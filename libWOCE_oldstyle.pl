@@ -1,0 +1,77 @@
+#======================================================================
+#                    L I B W O C E . P L 
+#                    doc: Mon Aug 28 11:07:47 2000
+#                    dlm: Sun Jul  2 00:16:46 2006
+#                    (c) 2000 A.M. Thurnherr
+#                    uE-Info: 53 35 NIL 0 0 72 2 2 4 NIL ofnI
+#======================================================================
+
+# HISTORY:
+#	Sep 04, 2000: - created from [libNODC.pl]
+#	Sep 19, 2000: - added &q_OK()
+#	Jan  2, 2002: - added optional length argument to &q_OK()
+#				  - allowed NaN observations in &q_OK()
+#	Aug 14, 2002: - added &csv_q_OK()
+#	Jun 19, 2004: - made Y2K compatible
+#	Apr  4, 2006: - added flt_qual(), flt_src()
+#   Jul  1, 2006: - Version 3.3 [HISTORY]
+
+require "$ANTS/libconv.pl";		# imply lat/lon conversions
+
+#----------------------------------------------------------------------
+# date/time
+#----------------------------------------------------------------------
+
+sub MMDDYY(@)		# 6 digit date
+{
+	my($MMDDYY) = &antsFunUsage(1,"6","MMDDYY",@_);
+	my($YY) = substr($MMDDYY,4,2);
+	return substr($MMDDYY,0,2) . "/" .
+		   substr($MMDDYY,2,2) . ($YY>50 ? "/19$YY" : "/20$YY");
+}
+
+sub HHMM(@)			# 4 digits
+{
+	my($HHMM) = &antsFunUsage(1,"4","HHMM",@_);
+	return substr($HHMM,0,2) . ":" . substr($HHMM,2,2);
+}
+
+#----------------------------------------------------------------------
+# CTD quality flags
+#----------------------------------------------------------------------
+
+sub q_OK(@)				# accept only perfect measurements (table 4.10)
+{
+	my($nflags) = (@_ == 3) ? 4 : $_[3];
+	my($obs,$qf,$qi) =
+		&antsFunUsage(-3,".${nflags}c","obs, quality flags, flag index[, nflags]",@_);
+	return (substr($qf,$qi,1) == 2) ? $obs : nan;
+}
+
+sub csv_q_OK(@)			# exchange-format version (single flags)
+{
+	return $_[1] == 2 ? $_[0] : nan;
+}
+
+#----------------------------------------------------------------------
+# Float Quality/Source Flags [/Data/Floats/DBE/WFDAC/WDBE/quality.doc]
+#	- 2-digit decimal number
+#	- 10s: quality (0-9, with 9 being best)
+#	-  1s: source:
+#			0	missing
+#			1	interpolated 	(backward diff for u/v)
+#			2					(forward diff for u/v)
+#			3	splined
+#			4	manually edited
+#			5	filtered/averaged
+#			9	original value
+#	- should accept source values >= 4
+#----------------------------------------------------------------------
+
+sub flt_qual($)
+{ return int($_[0] / 10); }
+
+sub flt_src($)
+{ return $_[0] % 10; }
+
+1;

@@ -1,0 +1,22 @@
+======================================================================
+                    R E A D M E 
+                    doc: Tue May 15 18:10:40 2012
+                    dlm: Wed May 16 06:30:40 2012
+                    (c) 2012 A.M. Thurnherr
+                    uE-Info: 19 0 NIL 0 0 72 3 2 4 NIL ofnI
+======================================================================
+
+This directory contains a set of perl libraries written and copyrighted
+by A.M. Thurnherr. The software is written in perl (V5.12.4 or later
+should work) and assumed to run in a UN*X environment.
+
+To find out which version you have, run "make" in current directory.
+
+Most of the source files use a hard tab of 4 spaces, i.e. they can be
+viewed correctly, e.g. with "less -x4".
+
+There is currently no documentation, nor is there support.
+
+SOFTWARE CAN BE FREELY USED AND COPIED FOR EDUCATIONAL OR OTHER
+NOT-FOR-PROFIT PURPOSES.
+

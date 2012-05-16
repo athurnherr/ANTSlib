@@ -1,0 +1,35 @@
+#!/usr/bin/perl
+#======================================================================
+#                    A N T S L I B 
+#                    doc: Wed May 16 06:19:16 2012
+#                    dlm: Wed May 16 06:28:16 2012
+#                    (c) 2012 A.M. Thurnherr
+#                    uE-Info: 11 36 NIL 0 0 72 2 2 4 NIL ofnI
+#======================================================================
+
+# HISTORY:
+#	May 16, 2012: - created for V5.0
+
+($ANTSlib) = ($0 =~ m{^(.*)/[^/]*$});
+
+require "$ANTSlib/ants.pl";
+require "$ANTSlib/libCPT.pl";
+require "$ANTSlib/libEOS83.pl";
+require "$ANTSlib/libGM.pl";
+require "$ANTSlib/libLADCP.pl";
+require "$ANTSlib/libNODC.pl";
+require "$ANTSlib/libPOSIX.pl";
+require "$ANTSlib/libRWalk.pl";
+require "$ANTSlib/libWOCE.pl";
+require "$ANTSlib/libWOCE_oldstyle.pl";
+require "$ANTSlib/libconv.pl";
+require "$ANTSlib/libfuns.pl";
+require "$ANTSlib/libgamma.pl";
+require "$ANTSlib/libstats.pl";
+require "$ANTSlib/libtides.pl";
+require "$ANTSlib/libubtest.pl";
+require "$ANTSlib/libvec.pl";
+
+chomp($about = `sed -n '/^description =/s/description = //p' $ANTSlib/.hg/hgrc`);
+print(STDERR "$about installed in $ANTSlib\n");
+exit(0);
