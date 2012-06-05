@@ -2,9 +2,9 @@
 #======================================================================
 #                    A N T S U T I L S . P L 
 #                    doc: Fri Jun 19 23:25:50 1998
-#                    dlm: Mon Feb 13 20:13:01 2012
+#                    dlm: Thu May 31 09:13:03 2012
 #                    (c) 1998 A.M. Thurnherr
-#                    uE-Info: 94 77 NIL 0 0 70 2 2 4 NIL ofnI
+#                    uE-Info: 157 9 NIL 0 0 70 10 2 4 NIL ofnI
 #======================================================================
 
 # Miscellaneous auxillary functions
@@ -92,6 +92,8 @@
 #	Nov 11, 2011: - added exact flag to fnrNoErr()
 #	Feb 13, 2012: - BUG: failure to specify exact flag resulted in ignoring antsFnrExactMatch
 #				  - BUG: fnrNoErr disregarded exact flag for external layouts
+#	May 16, 2012: - adapted to V5.0
+#	May 31, 2012: - changed ismember() semantics for use in psSamp
 
 # fnr notes:
 #	- matches field names starting with the string given, i.e. "sig" is
@@ -137,12 +139,22 @@ sub numbersp(@)
 sub equal($$)
 { return (@_ >= 2) && (abs($_[0]-$_[1]) < $PRACTICALLY_ZERO); }
 
+#----------------------------------------------------------------------
 # check whether given val is member of a set
+#	- set can either be an array or a comma-separated string
+#----------------------------------------------------------------------
+
 sub ismember($@)
 {
 	my($val,@set) = @_;
+	@set = split(',',$set[0])
+		if (@set == 1 && !numberp($set[0]));
 	for (my($i)=0; $i<@set; $i++) {
-		return 1 if ($val == $set[$i]);
+		if (numberp($val) && numberp($set[$i])) {
+			return 1 if ($val == $set[$i]);
+		} else {
+			return 1 if ($val eq $set[$i]);
+		}
 	}
 	return undef;
 }
@@ -419,7 +431,8 @@ sub antsLoadModel($$)
 			require "$pref.$name";
 			return $name;
 		} else {
-			require "$ANTS/$pref.$name";
+			my($path) = ($0 =~ m{^(.*)/[^/]*$});
+			require "$path/$pref.$name";
 			return $name;
 		}
 	}
@@ -441,7 +454,8 @@ sub antsLoadModelWithArgs($$)
 			require "$pref.$name";
 			return ($name,split(',',$args));
 		} else {
-			require "$ANTS/$pref.$name";
+			my($path) = ($0 =~ m{^(.*)/[^/]*$});
+			require "$path/$pref.$name";
 			return ($name,split(',',$args));
 		}
 	}

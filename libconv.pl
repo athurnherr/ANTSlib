@@ -1,9 +1,9 @@
 #======================================================================
 #                    L I B C O N V . P L 
 #                    doc: Sat Dec  4 13:03:49 1999
-#                    dlm: Tue Apr 17 10:34:41 2012
+#                    dlm: Tue May 22 11:34:01 2012
 #                    (c) 1999 A.M. Thurnherr
-#                    uE-Info: 61 76 NIL 0 0 72 2 2 4 NIL ofnI
+#                    uE-Info: 63 84 NIL 0 0 70 2 2 4 NIL ofnI
 #======================================================================
 
 # HISTORY:
@@ -59,6 +59,8 @@
 #	Jul 19, 2011: - made epoch aptional in mmddyy2dec_time()
 #	Aug  2, 2011: - enhanced yymmdd2dec_time()
 #	Apr 17, 2012: - added space as another date separator in ddmmyy2dec_time
+#	May 22, 2012: - BUG: illegal time spec error was also produced on missing seconds
+#				  - BUG: mmddyy2dec_time() did not allow for optional epoch argument
 
 require "$ANTS/libEOS83.pl";                        # &sigma()
 require "$ANTS/libPOSIX.pl";                        # &floor()
@@ -216,9 +218,9 @@ sub frac_day(@)										# fractional day
 	}
 
 	croak("$0: &frac_day_long(): illegal time spec $h:$m:$s\n")
-		unless (defined($h) && $h>=0 && $h<24 &&
-				defined($m) && $m>=0 && $m<60 &&
-				defined($s) && $s>=0 && $s<60);
+		unless ((defined($h) && $h>=0 && $h<24) &&
+				(defined($m) && $m>=0 && $m<60) &&
+				(!defined($s) || ($s>=0 && $s<60)));
 	return $h/24 + $m/24/60 + $s/24/3600;
 }
 
@@ -227,9 +229,9 @@ sub day_secs(@)										# seconds since daystart
 	my($h,$m,$s) = &antsFunUsage(3,'ccf',"<hour> <min> <sec>",@_);
 
 	croak("$0: &frac_day_long(): illegal time spec $h:$m:$s\n")
-		unless (defined($h) && $h>=0 && $h<24 &&
-				defined($m) && $m>=0 && $m<60 &&
-				defined($s) && $s>=0 && $s<60);
+		unless ((defined($h) && $h>=0 && $h<24) &&
+				(defined($m) && $m>=0 && $m<60) &&
+				(!defined($s) || ($s>=0 && $s<60)));
 	return $h*3600 + $m*60 + $s;
 }
 
@@ -260,7 +262,7 @@ sub dec_time(@)										# decimal time
 sub mmddyy2dec_time(@)								# decimal time
 {
 	my($ds,$ts,$epoch) =
-        &antsFunUsage(2,"..","date-string (empty ok), time-string[, epoch]",@_);
+        &antsFunUsage(-2,"..","date-string (empty ok), time-string[, epoch]",@_);
 
 	my($time) = 0;
 	if ($ds ne "") {								# date
@@ -273,10 +275,10 @@ sub mmddyy2dec_time(@)								# decimal time
 	}
 
 	my($h,$m,$s) = split(':',$ts);					# time
-	croak("$0: &dec_time(): illegal time spec $ts\n")
-		unless (defined($h) && $h>=0 && $h<24 &&
-				defined($m) && $m>=0 && $m<60 &&
-				defined($s) && $s>=0 && $s<60);
+	croak("$0: &mmddyy2dec_time(): illegal time spec $ts\n")
+		unless ((defined($h) && $h>=0 && $h<24) &&
+				(defined($m) && $m>=0 && $m<60) &&
+				(!defined($s) || ($s>=0 && $s<60)));
 	$time += $h/24 + $m/24/60 + $s/24/3600;
 
 	return $time;
@@ -295,9 +297,9 @@ sub ddmmyy2dec_time(@)								# decimal time
 
 	my($h,$m,$s) = split(':',$ts);
 	croak("$0: &dec_time(): illegal time spec $ts\n")
-		unless (defined($h) && $h>=0 && $h<24 &&
-				defined($m) && $m>=0 && $m<60 &&
-				defined($s) && $s>=0 && $s<60);
+		unless ((defined($h) && $h>=0 && $h<24) &&
+				(defined($m) && $m>=0 && $m<60) &&
+				(!defined($s) || ($s>=0 && $s<60)));
 	$time += $h/24 + $m/24/60 + $s/24/3600;
 
 	return $time;
@@ -324,9 +326,9 @@ sub yymmdd2dec_time(@)								# decimal time
 	if ($ts ne '') {
 		my($h,$m,$s) = split(':',$ts);
 		croak("$0: &dec_time(): illegal time spec $ts\n")
-			unless (defined($h) && $h>=0 && $h<24 &&
-					defined($m) && $m>=0 && $m<60 &&
-					defined($s) && $s>=0 && $s<60);
+		unless ((defined($h) && $h>=0 && $h<24) &&
+				(defined($m) && $m>=0 && $m<60) &&
+				(!defined($s) || ($s>=0 && $s<60)));
 	    $time += $h/24 + $m/24/60 + $s/24/3600;
 	}
 
