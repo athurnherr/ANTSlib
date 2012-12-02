@@ -2,9 +2,9 @@
 #======================================================================
 #                    A N T S U S A G E . P L 
 #                    doc: Fri Jun 19 13:43:05 1998
-#                    dlm: Mon Feb 13 19:57:03 2012
+#                    dlm: Mon Oct 29 12:08:54 2012
 #                    (c) 1998 A.M. Thurnherr
-#                    uE-Info: 441 0 NIL 0 0 70 2 2 4 NIL ofnI
+#                    uE-Info: 153 62 NIL 0 0 70 2 2 4 NIL ofnI
 #======================================================================
 
 # HISTORY:
@@ -150,6 +150,7 @@
 #						 resulted in always extending the layout, even when the field already
 #						 existed)
 #	Feb 13, 2012: - antsNewFieldOpt simplified by using 2nd arg to fnrNoErr
+#	Oct 29, 2012: - diabled "no file" messages on special args
 
 # NOTES:
 #	- ksh expands {}-arguments with commas in them!!! Use + instead
@@ -326,19 +327,19 @@ sub antsUsage($$@) {									# handle options
 						for (my($i)=$1; $i<=$2; $i++) {
 							my($f) = sprintf($fmt,$i);
 							if (-f $f) { push(@exp,$f); }
-							else { &antsInfo("$ARGV[$ai]: no file <$f>"); }
+#							else { &antsInfo("$ARGV[$ai]: no file <$f>"); }
 						}
 					} else {
 						for (my($i)=$1; $i>=$2; $i--) {
 							my($f) = sprintf($fmt,$i);
 							if (-f $f) { push(@exp,$f); }
-							else { &antsInfo("$ARGV[$ai]: no file <$f>"); }
+#							else { &antsInfo("$ARGV[$ai]: no file <$f>"); }
 	                    }
 	                }
 				} else {
 					my($f) = "$pref$range$suff";
 					if (-f $f) { push(@exp,$f); }
-					else { &antsInfo("$ARGV[$ai]: no file <$f>"); }
+#					else { &antsInfo("$ARGV[$ai]: no file <$f>"); }
 	            }
 				@exp = ($ARGV[$ai])						# make sure it *was* special arg
 					unless (@exp);

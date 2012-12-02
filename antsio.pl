@@ -2,9 +2,9 @@
 #======================================================================
 #                    A N T S I O . P L 
 #                    doc: Fri Jun 19 19:22:51 1998
-#                    dlm: Thu Apr 26 09:01:50 2012
+#                    dlm: Wed Oct 10 12:36:29 2012
 #                    (c) 1998 A.M. Thurnherr
-#                    uE-Info: 200 107 NIL 0 0 70 2 2 4 NIL ofnI
+#                    uE-Info: 598 0 NIL 0 0 70 2 2 4 NIL ofnI
 #======================================================================
 
 # HISTORY:
@@ -577,23 +577,25 @@ sub antsIn()
 			
 			$OEparamsOnly = 1;
 			for (my($if)=my($of)=0; $if<@antsOutExprs; $if++,$of++) {
-				if ($antsOutExprs[$if] =~ m{^%([\w\.]+)$}) {	# %PARAM
+#				if ($antsOutExprs[$if] =~ m{^%([\w\.]+)$}) {	# %PARAM
+				if ($antsOutExprs[$if] =~ m{^%([^=]+)$}) {		# %PARAM
 					$ofn[$of] = $1;
 					$OEparam[$of] = 1;
-				} elsif ($antsOutExprs[$if] =~ m{^[\w\.]+$}) { 	# single field
-					undef($OEparamsOnly);
-					$ofn[$of] = $antsOutExprs[$if];
-					$OEfield[$of] = &outFnr($antsOutExprs[$if]);
 	            } elsif ($antsOutExprs[$if] eq \'$@\') {		# all fields
 					undef($OEparamsOnly);
 	            	for (my($i)=0; $i<@ofn_buf; $i++,$of++) {
 	            		$ofn[$of] = $ofn_buf[$i];
 	            		$OEfield[$of] = $i;
 	            	}
+#				} elsif ($antsOutExprs[$if] =~ m{^[\w\.]+$}) { 	# single field
+				} elsif ($antsOutExprs[$if] =~ m{^[^=]+$}) { 	# single field
+					undef($OEparamsOnly);
+					$ofn[$of] = $antsOutExprs[$if];
+					$OEfield[$of] = &outFnr($antsOutExprs[$if]);
 	            } else {										# expression
 					undef($OEparamsOnly);
 					my($expr);
-	            	($ofn[$of],$expr) = ($antsOutExprs[$if] =~ m{^([\w\.]*)=(.*)$});
+	            	($ofn[$of],$expr) = ($antsOutExprs[$if] =~ m{^([^=]*)=(.*)$});
 	            	croak("$0: cannot parse -F $antsOutExprs[$if]\n")
 	            		unless defined($expr);
 	            	my(@tmp) = @antsLayout;

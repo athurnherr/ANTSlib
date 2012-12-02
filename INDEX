@@ -1,0 +1,213 @@
+======================================================================
+                    I N D E X 
+                    doc: Wed Jun 18 09:46:58 1997
+                    dlm: Tue Oct 16 09:12:43 2012
+                    (c) 1997 Andreas Thurnherr
+                    uE-Info: 122 0 NIL 0 0 72 2 2 4 NIL ofnI
+======================================================================
+
+NOTES:
+	- for documentation see [doc/INDEX]
+	- utilities not in ubtest are marked with !!!
+
+=Utilities=
+
+-Oceanographic-
+
+[ARGOSfloatdrift]	split ARGOS float track into subsurface/surface portions
+[CMrecavg]			record-average velocity & stderr
+[CTD_w]				calculate w from isopycnal displacement
+[dist]				distance on Earth's surface
+[distn]				station distance / mid point btw 2 profiles
+[distcircle]		calc geographic coords a given distance from point
+[distfrom]			calculate distance to particular station
+[dreckon]			dead reckoning (calc geo coords from length displacement)
+[dynmodes]!!!		calculate dynamical modes
+[expandtrack]		build interpolate track between stations
+[gamma_n]			calculate neutral densities
+[gvel]				calculate geostrophic velocities
+[interpstn]			interpolate between 2 stations
+[isopycnal_TS]		calc TS props on isopycnal
+[LADCPfs]!!!		calculate LADCP finestructure from [binpgrams] output
+[N]!!!				calculate buoyancy frequency
+[NMEA2latlon]		extract lat/lon info from NMEA strings
+[NODCsplit]!!!		split NODC_SD2 file into components
+[repeatstations]!!!	find repeat stations
+[Ri]!!!				calculate Richardson number
+[Rrho]!!!			stability ratio profile
+[thorpe77]!!!		calc Thorpe fluctuations
+[tidalphasediff]	calc M2 & K1 phase differences between two profiles
+[trackdist]			calculate distance for track-files
+[tracksplit]		split data set into linear tracks
+[veldiff]			compare velocity profiles
+	[.interp.linear]		linear interpolation
+	[.interp.poly]			polygonal interpolation
+	[.interp.spline]		spline interpolation
+	[.interp.nnbr]			nearest-neighbor
+	[.interp.ADCP]			RDI ADCP velocity sampling (triangular instrument response)
+[waterdepth]!!!		get water depth from Smith and Sandwell topography	
+[xover]				get crossover stations
+[xpgrams]!!!		extract pgrams from [binpgrams] [LADCPfs] output for plotting
+[yoyo]				splits yoyo file into individual casts
+
+-Model Fitting-
+
+[lfit]				linear least squares
+[match]!!!			match two data sets --- UNFINISHED
+	[.interp.linear]		linear interpolation
+	[.interp.poly]			polygonal interpolation
+	[.interp.spline]		spline interpolation
+	[.interp.nnbr]			nearest-neighbor
+[mfit]!!!			robust linear regression
+[lmfit]				non-linear least-squares (Levenberg-Marquardt)
+	[.lmfit.poly]		fit polynomial
+	[.lmfit.gauss]		fit Gaussian
+	[.lmfit.exp]		fit exponential
+[lsfit]				generalized linear least-squares
+	[.lsfit.poly]		fit polynomial
+	[.lsfit.bilin]		bi-linear fit
+
+-Stats-
+
+[avg]				avg/stddev/stderr/ndata/outliers/mean-sq amp/absolute mag/rms/gaussian avg
+[avgr]				avg correlation coefficient
+[bootstrap]			calc bootstrap confidence interval
+[Hist]				histogram
+[histeq]			histogram equalization
+[max]				maximum
+[median]			median
+[min]				minimum
+[Minmax]			min/max combo
+
+-Calculations-
+
+[abc]				PERL floating point replacement for expr(1)/bc(1)
+[count]				as in 1, 2, 3, ...
+[fdiff]				first differencing
+[fillgaps]			general interpolation of missing data
+	[.nminterp.linear]
+	[.nminterp.spline]
+[integrate]			integrate data
+[sum]				calc sum of field
+!!![wdiff]			window differencing
+
+-Filters-
+
+[fftfilt]			simplistic frequency domain digital filter
+[fgauss]!!!			running Gaussian filter
+[fmean]!!!			running mean filter
+[fmedian]!!!		median filter (OBSOLETE)
+[rfilt]!!!			general running filter (mean, median, min, max, ...)
+
+-Spectral Methods-
+
+[binpgrams]!!!		calc peridograms in (possibly overlapping) bins
+[lagcorr]			(lag) correlation / autocorrelation
+[pgram]				calc periodograms (power spectra)
+
+-Data Selection/Handling-
+
+[ANTS2mat]			Matlab export
+[bindata]			bin data & calc stats
+[binmerge]!!!		merge data into binned file (e.g. from [binpgrams])
+[Cat]				ants version of cat(1) 
+[crossings]!!!		get records when specific field val is crossed
+[data]!				get info about data
+[ded]				data editor
+[distfromtrack]!!!	calculate minimum perpendicular distance to piece-wise linear track
+[Echo]				ants versions of echo(1)
+[fileavg]!!!		avg, stddev files record-by-record
+[filediff]!			calc difference between files record-by-record
+[filestats]!!!		calc arbitrary stats of files record-by-record
+[fnr]				extracts field# from header or from Layout file
+[gextrema]			select extrema
+[glist]				select records from list
+[glmax]!!!			find local maxima
+[gmonot]!!!			select monotonic records (remove spurious inversions)
+[gpoly]				select points inside a polygon
+[how]!!!			extract command sequence from ANTS header
+[importCNV]			read ASCII and binary SeaBird CNV files
+[importfixed]		import fixed-size records
+[list]				list data and metadata
+[listNC]			list netcdf(1) data and metadata
+[merge]				merge files by matching numeric values
+[NCode]				encode ANTS to netcdf
+[resample]			resample data
+	[.interp.linear]		linear interpolation
+	[.interp.poly]			polygonal interpolation
+	[.interp.spline]		spline interpolation
+	[.interp.nnbr]			nearest-neighbor
+	[.interp.fillnan]		fill with nans
+[reverse]			reverse order of records in file
+[scantext]			extract numbers from free-format text files
+[Sort]				sort data
+[Split]				split data file according to field value
+[splitCNV]			split ASCII SeaBird CNV file
+[splitNC]			extract multiple ANTS files from single netCDF
+[stackplots]		plot multiple files with offsets
+[subsample]			nearest-neighbors; does not need monotonic x field
+[varbindata]		bin data in variable-sized bins
+
+-Misc-
+
+[fixfmt]!!!			fix path in ANTS header & nan format
+[tile]!!!			tile eps-files by 8
+[tabulate]!!!		make visually pleasing table from data
+
+-Debugging-
+
+[argtest]			test argument typechecking stuff
+
+
+=ANTS Libraries=
+
+[ants.pl]			common stuff
+	[antsio.pl]		input/output handling
+	[antsusage.pl]	usage handling
+	[antsutils.pl]	miscellaneous
+[antsfilters.pl]	library for data filtering
+[antsintegrate.pl]	integrator
+
+=Libraries (for -L)=
+
+[libCPT.pl]			GMT cpt file parsing
+[libEOS83.pl]		equation of state
+[libfuns.pl]		chapter 6 from NR: special functions; own stuff
+[libgamma.pl]		Jacket + McDougall gamma_n
+[libGHP.pl]			Gregg-Henyey-Polzin parameterization
+[libGM.pl]			Garrett & Munk spectrum
+[libLADCP.pl]		LADCP-related funs
+[libNODC.pl]!!!		NODC SD2 conversions
+[libPOSIX.pl]		POSIX functions
+[libstats.pl]		significance tests
+[libubtest.pl]		testing stuff
+[libvec.pl]			vector stuff, including distance on globe
+[libWOCE.pl]		WOCE conversions
+[libconv.pl]		conversions
+
+=Numerical Recipes Routines=
+
+[covsrt.pl]			for [lmfit]
+[fft.pl]			FFT
+[gaussj.pl]			Gaussian eliminiation
+[lfit.pl]			linear least squares
+[mrqcof.pl]			for [lmfit]
+[mrqmin.pl]			for [lmfit]
+[nrutil.pl]			aux utilities (vector/matrix/macros)
+[pearsn.pl]			for [corr]
+[polint.pl]			for [.interp.poly]
+[pythag.pl]			pythagoras
+
+=GMT Utilities=
+
+[adjustROI]!!!		make ROI compatible with grd file
+[CPTcolor]!!!		extract colour from cpt-file
+[CPTcontours]!!!	extract contour-levels from cpt-file
+[grdjoin]!!!		join multiple compatible grd files
+[lmcont]!!!			linear contouring of (quasi-)monotonic data
+[mkCPT]				makecpt(l) replacement
+[rectangulate]!!!	construct GMT multiseg rectangles from x/y/z/width info
+[psbath]!!!			build bathymetric map; similar to pscoast
+[psROI]!!!			psxy frontent to plot regions of interest
+[psSamp]!!!			generate GMT-compatible PS output for pie-wedge (repeat-)station data
+

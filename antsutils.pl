@@ -2,9 +2,9 @@
 #======================================================================
 #                    A N T S U T I L S . P L 
 #                    doc: Fri Jun 19 23:25:50 1998
-#                    dlm: Thu May 31 09:13:03 2012
+#                    dlm: Wed Oct 24 09:56:52 2012
 #                    (c) 1998 A.M. Thurnherr
-#                    uE-Info: 157 9 NIL 0 0 70 10 2 4 NIL ofnI
+#                    uE-Info: 259 43 NIL 0 0 70 10 2 4 NIL ofnI
 #======================================================================
 
 # Miscellaneous auxillary functions
@@ -94,6 +94,7 @@
 #				  - BUG: fnrNoErr disregarded exact flag for external layouts
 #	May 16, 2012: - adapted to V5.0
 #	May 31, 2012: - changed ismember() semantics for use in psSamp
+#	Jun 12, 2012: - added &compactList()
 
 # fnr notes:
 #	- matches field names starting with the string given, i.e. "sig" is
@@ -255,7 +256,7 @@ sub fmtNum($$)							# format number for output
     return $num;
 }
 
-sub log10 { my $n = shift; return log($n)/log(10); }	# c.v. perlfunc(1)
+sub log10 { my $n = shift; return ($n>0) ? log($n)/log(10) : nan; }	# c.v. perlfunc(1)
 
 
 #----------------------------------------------------------------------
@@ -460,6 +461,43 @@ sub antsLoadModelWithArgs($$)
 		}
 	}
 	return undef;
+}
+
+#----------------------------------------------------------------------
+# deal with lists of numbers
+#----------------------------------------------------------------------
+
+sub compactList(@)
+{
+	my(@out);
+	my($seqStart);
+	my($lv) = -9e99;
+
+	foreach my $v (@_) {
+		if (numberp($v)) {
+			if ($v == $lv+1) {						# we're in a sequence
+				$seqStart = $lv						# record beginning value
+					unless defined($seqStart);
+			} elsif (defined($seqStart)) {			# we've just completed a sequence
+				pop(@out);
+				push(@out,"$seqStart-$lv");
+				push(@out,$v);
+				undef($seqStart);
+			} else {								# not in a sequence
+				push(@out,$v);
+			}
+			$lv = $v;
+		} else {
+			push(@out,$v);
+			$lv = -9e99;
+		}
+	}
+	if (defined($seqStart)) {						# list ends with a sequence
+		pop(@out);
+		push(@out,"$seqStart-$lv");					
+	}
+	
+	return @out;
 }
 
 #----------------------------------------------------------------------

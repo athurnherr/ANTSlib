@@ -1,9 +1,9 @@
 #======================================================================
 #                    L I B S T A T S . P L 
 #                    doc: Wed Mar 24 13:59:27 1999
-#                    dlm: Thu Apr 26 09:49:47 2012
+#                    dlm: Mon Oct 15 10:34:21 2012
 #                    (c) 1999 A.M. Thurnherr
-#                    uE-Info: 33 64 NIL 0 0 72 2 2 4 NIL ofnI
+#                    uE-Info: 90 30 NIL 0 0 72 2 2 4 NIL ofnI
 #======================================================================
 
 # HISTORY:
@@ -31,6 +31,7 @@
 #	Mar 10, 2012: - medianF() -> medianAnts_(); mad2F() -> mad2Ants_()
 #				  - added sum()
 #	Apr 26, 2012: - BUG: std() did not allow nan as stddev input
+#	Oct 15, 2012: - added max_i(), min_i()
 
 require "$ANTS/libfuns.pl";
 
@@ -60,6 +61,17 @@ sub min(@)
 	return $min<9e99 ? $min : nan;
 }
 
+sub min_i(@)
+{
+	my($min) = 9e99;
+	my($min_i);
+	
+	for (my($i)=0; $i<=$#_; $i++) {
+		$min_i=$i,$min=$_[$i] if (numberp($_[$i]) && $_[$i] < $min);
+	}
+	return $min<9e99 ? $min_i : nan;
+}
+
 sub max(@)
 {
 	my($max) = -9e99;
@@ -67,6 +79,17 @@ sub max(@)
 		$max = $_[$i] if (numberp($_[$i]) && $_[$i] > $max);
 	}
 	return $max>-9e99 ? $max : nan;
+}
+
+sub max_i(@)
+{
+	my($max) = -9e99;
+	my($max_i);
+	
+	for (my($i)=0; $i<=$#_; $i++) {
+		$max_i=$i,$max=$_[$i] if (numberp($_[$i]) && $_[$i] > $max);
+	}
+	return $max>-9e99 ? $max_i : nan;
 }
 
 sub N(@)

@@ -1,9 +1,9 @@
 #======================================================================
-#                    . . / L I B / L I B V E C . P L 
+#                    . . / A N T S L I B / L I B V E C . P L 
 #                    doc: Sat Mar 20 12:50:32 1999
-#                    dlm: Tue Jun  5 08:38:52 2012
+#                    dlm: Mon Jun 11 11:12:06 2012
 #                    (c) 1999 A.M. Thurnherr
-#                    uE-Info: 318 0 NIL 0 0 70 2 2 4 NIL ofnI
+#                    uE-Info: 35 69 NIL 0 0 70 2 2 4 NIL ofnI
 #======================================================================
 
 # HISTORY:
@@ -32,6 +32,7 @@
 #	Nov  5, 2009: - added angle(); vel_bias() => angle_diff()
 #	Apr 22, 2010: - added angle_ts()
 #	Jun  5, 2012: - added &closestPointOnStraightLine()
+#	Jun 11, 2012: - addeed $t output to &closestPointOnStraightLine()
 
 require "$ANTS/libPOSIX.pl";	# acos()
 
@@ -299,9 +300,11 @@ sub area(@)
 }
 
 #----------------------------------------------------------------------
-# &closestPointOnStraightLine(lat,lon,lat1,lonA,lat2,lon2)
+# ($lat,$lon,$t) = &closestPointOnStraightLine(lat,lon,lat1,lonA,lat2,lon2)
 #	- determine point on line segment from <lat1,lonA> to <lat2,lon2> that
 #	  is closest to target point <lat,lon>
+#	- $t [0-1] output indicates where along the line segment the closest
+#	  point lies
 #   - http://stackoverflow.com/questions/3120357/get-closest-point-to-a-line
 #	- NOT DONE IN PLANAR GEOMETRY => USE ONLY IN SMALL DOMAINS
 #----------------------------------------------------------------------
@@ -315,7 +318,7 @@ sub closestPointOnStraightLine(@)
 	my($APlon) = $lonP - $lonA; my($APlat) = $latP - $latA;
 	my($t) = ($APlon*$ABlon + $APlat*$ABlat) / ($ABlon**2 + $ABlat**2);
 	return (undef,undef) unless ($t>=0 && $t<=1);
-	return ($latA + $t*$ABlat,$lonA + $t*$ABlon);
+	return ($latA + $t*$ABlat,$lonA + $t*$ABlon, $t);
 }
 
 1;

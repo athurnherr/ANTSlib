@@ -1,9 +1,9 @@
 #======================================================================
 #                    L I B L A D C P . P L 
 #                    doc: Wed Jun  1 20:38:19 2011
-#                    dlm: Wed Jan 18 18:46:33 2012
+#                    dlm: Thu Oct 25 21:24:59 2012
 #                    (c) 2011 A.M. Thurnherr
-#                    uE-Info: 103 19 NIL 0 0 72 2 2 4 NIL ofnI
+#                    uE-Info: 22 41 NIL 0 0 70 2 2 4 NIL ofnI
 #======================================================================
 
 # HISTORY:
@@ -16,101 +16,170 @@
 #	Jan  5, 2012: - removed S(), which is just pwrdens/N^2 (rather than
 #				    pwrdens/N^2/(2pi) as I erroneously thought)
 #	Jan 18, 2012: - added T_VI_alt() to allow assessment of tilt correction extrema
+#	Aug 22, 2012: - added documentation
+#				  - added T_w()
+#	Sep 24, 2012: - made "k" argument default in T_w()
+#	Oct 25, 2012: - renamed T_SM to T_ASM
 
 require "$ANTS/libvec.pl";
 require "$ANTS/libfuns.pl";
 
-#----------------------------------------------------------------------
-# Polzin et al., JAOT 2002 LADCP shear corrections
-#----------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
+# Spectral corrections for LADCP data
+#
 # NOTES:
-#	- apply to downcast data only
+#	- see Polzin et al. (JAOT 2002), Thurnherr (JAOT 2012)
+#	- to correct, multiply power densities (or power, I think) with corrections
+#	- apply to down-/up-cast data only
+#------------------------------------------------------------------------------
 
 #----------------------------------------------------------------------
-# individual corrections
+# 1. Corrections for individual data acquisition and processing steps
 #----------------------------------------------------------------------
 
-# NB: Dzb = (Dzt == Dzr) assumed
+#------------------------------------------------------------------------------
+# T_ravg(k,blen)
+#	- correct for range averaging due to finite pulse and finite receive window
+# 	- this version assumes bin-length == pulse-length
+#------------------------------------------------------------------------------
 
 sub T_ravg($$)
 {
-    my($kz,$Dzb) =
+    my($k,$blen) =
         &antsFunUsage(2,'ff','<vertical wavenumber[rad/s]> <pulse/bin-length[m]>',@_);
-    return 1 / sinc($kz*$Dzb/2/$PI)**4;
+    return 1 / sinc($k*$blen/2/$PI)**4;
 }
 
+#-------------------------------------------------------------
+# T_fdiff(k,dz)
+#	- correct for first differencing on a grid with dz spacing
+#-------------------------------------------------------------
 
 sub T_fdiff($$)
 {
-    my($kz,$Dzd) =
+    my($k,$dz) =
         &antsFunUsage(2,'ff','<vertical wavenumber[rad/s]> <differencing interval[m]>',@_);
-    return 1 / sinc($kz*$Dzd/2/$PI)**2;
+    return 1 / sinc($k*$dz/2/$PI)**2;
 }
 
+#------------------------------------------------------------
+# T_interp(k,blen,dz)
+#	- correct for CODAS gridding-with-interpolation algorithm
+#	- ONLY USED IN UH SOFTWARE
+#------------------------------------------------------------
 
 sub T_interp($$$)
 {
-    my($kz,$Dzb,$Dzg) =
+    my($k,$blen,$dz) =
         &antsFunUsage(3,'fff','<vertical wavenumber[rad/s]> <bin length[m]> <grid resolution[m]>',@_);
-    return 1 / sinc($kz*$Dzb/2/$PI)**4 / sinc($kz*$Dzg/2/$PI)**2;
+    return 1 / sinc($k*$blen/2/$PI)**4 / sinc($k*$dz/2/$PI)**2;
 }
 
+#-------------------------------------------------------------------------
+# T_binavg(k,dz)
+#	- correct for simple bin averaging
+#	- Polzin et al. suggest to use blen instead of dz; this must be a typo
+#-------------------------------------------------------------------------
 
-# NB: Polzin et al claim that Dz should be ADCP bin size, which does not seem to make sense
 sub T_binavg($$)
 {
-    my($kz,$Dzg) =
+    my($k,$dz) =
         &antsFunUsage(2,'ff','<vertical wavenumber[rad/s]> <grid resolution[m]>',@_);
-    return 1 / sinc($kz*$Dzg/2/$PI)**2;
+    return 1 / sinc($k*$dz/2/$PI)**2;
 }
 
+#--------------------------------------------------------------------------------
+# T_tilt(k,d')
+#	- d' is a length scale that depends on tilt stats and range max
+#	- on d' == 0, T_tilt() == 1, i.e. the correction is disabled
+#	- d' = dprime(range_max)
+#			- is from a quadratic fit to three data points given by Polzin et al.
+#			- see Thurnherr (J. Tech. 2012) for notes
+#			- on range_max == 0, d' == 0, i.e. the correction is disabled
+#--------------------------------------------------------------------------------
 
 sub T_tilt($$)
 {
-    my($kz,$dprime) =
+    my($k,$dprime) =
         &antsFunUsage(2,'ff','<vertical wavenumber[rad/s]> <d-prime[m]>',@_);
-    return 1 / sinc($kz*$dprime/2/$PI)**2;
+    return $dprime ? 1 / sinc($k*$dprime/2/$PI)**2 : 1;
 }
 
-#----------------------------------------------------------------------
-# convenient combinations
-#----------------------------------------------------------------------
-
-sub LADCP_tilt_dprime($)
+sub dprime($)
 {
-	return -1.2 + 0.0857 * $_[0] - 0.000136 * $_[0]**2;
+	return $_[0] ? -1.2 + 0.0857 * $_[0] - 0.000136 * $_[0]**2 : 0;
 } 
+
+#======================================================================
+# 2. Processing-Specific Corrections
+#======================================================================
+
+#----------------------------------------------------------------------
+# T_UH(k,blen,dz,range_max)
+#	- UH implementation of the shear method (WOCE standard)
+#	- range_max == 0 disables tilt correction
+#----------------------------------------------------------------------
 
 sub T_UH($$$$)
 {
-	my($kz,$blen,$grez,$maxrange) =
-        &antsFunUsage(4,'ffff','<vertical wavenumber[rad/s]> <ADCP bin size[m]> <shear grid resolution[m]> <max range[m]>',@_);
-    return T_ravg($kz,$blen) * T_fdiff($kz,$blen) * T_interp($kz,$blen,$grez) * T_tilt($kz,LADCP_tilt_dprime($maxrange));
+	my($k,$blen,$dz,$range_max) =
+        &antsFunUsage(4,'ffff','<vertical wavenumber[rad/s]> <ADCP bin size[m]> <shear grid resolution[m]> <range max[m]>',@_);
+    return T_ravg($k,$blen) * T_fdiff($k,$blen) * T_interp($k,$blen,$dz) * T_tilt($k,dprime($range_max));
 }
 
-sub T_SM($$$$)
+#----------------------------------------------------------------------
+# T_ASM(k,blen,dz,range_max)
+#	- re-implemented shear method with simple depth binning
+#	- range_max == 0 disables tilt correction
+#----------------------------------------------------------------------
+
+sub T_ASM($$$$)
 {
-	my($kz,$blen,$grez,$maxrange) =
-        &antsFunUsage(4,'ffff','<vertical wavenumber[rad/s]> <ADCP bin size[m]> <shear grid resolution[m]> <max range[m]>',@_);
-    return T_ravg($kz,$blen) * T_fdiff($kz,$blen) * T_binavg($kz,$grez) * T_tilt($kz,LADCP_tilt_dprime($maxrange));
+	my($k,$blen,$dz,$range_max) =
+        &antsFunUsage(4,'ffff','<vertical wavenumber[rad/s]> <ADCP bin size[m]> <shear grid resolution[m]> <range max[m]>',@_);
+    return T_ravg($k,$blen) * T_fdiff($k,$blen) * T_binavg($k,$dz) * T_tilt($k,dprime($range_max));
 }
+
+#------------------------------------------------------------
+# T_VI(k,blen,preavg_dz,grid_dz,range_max)
+# T_VI_alt(k,blen,preavg_dz,grid_dz,dprime)
+#	- velocity inversion method of Visbeck (J. Tech., 2002)
+#	- only valid if pre-averaging into superensembles is used
+#	- range_max == 0 disables tilt correction
+#------------------------------------------------------------
 
 sub T_VI($$$$$)
 {
-	my($kz,$blen,$sel,$grez,$maxrange) =
-        &antsFunUsage(5,'ff.ff','<vertical wavenumber[rad/s]> <ADCP bin size[m]> <superensemble size[m]|nan> <shear grid resolution[m]> <max range[m]>',@_);
-	return T_VI_alt($kz,$blen,$sel,$grez,LADCP_tilt_dprime($maxrange));        
+	my($k,$blen,$sel,$dz,$range_max) =
+        &antsFunUsage(5,'ff.ff','<vertical wavenumber[rad/s]> <ADCP bin size[m]> <superensemble size[m]|nan> <shear grid resolution[m]> <range max[m]>',@_);
+	return T_VI_alt($k,$blen,$sel,$dz,dprime($range_max));        
 }
 
 sub T_VI_alt($$$$$)
 {
-	my($kz,$blen,$sel,$grez,$dprime) =
+	my($k,$blen,$sel,$dz,$dprime) =
         &antsFunUsage(5,'ff.ff','<vertical wavenumber[rad/s]> <ADCP bin size[m]> <superensemble size[m]|nan> <shear grid resolution[m]> <tilt d-prime[m]>',@_);
 	croak("$0: tilt-dprime outside range [0..$blen]\n")
 		unless ($dprime>=0 && $dprime<=$blen);
-    return ($sel>0) ? T_ravg($kz,$blen) * T_binavg($kz,$sel) * T_binavg($kz,$grez) * T_tilt($kz,$dprime)
-    				: T_ravg($kz,$blen) * T_binavg($kz,$grez) * T_tilt($kz,$dprime);
+    return ($sel>0) ? T_ravg($k,$blen) * T_binavg($k,$sel) * T_binavg($k,$dz) * T_tilt($k,$dprime)
+    				: T_ravg($k,$blen) * T_binavg($k,$dz) * T_tilt($k,$dprime);
+}
+
+#----------------------------------------------------------------------
+# T_w(k,blen,dz,range_max)
+#	- vertical-velocity method of Thurnherr (IEEE 2011)
+#	- range_max == 0 disables tilt correction
+#----------------------------------------------------------------------
+
+{ my(@fc);
+	sub T_w(@)
+	{
+		my($k,$blen,$dz,$range_max) =
+			&antsFunUsage(4,'ffff',
+				'[vertical wavenumber[rad/s]] <ADCP bin size[m]> <output grid resolution[m]> <range max[m]>',
+				\@fc,'k',undef,undef,undef,@_);
+		return T_ravg($k,$blen) * T_binavg($k,$dz) * T_tilt($k,dprime($range_max));
+	}
 }
 
 1;

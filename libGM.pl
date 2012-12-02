@@ -1,9 +1,9 @@
 #======================================================================
 #                    L I B G M . P L 
 #                    doc: Sun Feb 20 14:43:47 2011
-#                    dlm: Sun Apr  1 11:29:53 2012
+#                    dlm: Fri Sep 14 12:35:40 2012
 #                    (c) 2011 A.M. Thurnherr
-#                    uE-Info: 53 1 NIL 0 0 72 2 2 4 NIL ofnI
+#                    uE-Info: 61 0 NIL 0 0 72 2 2 4 NIL ofnI
 #======================================================================
 
 # HISTORY:
@@ -15,10 +15,21 @@
 #					affects only long wavelengths
 #				  - return nan for omega outside internal-wave band
 #	Mar 29, 2012: - re-wrote using definition of B(omega) from Munk (1981)
+#	Aug 23, 2012: - cosmetics?
+#	Sep  7, 2012: - made N0, E0, b, jstar global
 
 require "$ANTS/libEOS83.pl";
 
 my($pi) = 3.14159265358979;
+
+#======================================================================
+# Global Constants
+#======================================================================
+
+$GM_N0 = 5.24e-3;   # rad/s			# reference stratification (from Gregg + Kunze, 1991)
+$GM_E0 = 6.3e-5;	# dimensionless # spectral level (Munk 1981)
+$GM_b  = 1300;		# m				# pycnocline e-folding scale
+$GM_jstar = 3;		# dimless		# peak mode number
 
 #======================================================================
 # Vertical velocity spectral density
@@ -47,13 +58,9 @@ sub m($$)	# vertical wavenumber as a function of mode number & stratification pa
 {
 	my($j,$N,$omega) = @_;
 
-	my($b) = 1300; #m                               # stratification e-folding scale (Munk 81)
-	my($N0) = 5.2e-3; #rad/s                        # extrapolated to surface value (Munk 81)
-
-#	print(STDERR "omega = $omega, N = $N\n");
 	return defined($omega)
-		   ? $pi / $b * sqrt(($N**2 - $omega**2) / ($N0**2 - $omega**2)) * $j
-		   : $pi * $j * $N / ($b * $N0);			# valid, except in vicinity of buoyancy turning frequency (p. 285)
+		   ? $pi / $GM_b * sqrt(($N**2 - $omega**2) / ($GM_N0**2 - $omega**2)) * $j
+		   : $pi * $j * $N / ($GM_b * $GM_N0);			# valid, except in vicinity of buoyancy turning frequency (p. 285)
 }
 
 sub B($)											# structure function (omega dependence)
@@ -67,18 +74,35 @@ sub B($)											# structure function (omega dependence)
 
 sub Sw($$$$)
 {
-	my($omega,$m,$lat,$N) = &antsFunUsage(4,'fff','<frequency[1/s]> <vertical wavenumber[1/m]> <lat[deg]> <N[rad/s]>',@_);
+	my($omega,$m,$lat,$N) = &antsFunUsage(4,'fff','<frequency[1/s]> <vertical wavenumber[rad/m]> <lat[deg]> <N[rad/s]>',@_);
 
 	local($f) = abs(&f($lat));
 	return nan if ($omega < $f || $omega > $N);
 
-	my($E0) = 6.3e-5;								# dimensionless spectral level
-	my($j_star) = 3;								# peak mode number
-	my($b) = 1300; #m								# pycnocline lengthscale
+	my($GM_b) = 1300; #m								# pycnocline lengthscale
 
-	my($mstar) = &m($j_star,$N,$omega);
+	my($mstar) = &m($GM_jstar,$N,$omega);
 
-	return $E0 * $b * 2 * $f**2/$omega**2/B($omega) * $j_star / ($m+$mstar)**2;
+	return $GM_E0 * $GM_b * 2 * $f**2/$omega**2/B($omega) * $GM_jstar / ($m+$mstar)**2;
+}
+
+#----------------------------------------------------------------------
+# GM76, as per Gregg and Kunze (JGR 1991)
+#	- beta is vertical wavenumber (m above)
+#----------------------------------------------------------------------
+
+sub Su($$)
+{
+	my($beta,$N) = @_;
+
+	my($beta_star) = &m($GM_jstar,$N);				# A3
+	return 3*$GM_E0*$GM_b**3*$GM_N0**2 / (2*$GM_jstar*$pi) / (1+$beta/$beta_star)**2;	# A2
+}
+
+sub Su_z($$)
+{
+	my($beta,$N) = &antsFunUsage(2,'ff','<vertical wavenumber[rad/m]> <N[rad/s]>',@_);
+	return $beta**2 * &Su($beta,$N);
 }
 
 1;
