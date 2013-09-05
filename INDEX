@@ -1,9 +1,9 @@
 ======================================================================
                     I N D E X 
                     doc: Wed Jun 18 09:46:58 1997
-                    dlm: Tue Oct 16 09:12:43 2012
+                    dlm: Mon Aug  5 12:16:56 2013
                     (c) 1997 Andreas Thurnherr
-                    uE-Info: 122 0 NIL 0 0 72 2 2 4 NIL ofnI
+                    uE-Info: 135 78 NIL 0 0 72 2 2 4 NIL ofnI
 ======================================================================
 
 NOTES:
@@ -114,6 +114,7 @@ NOTES:
 [crossings]!!!		get records when specific field val is crossed
 [data]!				get info about data
 [ded]				data editor
+[deglitch]!!!		remove very obvious data glitches
 [distfromtrack]!!!	calculate minimum perpendicular distance to piece-wise linear track
 [Echo]				ants versions of echo(1)
 [fileavg]!!!		avg, stddev files record-by-record
@@ -131,6 +132,7 @@ NOTES:
 [list]				list data and metadata
 [listNC]			list netcdf(1) data and metadata
 [merge]				merge files by matching numeric values
+[msplit]			split data file with monotonic key field at list of values
 [NCode]				encode ANTS to netcdf
 [resample]			resample data
 	[.interp.linear]		linear interpolation
@@ -141,8 +143,8 @@ NOTES:
 [reverse]			reverse order of records in file
 [scantext]			extract numbers from free-format text files
 [Sort]				sort data
-[Split]				split data file according to field value
-[splitCNV]			split ASCII SeaBird CNV file
+[Split]				split data file according to field value or # of records
+[splitCNV]			split ASCII SeaBird CNV file at list of elapsed times
 [splitNC]			extract multiple ANTS files from single netCDF
 [stackplots]		plot multiple files with offsets
 [subsample]			nearest-neighbors; does not need monotonic x field

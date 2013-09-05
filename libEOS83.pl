@@ -1,9 +1,9 @@
 #======================================================================
 #          L I B E O S 8 3 . P L 
 #          doc: Mon Mar  8 08:22:05 1999
-#          dlm: Thu Oct  6 11:44:00 2011
+#          dlm: Tue Feb  5 16:42:28 2013
 #          (c) 1999 A.M. Thurnherr
-#          uE-Info: 1 0 NIL 0 0 72 2 2 4 NIL ofnI
+#          uE-Info: 20 59 NIL 0 0 72 2 2 4 NIL ofnI
 #======================================================================
 
 # Perl Implementation of UNESCO Eqn of State 1983
@@ -17,7 +17,7 @@
 #	- no temperature scale assumed; set PARAM ITS=90|68
 #	- T90*1.00024=T68
 #	- check values calculated with T68
-#	- no conductivity unit assumed; set PARAM cond.unit=S/p|mS/cm
+#	- no conductivity unit assumed; set PARAM cond.unit=S/m|mS/cm
 
 # HISTORY:
 #	Mar 08, 1999: - translated by hand from krc

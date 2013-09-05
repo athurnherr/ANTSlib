@@ -2,9 +2,9 @@
 #======================================================================
 #                    A N T S U T I L S . P L 
 #                    doc: Fri Jun 19 23:25:50 1998
-#                    dlm: Wed Oct 24 09:56:52 2012
+#                    dlm: Thu Sep  5 21:53:55 2013
 #                    (c) 1998 A.M. Thurnherr
-#                    uE-Info: 259 43 NIL 0 0 70 10 2 4 NIL ofnI
+#                    uE-Info: 99 38 NIL 0 0 70 10 2 4 NIL ofnI
 #======================================================================
 
 # Miscellaneous auxillary functions
@@ -95,6 +95,8 @@
 #	May 16, 2012: - adapted to V5.0
 #	May 31, 2012: - changed ismember() semantics for use in psSamp
 #	Jun 12, 2012: - added &compactList()
+#	Dec 17, 2012: - added default to antsLoadModel()
+#	Sep  5, 2013: - FINALLY: added $pi
 
 # fnr notes:
 #	- matches field names starting with the string given, i.e. "sig" is
@@ -122,6 +124,8 @@ sub croak($)
 #----------------------------------------------------------------------
 # Number-related funs
 #----------------------------------------------------------------------
+
+$pi = 3.14159265358979;		# from $PI in [libvec.pl]
 
 $PRACTICALLY_ZERO = 1e-9;
 $SMALL_AMOUNT	  = 1e-6;
@@ -417,27 +421,27 @@ sub outFnr($)
 # model-loading funs
 #----------------------------------------------------------------------
 
-sub antsLoadModel($$)
+sub antsLoadModel(...)
 {
-	my($opt,$pref) = @_;
+	my($opt,$pref,$default) = @_;
 	my($name);
 	
 	for ($a=0;											# find model name
 		 $a<=$#ARGV && !($ARGV[$a] =~ m/^-\S*$opt$/);
 		 $a++) { }
-	if ($a < $#ARGV) {									# found
-		$name = $ARGV[$a+1];							# load it
-		if (-r "$pref.$name") {							# local
-			&antsInfo("loading local $pref.$name...");
-			require "$pref.$name";
-			return $name;
-		} else {
-			my($path) = ($0 =~ m{^(.*)/[^/]*$});
-			require "$path/$pref.$name";
-			return $name;
-		}
-	}
-	return undef;
+	$name = ($a < $#ARGV) ? $ARGV[$a+1] : $default;		# use default if not found
+
+	return undef unless defined($name);
+
+	if (-r "$pref.$name") { 							# load in local directory
+		&antsInfo("loading local $pref.$name...");
+		require "$pref.$name";
+		return $name;
+	} else {											# load from ANTSlib 
+		my($path) = ($0 =~ m{^(.*)/[^/]*$});
+		require "$path/$pref.$name";
+		return $name;
+    }
 }
 
 sub antsLoadModelWithArgs($$)

@@ -1,9 +1,9 @@
 #======================================================================
 #                    L I B G M . P L 
 #                    doc: Sun Feb 20 14:43:47 2011
-#                    dlm: Fri Sep 14 12:35:40 2012
+#                    dlm: Sat Apr 20 20:05:51 2013
 #                    (c) 2011 A.M. Thurnherr
-#                    uE-Info: 61 0 NIL 0 0 72 2 2 4 NIL ofnI
+#                    uE-Info: 62 0 NIL 0 0 72 2 2 4 NIL ofnI
 #======================================================================
 
 # HISTORY:
@@ -17,6 +17,7 @@
 #	Mar 29, 2012: - re-wrote using definition of B(omega) from Munk (1981)
 #	Aug 23, 2012: - cosmetics?
 #	Sep  7, 2012: - made N0, E0, b, jstar global
+#	Dec 28, 2012: - added allowance for small roundoff error to Sw()
 
 require "$ANTS/libEOS83.pl";
 
@@ -58,7 +59,7 @@ sub m($$)	# vertical wavenumber as a function of mode number & stratification pa
 {
 	my($j,$N,$omega) = @_;
 
-	return defined($omega)
+	return defined($omega) && ($omega <= $GM_N0)
 		   ? $pi / $GM_b * sqrt(($N**2 - $omega**2) / ($GM_N0**2 - $omega**2)) * $j
 		   : $pi * $j * $N / ($GM_b * $GM_N0);			# valid, except in vicinity of buoyancy turning frequency (p. 285)
 }
@@ -77,6 +78,8 @@ sub Sw($$$$)
 	my($omega,$m,$lat,$N) = &antsFunUsage(4,'fff','<frequency[1/s]> <vertical wavenumber[rad/m]> <lat[deg]> <N[rad/s]>',@_);
 
 	local($f) = abs(&f($lat));
+	$omega += $PRACTICALLY_ZERO if ($omega < $f);
+	$omega -= $PRACTICALLY_ZERO if ($omega > $N);
 	return nan if ($omega < $f || $omega > $N);
 
 	my($GM_b) = 1300; #m								# pycnocline lengthscale

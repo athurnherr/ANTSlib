@@ -1,9 +1,9 @@
 #======================================================================
 #                    A N T S F I L T E R S . P L 
 #                    doc: Sun Mar 14 15:17:29 1999
-#                    dlm: Wed Jan  5 23:34:57 2011
+#                    dlm: Wed Feb 13 11:11:16 2013
 #                    (c) 1999 A.M. Thurnherr
-#                    uE-Info: 15 48 NIL 0 0 72 2 2 4 NIL ofnI
+#                    uE-Info: 38 97 NIL 0 0 72 2 2 4 NIL ofnI
 #======================================================================
 
 # HISTORY:
@@ -35,9 +35,8 @@ sub antsXCheck($$$) # ($xfnr,$from,$to,$fac) -> mean dx	# sanity check on @ants_
 		croak("$0: can't handle $ants_[$r][$xfnr] (x field)\n")
 			unless (numberp($ants_[$r][$xfnr]));
 		$cdx = $ants_[$r][$xfnr] - $ants_[$r-1][$xfnr];
-		croak("$0: input badly non-uniformly spaced " .
-			"(rec# $r is $ants_[$r][$xfnr]; previous is $ants_[$r-1][$xfnr];" .
-			" target difference is $dx)\n")
+		croak(sprintf("$0: input badly non-uniformly spaced: @ rec#%d dx=%g, %.1fx target dx=%g\n",
+						$r,$cdx,$cdx/$dx,$dx))
 			if (($dx > 0) && ($cdx > $fac*$dx || $cdx < $dx/$fac)) ||
 			   (($dx < 0) && ($cdx < $fac*$dx || $cdx > $dx/$fac));
 		$sdx += $cdx;

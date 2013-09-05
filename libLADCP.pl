@@ -1,9 +1,9 @@
 #======================================================================
 #                    L I B L A D C P . P L 
 #                    doc: Wed Jun  1 20:38:19 2011
-#                    dlm: Thu Oct 25 21:24:59 2012
+#                    dlm: Wed Jun 26 11:47:45 2013
 #                    (c) 2011 A.M. Thurnherr
-#                    uE-Info: 22 41 NIL 0 0 70 2 2 4 NIL ofnI
+#                    uE-Info: 211 0 NIL 0 0 70 2 2 4 NIL ofnI
 #======================================================================
 
 # HISTORY:
@@ -19,7 +19,9 @@
 #	Aug 22, 2012: - added documentation
 #				  - added T_w()
 #	Sep 24, 2012: - made "k" argument default in T_w()
-#	Oct 25, 2012: - renamed T_SM to T_ASM
+#	Oct 25, 2012: - renamed T_SM() to T_ASM()
+#	Jun 26. 2013: - added T_w_z()
+#				  - added parameter checks to processing-specific corrections
 
 require "$ANTS/libvec.pl";
 require "$ANTS/libfuns.pl";
@@ -124,6 +126,8 @@ sub T_UH($$$$)
 {
 	my($k,$blen,$dz,$range_max) =
         &antsFunUsage(4,'ffff','<vertical wavenumber[rad/s]> <ADCP bin size[m]> <shear grid resolution[m]> <range max[m]>',@_);
+	croak("T_UH($k,$blen,$dz,$range_max): bad parameters\n")
+		unless ($k>=0 && $blen>0 && $dz>0 && $range_max>=0);				
     return T_ravg($k,$blen) * T_fdiff($k,$blen) * T_interp($k,$blen,$dz) * T_tilt($k,dprime($range_max));
 }
 
@@ -137,6 +141,8 @@ sub T_ASM($$$$)
 {
 	my($k,$blen,$dz,$range_max) =
         &antsFunUsage(4,'ffff','<vertical wavenumber[rad/s]> <ADCP bin size[m]> <shear grid resolution[m]> <range max[m]>',@_);
+	croak("T_ASM($k,$blen,$dz,$range_max): bad parameters\n")
+		unless ($k>=0 && $blen>0 && $dz>0 && $range_max>=0);				
     return T_ravg($k,$blen) * T_fdiff($k,$blen) * T_binavg($k,$dz) * T_tilt($k,dprime($range_max));
 }
 
@@ -146,6 +152,7 @@ sub T_ASM($$$$)
 #	- velocity inversion method of Visbeck (J. Tech., 2002)
 #	- only valid if pre-averaging into superensembles is used
 #	- range_max == 0 disables tilt correction
+#	- sel == nan disables pre-averaging correction
 #------------------------------------------------------------
 
 sub T_VI($$$$$)
@@ -159,6 +166,8 @@ sub T_VI_alt($$$$$)
 {
 	my($k,$blen,$sel,$dz,$dprime) =
         &antsFunUsage(5,'ff.ff','<vertical wavenumber[rad/s]> <ADCP bin size[m]> <superensemble size[m]|nan> <shear grid resolution[m]> <tilt d-prime[m]>',@_);
+	croak("T_VI_alt($k,$blen,$sel,$dz,$range_max): bad parameters\n")
+		unless ($k>=0 && $blen>0 && $sel ne '' && $dz>0 && $range_max>=0);				
 	croak("$0: tilt-dprime outside range [0..$blen]\n")
 		unless ($dprime>=0 && $dprime<=$blen);
     return ($sel>0) ? T_ravg($k,$blen) * T_binavg($k,$sel) * T_binavg($k,$dz) * T_tilt($k,$dprime)
@@ -178,7 +187,30 @@ sub T_VI_alt($$$$$)
 			&antsFunUsage(4,'ffff',
 				'[vertical wavenumber[rad/s]] <ADCP bin size[m]> <output grid resolution[m]> <range max[m]>',
 				\@fc,'k',undef,undef,undef,@_);
+		croak("T_w($k,$blen,$dz,$range_max): bad parameters\n")
+			unless ($k>=0 && $blen>0 && $dz>0 && $range_max>=0);				
 		return T_ravg($k,$blen) * T_binavg($k,$dz) * T_tilt($k,dprime($range_max));
+	}
+}
+
+#----------------------------------------------------------------------
+# T_w_z(k,blen,dz,range_max)
+#	- vertical-velocity method of Thurnherr (IEEE 2011)
+#	- first differencing of gridded shear to calculate dw/dz
+#	- NB: grid-scale differentiation assumed
+#	- range_max == 0 disables tilt correction
+#----------------------------------------------------------------------
+
+{ my(@fc);
+	sub T_w_z(@)
+	{
+		my($k,$blen,$dz,$range_max) =
+			&antsFunUsage(4,'ffff',
+				'[vertical wavenumber[rad/s]] <ADCP bin size[m]> <output grid resolution[m]> <range max[m]>',
+				\@fc,'k',undef,undef,undef,@_);
+		croak("T_w_z($k,$blen,$dz,$range_max): bad parameters\n")
+			unless ($k>=0 && $blen>0 && $dz>0 && $range_max>=0);				
+		return T_ravg($k,$blen) * T_binavg($k,$dz) * T_tilt($k,dprime($range_max)) * T_fdiff($k,$dz);
 	}
 }
 

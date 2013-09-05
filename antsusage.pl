@@ -2,9 +2,9 @@
 #======================================================================
 #                    A N T S U S A G E . P L 
 #                    doc: Fri Jun 19 13:43:05 1998
-#                    dlm: Mon Oct 29 12:08:54 2012
+#                    dlm: Tue Apr  2 22:26:55 2013
 #                    (c) 1998 A.M. Thurnherr
-#                    uE-Info: 153 62 NIL 0 0 70 2 2 4 NIL ofnI
+#                    uE-Info: 157 44 NIL 0 0 70 2 2 4 NIL ofnI
 #======================================================================
 
 # HISTORY:
@@ -151,6 +151,10 @@
 #						 existed)
 #	Feb 13, 2012: - antsNewFieldOpt simplified by using 2nd arg to fnrNoErr
 #	Oct 29, 2012: - diabled "no file" messages on special args
+#	Mar 29, 2013: - added support for $ANTSLIBS
+#	Apr  2, 2013: - BUG: pref{}suff special args did sometimes produce unexpanded as well
+#						 as expanded output (unexpanded should be produced only if the
+#						 expansion is empty)
 
 # NOTES:
 #	- ksh expands {}-arguments with commas in them!!! Use + instead
@@ -223,7 +227,6 @@ sub antsUsage($$@) {									# handle options
 		croak("$0: -N not supported (implementation restriction)\n")
 			if defined($opt_N);
 	}
-		
 
 	if ($eoo) {											# reset args
 		for ($i=0; $i<=$#ARGV; $i++) {
@@ -268,11 +271,13 @@ sub antsUsage($$@) {									# handle options
 		if (defined($opt_L)) {							# load libraries
 			foreach $lib (split(',',$opt_L)) {
 				if (-r "lib$lib.pl") {
-#					&antsInfo("loading ./lib$lib.pl");
 					require "lib$lib.pl";
-				} else {
-#					&antsInfo("loading $ANTS/lib$lib.pl"),
+				} elsif (-r "$ANTS/lib$lib.pl") {
 					require "$ANTS/lib$lib.pl";
+				} elsif (-r "$ANTSLIBS/lib$lib.pl") {
+					require "$ANTSLIBS/lib$lib.pl";
+				} else {
+					croak("$0: cannot load {.,$ANTS,$ANTSLIBS}/lib$lib.pl\n");
 				}
 			}
 		}
@@ -338,12 +343,13 @@ sub antsUsage($$@) {									# handle options
 	                }
 				} else {
 					my($f) = "$pref$range$suff";
+#					print(STDERR "f = $pref . $range . $suff\n");
 					if (-f $f) { push(@exp,$f); }
 #					else { &antsInfo("$ARGV[$ai]: no file <$f>"); }
 	            }
-				@exp = ($ARGV[$ai])						# make sure it *was* special arg
-					unless (@exp);
 	        }
+			@exp = ($ARGV[$ai])							# make sure it *was* special arg
+				unless (@exp);
 		} else {										# regular argument
 			next;
 		}
