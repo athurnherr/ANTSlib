@@ -1,9 +1,9 @@
 ======================================================================
                     I N D E X 
                     doc: Wed Jun 18 09:46:58 1997
-                    dlm: Mon Aug  5 12:16:56 2013
+                    dlm: Tue Nov 19 10:23:18 2013
                     (c) 1997 Andreas Thurnherr
-                    uE-Info: 135 78 NIL 0 0 72 2 2 4 NIL ofnI
+                    uE-Info: 49 58 NIL 0 0 72 2 2 4 NIL ofnI
 ======================================================================
 
 NOTES:
@@ -45,7 +45,8 @@ NOTES:
 	[.interp.spline]		spline interpolation
 	[.interp.nnbr]			nearest-neighbor
 	[.interp.ADCP]			RDI ADCP velocity sampling (triangular instrument response)
-[waterdepth]!!!		get water depth from Smith and Sandwell topography	
+[waterdepth]!!!		get water depth from Smith and Sandwell topography
+[WKBscale]!!!		apply WKB scaling to velocity profiles
 [xover]				get crossover stations
 [xpgrams]!!!		extract pgrams from [binpgrams] [LADCPfs] output for plotting
 [yoyo]				splits yoyo file into individual casts

@@ -1,9 +1,9 @@
 #======================================================================
-#                    . . / A N T S L I B / L I B V E C . P L 
+#                    L I B V E C . P L 
 #                    doc: Sat Mar 20 12:50:32 1999
-#                    dlm: Mon Jun 11 11:12:06 2012
+#                    dlm: Wed Nov 27 23:46:31 2013
 #                    (c) 1999 A.M. Thurnherr
-#                    uE-Info: 35 69 NIL 0 0 70 2 2 4 NIL ofnI
+#                    uE-Info: 36 53 NIL 0 0 70 2 2 4 NIL ofnI
 #======================================================================
 
 # HISTORY:
@@ -33,6 +33,7 @@
 #	Apr 22, 2010: - added angle_ts()
 #	Jun  5, 2012: - added &closestPointOnStraightLine()
 #	Jun 11, 2012: - addeed $t output to &closestPointOnStraightLine()
+#	Nov 27, 2013: - added &angle_pos(), mag_heading()
 
 require "$ANTS/libPOSIX.pl";	# acos()
 
@@ -141,10 +142,24 @@ sub cartesian_y(@)
 sub vel_v(@) { return &cartesian_y($_[0],90-$_[1]); }
 
 #----------------------------------------------------------------------
+# magnetic heading from magnetometer; losely based on info found on-line;
+#   note that mag_x = mag_y = 0 is singularity
+#----------------------------------------------------------------------
+
+sub mag_heading($$)
+{
+    if    ($_[1] != 0) { return 270 - deg(atan2($_[0],$_[1])); }
+    elsif ($_[0] < 0)  { return 180; }
+    else               { return 0; }
+}
+
+#----------------------------------------------------------------------
 # &angle(val)
 #	return angle in range [-180,180]
+# &angle_pos(val)
+#	return angle in range [0,360]
 # &angle_diff(ref_dir,dir)
-#	return rotation between two angles
+#	return rotation between two angles in range [-180,180]
 # &rotation_ts(dir)
 #	return time series of rotation
 # &angle_ts(dir)
@@ -157,6 +172,12 @@ sub angle(@)
 	$val += 360 while ($val < -180);
 	$val -= 360 while ($val > 180);
 	return $val;
+}
+
+sub angle_pos(@)
+{
+	my($val) = angle(@_);
+	return ($val < 0) ? 360+$val : $val;
 }
 
 sub angle_diff(@)

@@ -1,9 +1,9 @@
 #======================================================================
 #                    L I B S T A T S . P L 
 #                    doc: Wed Mar 24 13:59:27 1999
-#                    dlm: Mon Jun 10 21:10:04 2013
+#                    dlm: Sun Nov 24 23:23:11 2013
 #                    (c) 1999 A.M. Thurnherr
-#                    uE-Info: 106 0 NIL 0 0 72 2 2 4 NIL ofnI
+#                    uE-Info: 192 1 NIL 0 0 72 2 2 4 NIL ofnI
 #======================================================================
 
 # HISTORY:
@@ -32,6 +32,8 @@
 #				  - added sum()
 #	Apr 26, 2012: - BUG: std() did not allow nan as stddev input
 #	Oct 15, 2012: - added max_i(), min_i()
+#	Nov 24, 2013: - renamed N to ndata
+#				  - added fdiff()
 
 require "$ANTS/libfuns.pl";
 
@@ -50,6 +52,7 @@ sub std(@)
 
 #----------------------------------------------------------------------
 # calc standard stats from vector of vals
+#	- used, e.g., in [rfilt]
 #----------------------------------------------------------------------
 
 sub min(@)
@@ -92,7 +95,7 @@ sub max_i(@)
 	return $max>-9e99 ? $max_i : nan;
 }
 
-sub N(@)
+sub ndata(@)
 {
 	my($N) = 0;
 	for (my($i)=0; $i<=$#_; $i++) { $N++ if (numberp($_[$i])); }
@@ -182,6 +185,12 @@ sub mad2Ants_($$)
 	}
 	return ($n>0) ? $sum/$n : nan;
 }
+
+sub fdiff(@)	# finite difference, e.g. for [rfilt]
+{
+	return (numberp($_[0]) && numberp($_[$#_])) ? $_[$#_] - $_[0] : nan;
+}
+	
 
 #----------------------------------------------------------------------
 # &bootstrap(nDraw,cLim,statFun,val[,...])
