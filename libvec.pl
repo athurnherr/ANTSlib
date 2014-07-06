@@ -1,9 +1,9 @@
 #======================================================================
 #                    L I B V E C . P L 
 #                    doc: Sat Mar 20 12:50:32 1999
-#                    dlm: Wed Nov 27 23:46:31 2013
+#                    dlm: Wed May 21 21:26:22 2014
 #                    (c) 1999 A.M. Thurnherr
-#                    uE-Info: 36 53 NIL 0 0 70 2 2 4 NIL ofnI
+#                    uE-Info: 39 0 NIL 0 0 70 2 2 4 NIL ofnI
 #======================================================================
 
 # HISTORY:
@@ -34,6 +34,8 @@
 #	Jun  5, 2012: - added &closestPointOnStraightLine()
 #	Jun 11, 2012: - addeed $t output to &closestPointOnStraightLine()
 #	Nov 27, 2013: - added &angle_pos(), mag_heading()
+#	Mar  3, 2014: - made deg(), rad() handle nans
+#	Mar  4, 2014: - made some angle funs handle nans
 
 require "$ANTS/libPOSIX.pl";	# acos()
 
@@ -46,14 +48,14 @@ $PI = 3.14159265358979;
 
 sub rad(@)
 {
-	my($d) = &antsFunUsage(1,"f","<deg>",@_);
-	return $d/180 * $PI;
+	my($d) = &antsFunUsage(1,".","<deg>",@_);
+	return numberp($d) ? $d/180 * $PI : nan;
 }
 
 sub deg(@)
 {
-	my($r) = &antsFunUsage(1,"f","<rad>",@_);
-	return $r/$PI * 180;
+	my($r) = &antsFunUsage(1,".","<rad>",@_);
+	return numberp($r) ? $r/$PI * 180 : nan;
 }
 	
 
@@ -168,7 +170,8 @@ sub mag_heading($$)
 
 sub angle(@)
 {
-	my($val) = &antsFunUsage(1,"f","<val>",@_);
+	my($val) = &antsFunUsage(1,".","<val>",@_);
+	return nan unless numberp($val);
 	$val += 360 while ($val < -180);
 	$val -= 360 while ($val > 180);
 	return $val;
@@ -177,12 +180,14 @@ sub angle(@)
 sub angle_pos(@)
 {
 	my($val) = angle(@_);
+	return nan unless numberp($val);
 	return ($val < 0) ? 360+$val : $val;
 }
 
 sub angle_diff(@)
 {
-	my($m,$s) = &antsFunUsage(2,"ff","<minuend> <subtrahend>",@_);
+	my($m,$s) = &antsFunUsage(2,"..","<minuend> <subtrahend>",@_);
+	return nan unless numbersp($m,$s);
 	return angle($m-$s);
 }
 

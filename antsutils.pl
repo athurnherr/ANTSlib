@@ -2,9 +2,9 @@
 #======================================================================
 #                    A N T S U T I L S . P L 
 #                    doc: Fri Jun 19 23:25:50 1998
-#                    dlm: Thu Sep  5 21:53:55 2013
+#                    dlm: Fri May 23 17:48:00 2014
 #                    (c) 1998 A.M. Thurnherr
-#                    uE-Info: 99 38 NIL 0 0 70 10 2 4 NIL ofnI
+#                    uE-Info: 100 55 NIL 0 0 70 10 2 4 NIL ofnI
 #======================================================================
 
 # Miscellaneous auxillary functions
@@ -97,6 +97,7 @@
 #	Jun 12, 2012: - added &compactList()
 #	Dec 17, 2012: - added default to antsLoadModel()
 #	Sep  5, 2013: - FINALLY: added $pi
+#	May 23, 2014: - made ismember understand "123,1-10"
 
 # fnr notes:
 #	- matches field names starting with the string given, i.e. "sig" is
@@ -157,6 +158,8 @@ sub ismember($@)
 	for (my($i)=0; $i<@set; $i++) {
 		if (numberp($val) && numberp($set[$i])) {
 			return 1 if ($val == $set[$i]);
+		} elsif (numberp($val) && ($set[$i] =~ m{-}) && numberp($`) && numberp($')) {
+			return 1 if (ismember($val,$`..$'));
 		} else {
 			return 1 if ($val eq $set[$i]);
 		}
