@@ -2,9 +2,9 @@
 #======================================================================
 #                    A N T S U T I L S . P L 
 #                    doc: Fri Jun 19 23:25:50 1998
-#                    dlm: Fri May 23 17:48:00 2014
+#                    dlm: Tue Jul 22 20:35:50 2014
 #                    (c) 1998 A.M. Thurnherr
-#                    uE-Info: 100 55 NIL 0 0 70 10 2 4 NIL ofnI
+#                    uE-Info: 91 56 NIL 0 0 70 10 2 4 NIL ofnI
 #======================================================================
 
 # Miscellaneous auxillary functions
@@ -88,7 +88,7 @@
 #	Mar 21, 2009: - added debug()
 #	Nov 17, 2009: - added listAllRecs flag for list(1)
 #	May 12, 2010: - BUG: round() did not work correctly for -ve numbers
-#	May 21, 2011: - added support for $antsFnrNegative
+#	May 21, 2011: - added support for $antsFnrNegativeOk
 #	Nov 11, 2011: - added exact flag to fnrNoErr()
 #	Feb 13, 2012: - BUG: failure to specify exact flag resulted in ignoring antsFnrExactMatch
 #				  - BUG: fnrNoErr disregarded exact flag for external layouts
@@ -98,6 +98,7 @@
 #	Dec 17, 2012: - added default to antsLoadModel()
 #	Sep  5, 2013: - FINALLY: added $pi
 #	May 23, 2014: - made ismember understand "123,1-10"
+#	Jul 22, 2014: - removed support for antsFnrNegativeOk
 
 # fnr notes:
 #	- matches field names starting with the string given, i.e. "sig" is
@@ -110,7 +111,6 @@
 #----------------------------------------------------------------------
 
 $antsFnrExactMatch = 0;				# set to force exact match, e.g. for antsNewField* [antsutils.pl]
-$antsFnrNegativeOk = 0;				# set to allow, e.g., $-1 in [list]
 
 #----------------------------------------------------------------------
 # Error-Exit
@@ -370,7 +370,6 @@ sub fnrNoErr($)
 	my($fullName);
 
 	return $fnr if defined($fnr); 						# internal layout
-	return $fnm if ($fnm < 0 && $antsFnrNegativeOk);	# e.g. for $-1 in [list]
 
 	my($tmp) = $antsFnrExactMatch;
 	$antsFnrExactMatch = $exact if defined($exact);

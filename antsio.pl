@@ -2,9 +2,9 @@
 #======================================================================
 #                    A N T S I O . P L 
 #                    doc: Fri Jun 19 19:22:51 1998
-#                    dlm: Wed Oct 10 12:36:29 2012
+#                    dlm: Tue Jul 22 20:39:11 2014
 #                    (c) 1998 A.M. Thurnherr
-#                    uE-Info: 598 0 NIL 0 0 70 2 2 4 NIL ofnI
+#                    uE-Info: 497 0 NIL 0 0 70 2 2 4 NIL ofnI
 #======================================================================
 
 # HISTORY:
@@ -198,6 +198,9 @@
 #	Jul 28, 2011: - disabled adding of new deps on -D
 #	Apr 11, 2012: - improved layout-change error message
 #	Apr 26, 2012: - BUG: antsFileScanParam() was not properly anchored (%start_date matched %BT.start_date)
+#	Jul 20, 2014: - adapted antsFileScanParam() to :: convention
+#	Jul 22, 2014: - BUG: antsPadIn was done after handling -S & -N
+#				  - removed antsPadIn flag (made it always be true)
 
 # NOTES:
 #	- %P was named without an ants-prefix because associative arrays
@@ -221,7 +224,6 @@
 
 # Flags
 
-$antsPadIn = 1;								# fill with nan on input
 $antsFixedFormat = 0;						# remove leading & trailing stuff
 $antsParseHeader = 1;						# parse header on &antsUsage()
 $antsIgnoreInputParams = 0;					# ignore %PARAMs
@@ -476,53 +478,62 @@ sub antsIn()
 			$antsPadOut = $antsBufNFields = split($opt_I,$antsPeekBuffer);
 			return 1;
 		}
-
+		
 	    $P{RECNO}++;								# update pseudo %PARAMs
 	    $P{LINENO} = ($ARGV eq $lastFile) ? $P{LINENO}+1 : 0;
 
 		s/[Nn][Aa][Nn]/nan/g;						# make all nans lower case
 
-		local(@in) = split($opt_I);					# needs to be local for -S 
-		if (defined($opt_S)) {						# -S)elect
-			$opt_S = &antsCompileAddrExpr($opt_S,\'$in\')
-				unless ref($opt_S);
-			next IN unless (&$opt_S);
+        local(@in) = split($opt_I);                 # needs to be local for -S 
+		if (@in > $antsBufNFields) {				# increase # of fields to expect
+			$antsBufNFields = @in;
+			for ($i=0; $i<$#ants_; $i++) {			# update recs already in buffer
+				push(@{$ants_[$i]},nan)
+					while ($#{$ants_[$i]}+1 < $antsBufNFields);
+            }
 		}
-		
-		if (@antsNFNames) {							# -N)ums
-			for (my($i)=0; $i<=$#antsNFNames; $i++) {
-				unless (defined($antsNfnr[$i])) {
-					if ($antsNFNames[$i] =~ /^%/) {
-						croak("$0: illegal -N option ($antsNFNames[$i] undefined)\n")
-							unless (defined($P{$\'}));
-						next IN unless (numberp($P{$\'}));
-					} else {
-						$antsNfnr[$i] = &fnr($antsNFNames[$i]);
-						next IN unless (numberp($in[$antsNfnr[$i]]));
-					}
-				} else {
-					next IN unless (numberp($in[$antsNfnr[$i]]));
-	            }
-	        }
-		}
+		push(@in,nan)								# pad current record
+            while (@in<$antsBufNFields);
 
-		chomp;
-		$antsLineBuf = $_;						# save
+        if (defined($opt_S)) {                      # -S)elect
+            $opt_S = &antsCompileAddrExpr($opt_S,\'$in\')
+                unless ref($opt_S);
+            next IN unless (&$opt_S);
+        }
+        
+        if (@antsNFNames) {                         # -N)ums
+            for (my($i)=0; $i<=$#antsNFNames; $i++) {
+                unless (defined($antsNfnr[$i])) {
+                    if ($antsNFNames[$i] =~ /^%/) {
+                        croak("$0: illegal -N option ($antsNFNames[$i] undefined)\n")
+                            unless (defined($P{$\'}));
+                        next IN unless (numberp($P{$\'}));
+                    } else {
+                        $antsNfnr[$i] = &fnr($antsNFNames[$i]);
+                        next IN unless (numberp($in[$antsNfnr[$i]]));
+                    }
+                } else {
+                    next IN unless (numberp($in[$antsNfnr[$i]]));
+                }
+            }
+        }
 
-		push(@ants_,[@in]);						# add to buffer
+        chomp;
+        $antsLineBuf = $_;                      # save
 
-		if ($#{$ants_[$#ants_]}+1 > $antsBufNFields) {	# grow # of fields
-			$antsBufNFields = $#{$ants_[$#ants_]} + 1;
-#			print("antsBufNFields := $antsBufNFields --- $_");
-			if ($antsPadIn) {
-				for ($i=0; $i<$#ants_; $i++) {
-					push(@{$ants_[$i]},nan)
-						while ($#{$ants_[$i]}+1 < $antsBufNFields);
-	            }
-	        }
-		}
-		push(@{$ants_[$#ants_]},nan)			# pad this
-	        while ($antsPadIn && $#{$ants_[$#ants_]}+1 < $antsBufNFields);
+        push(@ants_,[@in]);                     # add to buffer
+
+###		if ($#{$ants_[$#ants_]}+1 > $antsBufNFields) {	# grow # of fields
+###			$antsBufNFields = $#{$ants_[$#ants_]} + 1;
+####			print("antsBufNFields := $antsBufNFields --- $_");
+###				for ($i=0; $i<$#ants_; $i++) {
+###					push(@{$ants_[$i]},nan)
+###						while ($#{$ants_[$i]}+1 < $antsBufNFields);
+###	            }
+###	        }
+###		}
+###		push(@{$ants_[$#ants_]},nan)			# pad this
+###	        while ($#{$ants_[$#ants_]}+1 < $antsBufNFields);
 	}
 
 	$ants_ = ($#ants_ - $#ants_%2) / 2;			# set current idx to centre
@@ -858,15 +869,16 @@ sub antsFileParams()							# get params from file
 sub antsFileScanParam()							# find param in file
 {
 	my($f,$pn) = @_;
-	my($val);
+	my($v1,$v2);
 
 	while ($_ = <$f>) {							# get next record
 		last unless (/^#/ || /^\s*$/);
 		next unless (/^#ANTS#PARAMS# /);
-		$val = $1 if (/ $pn\{([^\}]*)\}/);
+		$v1 = $1 if (/ $pn\{([^\}]*)\}/);
+		$v2 = $1 if (/::$pn\{([^\}]*)\}/);
 	}
 	seek($f,0,0) || croak("$0: $@\n");
-	return $val;
+	return defined($v1) ? $v1 : $v2;
 }
 
 #----------------------------------------------------------------------
