@@ -2,9 +2,9 @@
 #======================================================================
 #                    A N T S I O . P L 
 #                    doc: Fri Jun 19 19:22:51 1998
-#                    dlm: Wed Oct 10 12:36:29 2012
+#                    dlm: Wed Oct 29 16:12:46 2014
 #                    (c) 1998 A.M. Thurnherr
-#                    uE-Info: 598 0 NIL 0 0 70 2 2 4 NIL ofnI
+#                    uE-Info: 202 73 NIL 0 0 70 2 2 4 NIL ofnI
 #======================================================================
 
 # HISTORY:
@@ -197,15 +197,26 @@
 #	May 24: 2011: - BUG: forgot '$' in a variable (where???)
 #	Jul 28, 2011: - disabled adding of new deps on -D
 #	Apr 11, 2012: - improved layout-change error message
-#	Apr 26, 2012: - BUG: antsFileScanParam() was not properly anchored (%start_date matched %BT.start_date)
+#	Apr 26, 2012: - BUG: antsFileScanParam() was not properly anchored (%start_date matched
+#						 %BT.start_date)
+#	Oct 29, 2014: - implemented abbreviated Layout and %PARAM definitions
 
-# NOTES:
+# GENERAL NOTES:
 #	- %P was named without an ants-prefix because associative arrays
 #	  are rare (and perl supports multiple name spaces for the
 #	  different variable types) and to facilitate its use in
 #	  [list]
 #	- copying of embedded (i.e. not appearing at start) headers is
 #	  required e.g. for subsample -i ... | list %some-param
+
+# ABBREVIATED LAYOUT & PARAM DEFINITIONS
+#	- # definition [definition [...]]
+#	- definition := field_name | %PARAM_def
+#	- field_name := {string}
+#	- %PARAM_def := string{string|num}
+#	- implemented in October 2014 in order to make ANTS format easier to use for others
+#	- abbreviated and full headers must not be used together
+#	- abbreviated field definitions are additive (rather than replacing, as in the full headers)
 
 # $antsIngoreInputParams:
 #	- is eval'ed first time antsIn() is called (usually while parsing header)
@@ -308,12 +319,23 @@ sub antsParseHeader()
 
 #----------------------------------------------------------------------
 
+sub def_abbrev($)
+{
+	my($def) = @_;
+	if ($def =~ /^\{(\w+)\}$/) {
+		push(@Layout,$1);
+	} else {
+		my($name,$val) = ($def =~ /(\w+)\{([^\}]+)\}/);
+		$P{$name} = $val;
+	}
+}
+
 sub antsReCompile()								# re-compile with funs
 { eval '
 
 sub antsIn()
 {
-	my(@Layout);
+	local(@Layout);
 	undef(@Layout);								# needed, but unclear why
 
 	undef($antsNewFile);						# assume no new file
@@ -415,8 +437,14 @@ sub antsIn()
 			do {
 				push(@Layout,$1 eq "" ? undef : $1);
 			} while ($\' =~ m/ \{([^\}]*)\}/);
+		} elsif (/^# (\{\w+\}|\w+\{[^\}]+\})+/) {		# ABBREVIATED DEFINITIONS
+			my($match) = $1; my($rem) = $\';
+			do {
+				def_abbrev($match);
+				($match,$rem) = ($rem =~ /(\{\w+\}|\w+\{[^\}]+\})(.*)/);
+			} while ($match);
 		}
-
+				
 		if (!($opt_Q || $antsNoHeaderCopy) && /^#ANTS#/) {	# handle headers
 			if (defined($antsHeadersPrinted)) {		# embedded headers
 # The following is somewhat subtle because it must prevent embedded
