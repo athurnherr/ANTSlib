@@ -1,9 +1,9 @@
 #======================================================================
 #                    L I B G M . P L 
 #                    doc: Sun Feb 20 14:43:47 2011
-#                    dlm: Sat Apr 20 20:05:51 2013
+#                    dlm: Mon Oct  6 09:48:22 2014
 #                    (c) 2011 A.M. Thurnherr
-#                    uE-Info: 62 0 NIL 0 0 72 2 2 4 NIL ofnI
+#                    uE-Info: 21 10 NIL 0 0 70 2 2 4 NIL ofnI
 #======================================================================
 
 # HISTORY:
@@ -18,6 +18,7 @@
 #	Aug 23, 2012: - cosmetics?
 #	Sep  7, 2012: - made N0, E0, b, jstar global
 #	Dec 28, 2012: - added allowance for small roundoff error to Sw()
+#	Oct  6, 2014: - made omega optional in Sw()
 
 require "$ANTS/libEOS83.pl";
 
@@ -53,6 +54,21 @@ $GM_jstar = 3;		# dimless		# peak mode number
 # velocity.  Since w WKB-scales inversely with N, the largest signals should
 # be in the abyss where you therefore likely have the best chance of
 # measuring it.
+#
+# E. Kunze (email, Sep 19, 2013):
+#
+# S[w](omega, m) = PI*E0*b*[f*sqrt(omega^2-f^2)/omega]*[jstar/(m+mstar)^2] with
+#
+# S[w](m) = PI*E0*b*N*f*[jstar/(m+mstar)^2]
+#
+# where the nondimensional spectral energy level E0 = 6.3e-5, stratification
+# lengthscale b = 1500 m, jstar = 3, mstar = jstar*PI*N/b/N0, and N0 =
+# 5.3e-3 rad/s.
+#
+# NOTES:
+#	- b=1500m is a likely typo, as Gregg & Kunze (1991) have b=1300m
+#	- k_z == m
+#    
 #======================================================================
 
 sub m($$)	# vertical wavenumber as a function of mode number & stratification params
@@ -61,7 +77,7 @@ sub m($$)	# vertical wavenumber as a function of mode number & stratification pa
 
 	return defined($omega) && ($omega <= $GM_N0)
 		   ? $pi / $GM_b * sqrt(($N**2 - $omega**2) / ($GM_N0**2 - $omega**2)) * $j
-		   : $pi * $j * $N / ($GM_b * $GM_N0);			# valid, except in vicinity of buoyancy turning frequency (p. 285)
+		   : $pi * $j * $N / ($GM_b * $GM_N0);		# valid, except in vicinity of buoyancy turning frequency (Munk 1981, p.285)
 }
 
 sub B($)											# structure function (omega dependence)
@@ -73,20 +89,27 @@ sub B($)											# structure function (omega dependence)
 }
 
 
-sub Sw($$$$)
+sub Sw(@)
 {
-	my($omega,$m,$lat,$N) = &antsFunUsage(4,'fff','<frequency[1/s]> <vertical wavenumber[rad/m]> <lat[deg]> <N[rad/s]>',@_);
-
-	local($f) = abs(&f($lat));
-	$omega += $PRACTICALLY_ZERO if ($omega < $f);
-	$omega -= $PRACTICALLY_ZERO if ($omega > $N);
-	return nan if ($omega < $f || $omega > $N);
-
+	my($omega,$m,$lat,$N) = &antsFunUsage(-3,'fff','[frequency[1/s]] <vertical wavenumber[rad/m]> <lat[deg]> <N[rad/s]>',@_);
 	my($GM_b) = 1300; #m								# pycnocline lengthscale
 
-	my($mstar) = &m($GM_jstar,$N,$omega);
-
-	return $GM_E0 * $GM_b * 2 * $f**2/$omega**2/B($omega) * $GM_jstar / ($m+$mstar)**2;
+	if (defined($N)) {									# Sw(omega,m)
+		local($f) = abs(&f($lat));
+		$omega += $PRACTICALLY_ZERO if ($omega < $f);
+		$omega -= $PRACTICALLY_ZERO if ($omega > $N);
+		return nan if ($omega < $f || $omega > $N);
+		my($mstar) = &m($GM_jstar,$N,$omega);
+		return $GM_E0 * $GM_b * 2 * $f**2/$omega**2/B($omega) * $GM_jstar / ($m+$mstar)**2;
+	} else {											# Sw(m)
+		$N = $lat;										# shift arguments to account for missing omega
+		$lat = $m;
+		local($f) = abs(&f($lat));
+		$m = $omega;
+		undef($omega);
+		my($mstar) = &m($GM_jstar,$N);
+		return $pi * $GM_E0 * $GM_b * $N * $f * $GM_jstar / ($m+$mstar)**2;
+	}
 }
 
 #----------------------------------------------------------------------
