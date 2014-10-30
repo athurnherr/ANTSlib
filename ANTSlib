@@ -1,17 +1,20 @@
 #!/usr/bin/perl
 #======================================================================
-#                    L I B / A N T S L I B 
+#                    A N T S L I B 
 #                    doc: Wed May 16 06:19:16 2012
-#                    dlm: Wed Oct 29 19:22:45 2014
+#                    dlm: Thu Oct 30 09:27:54 2014
 #                    (c) 2012 A.M. Thurnherr
-#                    uE-Info: 35 42 NIL 0 0 72 0 2 4 NIL ofnI
+#                    uE-Info: 14 39 NIL 0 0 72 0 2 4 NIL ofnI
 #======================================================================
 
 # HISTORY:
 #	May 16, 2012: - created for V5.0
 #	Oct 29, 2014: - made it work again for V6
+#	Oct 30, 2014: - changed output
+#				  - added version check
 
 ($ANTSLIB) = ($0 =~ m{^(.*)/[^/]*$});
+$antsMinLibVersion = 6.0;
 
 require "$ANTSLIB/ants.pl";
 require "$ANTSLIB/libCPT.pl";
@@ -32,5 +35,9 @@ require "$ANTSLIB/libubtest.pl";
 require "$ANTSLIB/libvec.pl";
 
 chomp($about = `sed -n '/^description =/s/description = //p' $ANTSLIB/.hg/hgrc`);
-printf(STDERR "$about (\$antsLibVersion = %.1f) installed in $ANTSLIB\n",$antsLibVersion);
+($aboutVer) = ($about =~ /V(.*)$/);
+die(sprintf("$0: inconsistent version numbers (.hg/hgrc: $aboutVer; \$antsLibVersion: %.1f)\n",$antsLibVersion))
+	unless ($aboutVer == $antsLibVersion);
+
+print("$ANTSLIB: $about\n");
 exit(0);
