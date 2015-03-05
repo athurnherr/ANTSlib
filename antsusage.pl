@@ -2,9 +2,9 @@
 #======================================================================
 #                    A N T S U S A G E . P L 
 #                    doc: Fri Jun 19 13:43:05 1998
-#                    dlm: Wed Jul 30 12:43:52 2014
+#                    dlm: Thu Mar  5 12:58:27 2015
 #                    (c) 1998 A.M. Thurnherr
-#                    uE-Info: 365 24 NIL 0 0 70 2 2 4 NIL ofnI
+#                    uE-Info: 161 0 NIL 0 0 70 2 2 4 NIL ofnI
 #======================================================================
 
 # HISTORY:
@@ -156,6 +156,8 @@
 #						 as expanded output (unexpanded should be produced only if the
 #						 expansion is empty)
 #	Jul 30, 2014: - added special args to -U)sage output
+#	Jan 30, 2015: - added &antsFunOpt()
+#	Jan 31, 2015: - made it work
 
 # NOTES:
 #	- ksh expands {}-arguments with commas in them!!! Use + instead
@@ -661,6 +663,25 @@ sub antsFloatOpt(@)
 	    	return $default;
 	    }
 	}
+}
+
+#----------------------------------------------------------------------
+# antsFunOpt(\$opt_x) parses the contents of $opt_x as follows:
+#
+#	name(value)	=> $opt_x = 'name'; $name = "value";
+#	name		=> no change
+#----------------------------------------------------------------------
+
+sub antsFunOpt(@)
+{
+	my($opt) = @_;
+	return unless defined($opt);
+	croak("antsusage.pl: antsFunOpt(@_): argument is not a ref\n")
+		unless ref($opt);
+	my($name,$param) = (${$opt} =~ m{^([^\)]+)\(([^\)]+)\)$});
+	return unless defined($param);
+	eval(sprintf('$%s = "%s";',$name,$param));
+	${$opt} = $name;
 }
 
 1;														# return true
