@@ -1,9 +1,9 @@
 ======================================================================
                     I N D E X 
                     doc: Wed Jun 18 09:46:58 1997
-                    dlm: Tue Nov 19 10:23:18 2013
+                    dlm: Mon Nov  3 12:42:00 2014
                     (c) 1997 Andreas Thurnherr
-                    uE-Info: 49 58 NIL 0 0 72 2 2 4 NIL ofnI
+                    uE-Info: 186 41 NIL 0 0 72 2 2 4 NIL ofnI
 ======================================================================
 
 NOTES:
@@ -173,6 +173,7 @@ NOTES:
 
 =Libraries (for -L)=
 
+[libconv.pl]		conversions
 [libCPT.pl]			GMT cpt file parsing
 [libEOS83.pl]		equation of state
 [libfuns.pl]		chapter 6 from NR: special functions; own stuff
@@ -182,11 +183,11 @@ NOTES:
 [libLADCP.pl]		LADCP-related funs
 [libNODC.pl]!!!		NODC SD2 conversions
 [libPOSIX.pl]		POSIX functions
+[libSBE.pl]			Seabird CTD utilities
 [libstats.pl]		significance tests
 [libubtest.pl]		testing stuff
 [libvec.pl]			vector stuff, including distance on globe
 [libWOCE.pl]		WOCE conversions
-[libconv.pl]		conversions
 
 =Numerical Recipes Routines=
 

@@ -2,34 +2,42 @@
 #======================================================================
 #                    A N T S L I B 
 #                    doc: Wed May 16 06:19:16 2012
-#                    dlm: Wed May 16 06:28:16 2012
+#                    dlm: Thu Oct 30 09:27:54 2014
 #                    (c) 2012 A.M. Thurnherr
-#                    uE-Info: 11 36 NIL 0 0 72 2 2 4 NIL ofnI
+#                    uE-Info: 14 39 NIL 0 0 72 0 2 4 NIL ofnI
 #======================================================================
 
 # HISTORY:
 #	May 16, 2012: - created for V5.0
+#	Oct 29, 2014: - made it work again for V6
+#	Oct 30, 2014: - changed output
+#				  - added version check
 
-($ANTSlib) = ($0 =~ m{^(.*)/[^/]*$});
+($ANTSLIB) = ($0 =~ m{^(.*)/[^/]*$});
+$antsMinLibVersion = 6.0;
 
-require "$ANTSlib/ants.pl";
-require "$ANTSlib/libCPT.pl";
-require "$ANTSlib/libEOS83.pl";
-require "$ANTSlib/libGM.pl";
-require "$ANTSlib/libLADCP.pl";
-require "$ANTSlib/libNODC.pl";
-require "$ANTSlib/libPOSIX.pl";
-require "$ANTSlib/libRWalk.pl";
-require "$ANTSlib/libWOCE.pl";
-require "$ANTSlib/libWOCE_oldstyle.pl";
-require "$ANTSlib/libconv.pl";
-require "$ANTSlib/libfuns.pl";
-require "$ANTSlib/libgamma.pl";
-require "$ANTSlib/libstats.pl";
-require "$ANTSlib/libtides.pl";
-require "$ANTSlib/libubtest.pl";
-require "$ANTSlib/libvec.pl";
+require "$ANTSLIB/ants.pl";
+require "$ANTSLIB/libCPT.pl";
+require "$ANTSLIB/libEOS83.pl";
+require "$ANTSLIB/libGM.pl";
+require "$ANTSLIB/libLADCP.pl";
+require "$ANTSLIB/libNODC.pl";
+require "$ANTSLIB/libPOSIX.pl";
+require "$ANTSLIB/libRWalk.pl";
+require "$ANTSLIB/libWOCE.pl";
+require "$ANTSLIB/libWOCE_oldstyle.pl";
+require "$ANTSLIB/libconv.pl";
+require "$ANTSLIB/libfuns.pl";
+require "$ANTSLIB/libgamma.pl";
+require "$ANTSLIB/libstats.pl";
+require "$ANTSLIB/libtides.pl";
+require "$ANTSLIB/libubtest.pl";
+require "$ANTSLIB/libvec.pl";
 
-chomp($about = `sed -n '/^description =/s/description = //p' $ANTSlib/.hg/hgrc`);
-print(STDERR "$about installed in $ANTSlib\n");
+chomp($about = `sed -n '/^description =/s/description = //p' $ANTSLIB/.hg/hgrc`);
+($aboutVer) = ($about =~ /V(.*)$/);
+die(sprintf("$0: inconsistent version numbers (.hg/hgrc: $aboutVer; \$antsLibVersion: %.1f)\n",$antsLibVersion))
+	unless ($aboutVer == $antsLibVersion);
+
+print("$ANTSLIB: $about\n");
 exit(0);

@@ -1,9 +1,9 @@
 #======================================================================
 #                    L I B S T A T S . P L 
 #                    doc: Wed Mar 24 13:59:27 1999
-#                    dlm: Sun Nov 24 23:23:11 2013
+#                    dlm: Sat Jan 31 15:51:14 2015
 #                    (c) 1999 A.M. Thurnherr
-#                    uE-Info: 192 1 NIL 0 0 72 2 2 4 NIL ofnI
+#                    uE-Info: 150 0 NIL 0 0 70 2 2 4 NIL ofnI
 #======================================================================
 
 # HISTORY:
@@ -34,6 +34,8 @@
 #	Oct 15, 2012: - added max_i(), min_i()
 #	Nov 24, 2013: - renamed N to ndata
 #				  - added fdiff()
+#	Jan 30, 2015: - added log_avg()
+#				  - added noise_avg()
 
 require "$ANTS/libfuns.pl";
 
@@ -116,6 +118,50 @@ sub avg(@)
 	for (my($i)=0; $i<=$#_; $i++) { $N++,$sum+=$_[$i] if (numberp($_[$i])); }
 	return ($N>0)?$sum/$N:nan;
 }
+
+#----------------------------------------------------------------------
+# log_avg does the average in log space, which may be useful
+# for log-normal distributions. However, when I tired this
+# in response to a reviewer suggestion, the results were
+# noticably but not significantly worse, even though at least
+# some of the distributions looked quite log-normal.
+# It appears, however, that 32 samples are enough to sample
+# the distribution of dissipation adequately.
+#----------------------------------------------------------------------
+
+sub log_avg(@)	# exp(avg(log(x)))
+{
+	my($N) = my($sum) = 0;
+	for (my($i)=0; $i<=$#_; $i++) { $N++,$sum+=log($_[$i]) if (numberp($_[$i])); }
+	return ($N>0)?exp($sum/$N):nan;
+}
+
+#----------------------------------------------------------------------
+# noise_avg(noise_lvl,frac)  calculates an arithmetic average after
+# setting all samples below noise level to a certain fraction of the
+# noise level. 66% was used for the VKE paper.
+# Requires $noise_avg to be set, e.g. with &antsFunOpt()
+#----------------------------------------------------------------------
+
+sub noise_avg(@)
+{
+	my($nlv,$frac) = split(',',$noise_avg);
+	croak("libstats.pl: noise_avg: cannot decode \$noise_avg = <$noise_avg> <$nlv,$frac> (noise level, fraction)\n")
+		unless ($nlv > 0) && ($frac < 1);
+	my($nsamp) = my($sum) = 0;
+	for (my($i)=0; $i<=$#_; $i++) {
+		if (numberp($_[$i])) {
+			$nsamp++;
+			if ($_[$i]  > $nlv) {
+				$sum += $_[$i];
+			} else {
+				$sum += $frac*$nlv;
+			}
+		}
+	}
+	return ($nsamp > 0) ? $sum/$nsamp : nan;
+}
+
 
 sub stddev2(@)		# avg, val, val, val, ...
 {
