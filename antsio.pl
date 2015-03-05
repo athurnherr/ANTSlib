@@ -2,9 +2,9 @@
 #======================================================================
 #                    A N T S I O . P L 
 #                    doc: Fri Jun 19 19:22:51 1998
-#                    dlm: Tue Jul 22 20:39:11 2014
+#                    dlm: Thu Aug  7 09:20:37 2014
 #                    (c) 1998 A.M. Thurnherr
-#                    uE-Info: 497 0 NIL 0 0 70 2 2 4 NIL ofnI
+#                    uE-Info: 204 55 NIL 0 0 70 2 2 4 NIL ofnI
 #======================================================================
 
 # HISTORY:
@@ -201,6 +201,7 @@
 #	Jul 20, 2014: - adapted antsFileScanParam() to :: convention
 #	Jul 22, 2014: - BUG: antsPadIn was done after handling -S & -N
 #				  - removed antsPadIn flag (made it always be true)
+#	Aug  7, 2014: - allow optional % in param name in &antsFileScanParam()
 
 # NOTES:
 #	- %P was named without an ants-prefix because associative arrays
@@ -870,6 +871,8 @@ sub antsFileScanParam()							# find param in file
 {
 	my($f,$pn) = @_;
 	my($v1,$v2);
+
+	$pn = $' if ($pn =~ /^%/);					# strip optional leading %
 
 	while ($_ = <$f>) {							# get next record
 		last unless (/^#/ || /^\s*$/);

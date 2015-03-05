@@ -1,9 +1,9 @@
 #======================================================================
 #                    L I B C O N V . P L 
 #                    doc: Sat Dec  4 13:03:49 1999
-#                    dlm: Tue May 22 11:34:01 2012
+#                    dlm: Thu Aug  7 09:17:59 2014
 #                    (c) 1999 A.M. Thurnherr
-#                    uE-Info: 63 84 NIL 0 0 70 2 2 4 NIL ofnI
+#                    uE-Info: 203 27 NIL 0 0 70 2 2 4 NIL ofnI
 #======================================================================
 
 # HISTORY:
@@ -61,6 +61,7 @@
 #	Apr 17, 2012: - added space as another date separator in ddmmyy2dec_time
 #	May 22, 2012: - BUG: illegal time spec error was also produced on missing seconds
 #				  - BUG: mmddyy2dec_time() did not allow for optional epoch argument
+#	Aug  7, 2014: - finally cleaned up date conversions
 
 require "$ANTS/libEOS83.pl";                        # &sigma()
 require "$ANTS/libPOSIX.pl";                        # &floor()
@@ -93,76 +94,11 @@ sub monthLength(@)                                  # #days in given month/year
     croak("$0: &monthLength(): Illegal month\n");
 }
 
-{ my(@fc);
-
-	sub Date(@) 										# day number -> date
-	{
-	
-		my($dnf);										# find std dn field & epoch
-		if (@_ == 0) {
-			for (my($i)=0; $i<@antsLayout; $i++) {
-				next unless ($antsLayout[$i] =~ /^dn(\d\d)$/);
-				$dnf = $antsLayout[$i]; push(@_,$1);
-				last;
-	        }
-	    }
-	    
-		my($year,$day) = &antsFunUsage(2,"cf","epoch, dayNo",\@fc,undef,$dnf,@_);
-	
-		$year += ($year < 50) ? 2000 : 1900 			# Y2K
-			if ($year < 100);
-	
-		$day = int($day);								# prevent runover on last day of month
-		while ($day > 365+&leapYearP($year)) {			# adjust year
-			$day -= 365 + &leapYearP($year);
-			$year++;
-		}
-	
-		my($month) = 1;
-		while ($day > &monthLength($year,$month)) {
-			$day -= &monthLength($year,$month);
-			$month++;
-		}
-	
-		return sprintf('%04d/%02d/%02d',$year,$month,$day);
-	}
-}
-
-{ my(@fc);
-
-	sub Time(@) 										# day number -> date/time
-	{
-		my($dnf);										# find standard dn field
-		for (my($i)=0; $i<@antsLayout; $i++) {
-			next unless ($antsLayout[$i] =~ /^dn\d\d$/);
-			$dnf = $antsLayout[$i];
-			last;
-		}
-	    
-		my($fday) = &antsFunUsage(1,"f","dayNo",\@fc,$dnf,@_);
-		my($day) = int($fday);
-		$fday -= $day;
-	
-		my($hour) = int(24*$fday);
-		$fday -= $hour/24;
-		my($min) = int(24*60*$fday);
-		$fday -= $min/24/60;
-		my($sec) = round(24*3600*$fday);
-		$min++,$sec=0 if ($sec == 60);
-		$hour++,$min=0 if ($min == 60);
-		$day++,$hour=0 if ($hour == 24);
-	
-		return sprintf('%02d:%02d:%02d',$hour,$min,$sec);
-	}
-}
-
 sub dayNo(@)										# day number, starting at 1
 {
-    my($epoch,$y,$m,$d) =
-        &antsFunUsage(-3,"c..","[epoch,] year, month, day",@_);
-    unless (defined($d)) {
-    	$d = $m; $m = $y; $y = $epoch;
-    }
+    my($y,$m,$d,$epoch) =
+        &antsFunUsage(-3,"c..","year, month, day[, epoch]",@_);
+	$epoch = $y unless defined($epoch);
 
 	unless (cardinalp($m)) {
 		$m = lc($m);
@@ -235,83 +171,106 @@ sub day_secs(@)										# seconds since daystart
 	return $h*3600 + $m*60 + $s;
 }
 
-sub str2dec_time(@)									# decimal time
-{
-	my($ts,$ds,$epoch) =
-        &antsFunUsage(-1,'.',"'hh:mm[:ss]'[,'[YY]YY/MM/DD'[,epoch]]",@_);
-
-	my($dayNo) = 0;
-	if ($ds ne '') {								# date
-		my($yy,$mm,$dd) = split('[-/\.]',$ds);
-		$dayNo = defined($epoch) ?
-				 dayNo($epoch,$yy,$mm,$dd) : dayNo($yy,$mm,$dd);
-	}
-
-	my($h,$m,$s) = split(':',$ts);
-	$s = 0 unless defined($s);
-	return $dayNo + &frac_day($h,$m,$s);
-}
-
 sub dec_time(@)										# decimal time
 {
 	my($epoch,$yy,$mm,$dd,$h,$m,$s) =
         &antsFunUsage(7,'ccccccf',"<epoch> <year> <month> <day> <hour> <min> <sec>",@_);
-	return &dayNo($epoch,$yy,$mm,$dd) + &frac_day($h,$m,$s);
+	return &dayNo($yy,$mm,$dd,$epoch) + &frac_day($h,$m,$s);
 }
 
-sub mmddyy2dec_time(@)								# decimal time
+#----------------------------------------------------------------------
+# String to Decimal Time Conversion
+#----------------------------------------------------------------------
+
+{ my($date_fmt); 
+
+	sub str2dec_time(@) 									# heuristic
+	{
+		my($ds,$ts,$epoch) =
+			&antsFunUsage(-2,"..","date, hh:mm[:ss][, epoch]",@_);
+	
+		croak("$0 str2dec_time: date required\n") unless ($ds ne '');
+
+		unless (defined($date_fmt)) {
+			my($X,$Y,$Z) = split('[-/\.]',$ds);
+			if ($X > 31) {									# YY/MM//DD
+				$date_fmt = 1;							    
+			} elsif ($X > 12) { 							# DD/MM/YY
+				$date_fmt = 2;
+			} elsif ($Y > 12) { 							# MM/DD/YY
+				$date_fmt = 3;
+			} else {
+				&antsInfo("str2dec_time: ambiguous date <$ds>; MM/DD/YY assumed");
+				$date_fmt = 3;
+	        }
+	    }
+
+	    if 	  ($date_fmt == 1) { return yymmdd2dec_time($ds,$ts,$epoch); }
+	    elsif ($date_fmt == 2) { return ddmmyy2dec_time($ds,$ts,$epoch); }
+	    else 				   { return mmddyy2dec_time($ds,$ts,$epoch); }
+    }
+
+}
+
+sub mmddyy2dec_time(@)								
 {
 	my($ds,$ts,$epoch) =
-        &antsFunUsage(-2,"..","date-string (empty ok), time-string[, epoch]",@_);
+        &antsFunUsage(-2,"..","MM/DD/[YY]YY, hh:mm[:ss][, epoch]",@_);
 
 	my($time) = 0;
-	if ($ds ne "") {								# date
-		my($mm,$dd,$yy) = split('[-/\. ]',$ds);
-		if (defined($epoch)) {
-			$time = dayNo($epoch,$yy,$mm,$dd);
-        } else {
-			$time = dayNo($yy,$yy,$mm,$dd);
+	if ($ds ne '') {
+		my($yy,$mm,$dd);
+		if (length($ds) == 6) {
+			$mm = substr($ds,0,2);
+			$dd = substr($ds,2,2);
+			$yy = substr($ds,4,2);
+		} else {
+			($mm,$dd,$yy) = split('[-/\.]',$ds);
 		}
+		$time = dayNo($yy,$mm,$dd,$epoch);
+	}
+	if ($ts ne '') {
+		my($h,$m,$s) = split(':',$ts);
+		$s = 0 unless defined($s);
+	    return $time + &frac_day($h,$m,$s);
+	}
+	return $time;
+}
+
+sub ddmmyy2dec_time(@)
+{
+	my($ds,$ts,$epoch) =
+        &antsFunUsage(-2,"..","DD/MM/[YY]YY, hh:mm[:ss][, epoch]",@_);
+
+	my($time) = 0;
+	if ($ds ne '') {
+		my($yy,$mm,$dd);
+		if (length($ds) == 6) {
+			$dd = substr($ds,0,2);
+			$mm = substr($ds,2,2);
+			$yy = substr($ds,4,2);
+		} else {
+			($dd,$mm,$yy) = split('[-/\.]',$ds);
+		}
+		$time = dayNo($yy,$mm,$dd,$epoch);
 	}
 
-	my($h,$m,$s) = split(':',$ts);					# time
-	croak("$0: &mmddyy2dec_time(): illegal time spec $ts\n")
-		unless ((defined($h) && $h>=0 && $h<24) &&
-				(defined($m) && $m>=0 && $m<60) &&
-				(!defined($s) || ($s>=0 && $s<60)));
-	$time += $h/24 + $m/24/60 + $s/24/3600;
+	if ($ts ne '') {
+		my($h,$m,$s) = split(':',$ts);
+		$s = 0 unless defined($s);
+	    return $time + &frac_day($h,$m,$s);
+	}
 
 	return $time;
 }
 
-sub ddmmyy2dec_time(@)								# decimal time
+sub yymmdd2dec_time(@)								
 {
-	my($epoch,$ds,$ts) =
-        &antsFunUsage(3,"c..","epoch, date-string (empty ok), time-string",@_);
+	my($ds,$ts,$epoch) =
+        &antsFunUsage(-2,"..","[YY]YY/MM/DD, hh:mm[:ss][, epoch]",@_);
 
 	my($time) = 0;
-	if ($ds ne "") {								# date
-		my($dd,$mm,$yy) = split('[-/\.]',$ds);
-		$time = dayNo($epoch,$yy,$mm,$dd);
-	}
-
-	my($h,$m,$s) = split(':',$ts);
-	croak("$0: &dec_time(): illegal time spec $ts\n")
-		unless ((defined($h) && $h>=0 && $h<24) &&
-				(defined($m) && $m>=0 && $m<60) &&
-				(!defined($s) || ($s>=0 && $s<60)));
-	$time += $h/24 + $m/24/60 + $s/24/3600;
-
-	return $time;
-}
-
-sub yymmdd2dec_time(@)								# decimal time
-{
-	my($epoch,$ds,$ts) =
-        &antsFunUsage(3,"c..","epoch, date-string (empty ok), time-string (empty ok)",@_);
-
-	my($time) = 0;
-	if ($ds ne "") {								# date
+	if ($ds ne '') {								
 		my($yy,$mm,$dd);
 		if (length($ds) == 6) {
 			$yy = substr($ds,0,2);
@@ -320,46 +279,114 @@ sub yymmdd2dec_time(@)								# decimal time
 		} else {
 			($yy,$mm,$dd) = split('[-/\.]',$ds);
 		}
-		$time = dayNo($epoch,$yy,$mm,$dd);
+		$time = dayNo($yy,$mm,$dd,$epoch);
 	}
 
 	if ($ts ne '') {
 		my($h,$m,$s) = split(':',$ts);
-		croak("$0: &dec_time(): illegal time spec $ts\n")
-		unless ((defined($h) && $h>=0 && $h<24) &&
-				(defined($m) && $m>=0 && $m<60) &&
-				(!defined($s) || ($s>=0 && $s<60)));
-	    $time += $h/24 + $m/24/60 + $s/24/3600;
+		$s = 0 unless defined($s);
+	    return $time + &frac_day($h,$m,$s);
 	}
 
 	return $time;
 }
 
+#----------------------------------------------------------------------
+# Decimal Time to Strin Conversion
+#----------------------------------------------------------------------
+
+{ my(@fc);
+
+	sub Date(@) 										# day number -> date
+	{
+	
+		my($dnf);										# find std dn field & epoch
+		if (@_ == 0) {
+			for (my($i)=0; $i<@antsLayout; $i++) {
+				next unless ($antsLayout[$i] =~ /^dn(\d\d)$/);
+				$dnf = $antsLayout[$i]; push(@_,$1);
+				last;
+	        }
+	    }
+	    
+		my($year,$day) = &antsFunUsage(2,"cf","epoch, dayNo",\@fc,undef,$dnf,@_);
+	
+		$year += ($year < 50) ? 2000 : 1900 			# Y2K
+			if ($year < 100);
+	
+		$day = int($day);								# prevent runover on last day of month
+		while ($day > 365+&leapYearP($year)) {			# adjust year
+			$day -= 365 + &leapYearP($year);
+			$year++;
+		}
+	
+		my($month) = 1;
+		while ($day > &monthLength($year,$month)) {
+			$day -= &monthLength($year,$month);
+			$month++;
+		}
+	
+		return sprintf('%04d/%02d/%02d',$year,$month,$day);
+	}
+}
+
+{ my(@fc);
+
+	sub Time(@) 										# day number -> date/time
+	{
+		my($dnf);										# find standard dn field
+		for (my($i)=0; $i<@antsLayout; $i++) {
+			next unless ($antsLayout[$i] =~ /^dn\d\d$/);
+			$dnf = $antsLayout[$i];
+			last;
+		}
+	    
+		my($fday) = &antsFunUsage(1,"f","dayNo",\@fc,$dnf,@_);
+		my($day) = int($fday);
+		$fday -= $day;
+	
+		my($hour) = int(24*$fday);
+		$fday -= $hour/24;
+		my($min) = int(24*60*$fday);
+		$fday -= $min/24/60;
+		my($sec) = round(24*3600*$fday);
+		$min++,$sec=0 if ($sec == 60);
+		$hour++,$min=0 if ($min == 60);
+		$day++,$hour=0 if ($hour == 24);
+	
+		return sprintf('%02d:%02d:%02d',$hour,$min,$sec);
+	}
+}
+
+#----------------------------------------------------------------------
+# Other Misc Date Conversions
+#----------------------------------------------------------------------
+
 sub date2str(@)
 {
-    my($MM,$DD,$YYYY) = &antsFunUsage(3,"ccc","month, day, year",@_);
+    my($MM,$DD,$YYYY) = &antsFunUsage(3,'ccc','month, day, year',@_);
     $YYYY += 2000 if ($YYYY < 50);
     $YYYY += 1900 if ($YYYY < 100);
-    return sprintf("%02d",$MM) . "/" .
-           sprintf("%02d",$DD) . "/" . $YYYY;
+    return sprintf('%02d',$MM) . '/' .
+           sprintf('%02d',$DD) . '/' . $YYYY;
 }
 
 sub card_date2str(@)
 {
-    my($DDMMYY) = &antsFunUsage(1,"c","ddmmyy",@_);
-    $DDMMYY = sprintf("%06d",$DDMMYY);
+    my($DDMMYY) = &antsFunUsage(1,'c','ddmmyy',@_);
+    $DDMMYY = sprintf('%06d',$DDMMYY);
     return &fmtdate(substr($DDMMYY,2,2),substr($DDMMYY,0,2),substr($DDMMYY,4,2));
 }
 
 sub time2str(@)
 {
-    my($HH,$MM) = &antsFunUsage(2,"cc","hr, min",@_);
-    return sprintf("%02d",$HH) . ":" . sprintf("%02d",$MM);
+    my($HH,$MM) = &antsFunUsage(2,'cc','hr, min',@_);
+    return sprintf('%02d',$HH) . ':' . sprintf('%02d',$MM);
 }
 
 sub card_time2str(@)
 {
-    my($HHMM) = &antsFunUsage(1,"c","hrmin",@_);
+    my($HHMM) = &antsFunUsage(1,'c','hrmin',@_);
     return &fmttime(int($HHMM/100),$HHMM%100);
 }
 
@@ -376,7 +403,7 @@ sub wraplon(@)		# get sign of longitudes right
 sub dmh2deg(@)		# dd mm.m NSEW -> dd.d
 {
     my($deg,$min,$hemisph) =
-        &antsFunUsage(3,"ff1","deg, min, hemisphere",@_);
+        &antsFunUsage(3,'ff1','deg, min, hemisphere',@_);
     croak("$0 dmh2d(): <deg> may not be -ve\n") if ($deg < 0);
     croak("$0 dmh2d(): <min> may not be -ve\n") if ($min < 0);
     $deg += $min/60;
@@ -392,7 +419,7 @@ sub dmh2deg(@)		# dd mm.m NSEW -> dd.d
 sub dmsh2deg(@)   # dd mm ss NSEW -> dd.d
 {
     my($deg,$min,$sec,$hemisph) =
-        &antsFunUsage(4,"fff1","deg, min, sec, hemisphere",@_);
+        &antsFunUsage(4,'fff1','deg, min, sec, hemisphere',@_);
     croak("$0 dmsh2d(): <deg> may not be -ve\n") if ($deg < 0);
     croak("$0 dmsh2d(): <min> may not be -ve\n") if ($min < 0);
     croak("$0 dmsh2d(): <sec> may not be -ve\n") if ($sec < 0);
@@ -408,7 +435,7 @@ sub dmsh2deg(@)   # dd mm ss NSEW -> dd.d
 
 sub str2deg(@)      # string containing dd [mm.m] [NSEW] -> dd.d
 {
-    my($s) = &antsFunUsage(1,".","'deg[ :][min][ ]hemisphere'",@_);
+    my($s) = &antsFunUsage(1,'.',"'deg[ :][min][ ]hemisphere'",@_);
     my($deg,$a,$b) = ($s =~ m{^([-\d]+)[\s:]([\d\.]+)\s*([NSEW])$});
 #    print(STDERR "--> $deg, $a, $b\n");
 	return ($b eq "") ? &dmh2d($deg,0,$a) : &dmh2d($deg,$a,$b);

@@ -2,9 +2,9 @@
 #======================================================================
 #                    A N T S U S A G E . P L 
 #                    doc: Fri Jun 19 13:43:05 1998
-#                    dlm: Tue Apr  2 22:26:55 2013
+#                    dlm: Wed Jul 30 12:43:52 2014
 #                    (c) 1998 A.M. Thurnherr
-#                    uE-Info: 157 44 NIL 0 0 70 2 2 4 NIL ofnI
+#                    uE-Info: 365 24 NIL 0 0 70 2 2 4 NIL ofnI
 #======================================================================
 
 # HISTORY:
@@ -155,6 +155,7 @@
 #	Apr  2, 2013: - BUG: pref{}suff special args did sometimes produce unexpanded as well
 #						 as expanded output (unexpanded should be produced only if the
 #						 expansion is empty)
+#	Jul 30, 2014: - added special args to -U)sage output
 
 # NOTES:
 #	- ksh expands {}-arguments with commas in them!!! Use + instead
@@ -168,15 +169,21 @@ sub antsUsageError() {									# die with Usage error
 		print(STDERR "\n$0\n\n")
 	}
 	if ($opt_U) {
-		print(STDERR "Options & Arguments: $antsCurUsage$_[0]\n\nCommon options:\n" .
-			"\t[-F)ields {%P|f|[\$@]|[f]=expr}[,...]]\n" .
-			"\t[num for-M)at] [-C)anonical numbers] [-G)eographic lat/lon]\n" .
-			"\t[-A)ctivate output] [LaTeX -T)able output]\n" .
-			"\t[-S)elect <addr-expr>] [-N)ums f[,...]] [-H)ead <n lines>]\n" .
-			"\t[-P)ass comments] [-Q)uiet (no headers)] [-X (no new header)]\n" .
-			"\t[suppress -D)ependency checks & addition of new dependencies]\n" .
-			"\t[-L)oad <lib,...>]\n" .
-			"\t[-I)n field-sep] [-O)ut field-sep] [-R)ecord sep]\n");
+		print(STDERR "Options & Arguments: $antsCurUsage$_[0]\n\n" .
+			"Common Options:\n" .
+				"\t[-F)ields {%P|f|[\$@]|[f]=expr}[,...]]\n" .
+				"\t[num for-M)at] [-C)anonical numbers] [-G)eographic lat/lon]\n" .
+				"\t[-A)ctivate output] [LaTeX -T)able output]\n" .
+				"\t[-S)elect <addr-expr>] [-N)ums f[,...]] [-H)ead <n lines>]\n" .
+				"\t[-P)ass comments] [-Q)uiet (no headers)] [-X (no new header)]\n" .
+				"\t[suppress -D)ependency checks & addition of new dependencies]\n" .
+				"\t[-L)oad <lib,...>]\n" .
+	            "\t[-I)n field-sep] [-O)ut field-sep] [-R)ecord sep]\n\n" .
+			"Special Argument Expansion:\n" .
+				"\t@<file>:<field>\t\t\t<field> values in <file>\n" .
+				"\t#<from>-<to>[:<step>]\t\tenumerated values\n" .
+				"\t[prefix]{<ranges>}[suffix]\texisting files (ranges: <from>[-<to>][+...])\n" .
+				"\t[prefix]((<file>))[suffix]\tfiles, using <file> with ranges\n");
 	} else {
 		print(STDERR "Options & Arguments: $antsCurUsage$_[0]\n");
 	}
@@ -321,7 +328,6 @@ sub antsUsage($$@) {									# handle options
 					push(@exp,$i);
 				}
 			}
-#		} elsif ($ARGV[$ai] =~ m{\{([^\}]+)\}}) {		# pref{list of ranges}suff
 		} elsif ($ARGV[$ai] =~ m{\{([-\+,\d]+)\}}) {	# pref{list of ranges}suff
 			my($pref) = $`; my($suff) = $';
 			foreach my $range (split('[,\+]',$1)) {
@@ -350,6 +356,31 @@ sub antsUsage($$@) {									# handle options
 	        }
 			@exp = ($ARGV[$ai])							# make sure it *was* special arg
 				unless (@exp);
+		} elsif ($ARGV[$ai] =~ m{\(\(([^\)]+)\)\)}) {		# pref((file))suff
+			my($pref) = $`; my($suff) = $';
+			&antsAddDeps($1);
+			open(F,$1) || croak("$1: $!\n");
+			while (<F>) {
+				s/#.*//g; next if /^\s+$/;					# handle comments and empty lines
+				s/\s*//g;
+				chomp($_);
+				if ($_ =~ /^(\d+)-(\d+)$/) {
+					my($fmt) = length($1)==length($2) ?
+							   sprintf("$pref%%0%dd$suff",length($1)) : "$pref%d$suff";
+					if ($2 > $1) {
+						for (my($i)=$1; $i<=$2; $i++) {
+							push(@exp,sprintf($fmt,$i));
+						}
+					} else {
+						for (my($i)=$1; $i>=$2; $i--) {
+							push(@exp,sprintf($fmt,$i));
+	                    }
+	                }
+				} else {
+					push(@exp,"$pref$_$suff");
+	            }
+	        }
+			close(F);
 		} else {										# regular argument
 			next;
 		}
