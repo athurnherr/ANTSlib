@@ -1,9 +1,9 @@
 #======================================================================
 #                    L I B G M . P L 
 #                    doc: Sun Feb 20 14:43:47 2011
-#                    dlm: Mon Oct  6 09:48:22 2014
+#                    dlm: Tue Nov 18 12:42:30 2014
 #                    (c) 2011 A.M. Thurnherr
-#                    uE-Info: 21 10 NIL 0 0 70 2 2 4 NIL ofnI
+#                    uE-Info: 22 53 NIL 0 0 70 2 2 4 NIL ofnI
 #======================================================================
 
 # HISTORY:
@@ -19,6 +19,7 @@
 #	Sep  7, 2012: - made N0, E0, b, jstar global
 #	Dec 28, 2012: - added allowance for small roundoff error to Sw()
 #	Oct  6, 2014: - made omega optional in Sw()
+#	Nov 18, 2014: - made b & jstar mandatory for Sw()
 
 require "$ANTS/libEOS83.pl";
 
@@ -91,24 +92,24 @@ sub B($)											# structure function (omega dependence)
 
 sub Sw(@)
 {
-	my($omega,$m,$lat,$N) = &antsFunUsage(-3,'fff','[frequency[1/s]] <vertical wavenumber[rad/m]> <lat[deg]> <N[rad/s]>',@_);
-	my($GM_b) = 1300; #m								# pycnocline lengthscale
+	my($omega,$m,$lat,$b,$jstar,$N) =
+		&antsFunUsage(-5,'fff','[frequency[1/s]] <vertical wavenumber[rad/m]> <lat[deg]> <N[rad/s]> <b[m]> <j*>',@_);
 
 	if (defined($N)) {									# Sw(omega,m)
 		local($f) = abs(&f($lat));
 		$omega += $PRACTICALLY_ZERO if ($omega < $f);
 		$omega -= $PRACTICALLY_ZERO if ($omega > $N);
 		return nan if ($omega < $f || $omega > $N);
-		my($mstar) = &m($GM_jstar,$N,$omega);
-		return $GM_E0 * $GM_b * 2 * $f**2/$omega**2/B($omega) * $GM_jstar / ($m+$mstar)**2;
+		my($mstar) = &m($jstar,$N,$omega);
+		return $GM_E0 * $b * 2 * $f**2/$omega**2/B($omega) * $jstar / ($m+$mstar)**2;
 	} else {											# Sw(m)
 		$N = $lat;										# shift arguments to account for missing omega
 		$lat = $m;
 		local($f) = abs(&f($lat));
 		$m = $omega;
 		undef($omega);
-		my($mstar) = &m($GM_jstar,$N);
-		return $pi * $GM_E0 * $GM_b * $N * $f * $GM_jstar / ($m+$mstar)**2;
+		my($mstar) = &m($jstar,$N);
+		return $pi * $GM_E0 * $b * $N * $f * $jstar / ($m+$mstar)**2;
 	}
 }
 

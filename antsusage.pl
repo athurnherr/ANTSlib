@@ -2,9 +2,9 @@
 #======================================================================
 #                    A N T S U S A G E . P L 
 #                    doc: Fri Jun 19 13:43:05 1998
-#                    dlm: Tue Apr  2 22:26:55 2013
+#                    dlm: Sat Jan 31 15:49:23 2015
 #                    (c) 1998 A.M. Thurnherr
-#                    uE-Info: 157 44 NIL 0 0 70 2 2 4 NIL ofnI
+#                    uE-Info: 652 28 NIL 0 0 70 2 2 4 NIL ofnI
 #======================================================================
 
 # HISTORY:
@@ -155,6 +155,8 @@
 #	Apr  2, 2013: - BUG: pref{}suff special args did sometimes produce unexpanded as well
 #						 as expanded output (unexpanded should be produced only if the
 #						 expansion is empty)
+#	Jan 30, 2015: - added &antsFunOpt()
+#	Jan 31, 2015: - made it work
 
 # NOTES:
 #	- ksh expands {}-arguments with commas in them!!! Use + instead
@@ -630,6 +632,25 @@ sub antsFloatOpt(@)
 	    	return $default;
 	    }
 	}
+}
+
+#----------------------------------------------------------------------
+# antsFunOpt(\$opt_x) parses the contents of $opt_x as follows:
+#
+#	name(value)	=> $opt_x = 'name'; $name = "value";
+#	name		=> no change
+#----------------------------------------------------------------------
+
+sub antsFunOpt(@)
+{
+	my($opt) = @_;
+	return unless defined($opt);
+	croak("antsusage.pl: antsFunOpt(@_): argument is not a ref\n")
+		unless ref($opt);
+	my($name,$param) = (${$opt} =~ m{^([^\)]+)\(([^\)]+)\)$});
+	return unless defined($param);
+	eval(sprintf('$%s = "%s";',$name,$param));
+	${$opt} = $name;
 }
 
 1;														# return true
