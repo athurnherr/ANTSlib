@@ -1,20 +1,25 @@
 #======================================================================
-#                    . / S V B K S B . P L 
+#                    S V B K S B . P L 
 #                    doc: Sat Jul 31 22:47:03 1999
-#                    dlm: Sat Jul 31 23:06:40 1999
+#                    dlm: Wed Mar 11 19:29:39 2015
 #                    (c) 1999 A.M. Thurnherr
-#                    uE-Info: 30 32 NIL 0 0 72 2 2 4 ofnI
+#                    uE-Info: 20 0 NIL 0 0 72 2 2 4 NIL ofnI
 #======================================================================
 
 # SVBKSB routine from Numerical Recipes adapted to ANTS
+#
+#	solves Ax = b for x, given b
+#
+#	Notes:
+#		- A = U W V' as done in [svdcmp.pl]
 
 # HISTORY:
 #	Jul 31, 1999: - manually converted from c-source
-
-# Notes:
-#   - everything passed as refs
+#	Mar 11, 2015: - fixed syntax errors (code had never been used before)
 
 require "$ANTS/nrutil.pl";
+
+use strict;
 
 sub svbksb($$$$$)
 {
@@ -37,9 +42,9 @@ sub svbksb($$$$$)
 	for ($j=1; $j<=$#{$wR}; $j++) {
 		$s = 0;
 		for ($jj=1; $jj<=$#{$wR}; $jj++) {
-			$s += $vR->[$j][$jj] * tmp[$jj];
+			$s += $vR->[$j][$jj] * $tmp[$jj];
 		}
-		$x->[$j] = $s;
+		$xR->[$j] = $s;
 	}
 }
 

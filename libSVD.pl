@@ -1,26 +1,76 @@
 #======================================================================
-#                    S V D C M P . P L 
-#                    doc: Sun Aug  1 09:51:37 1999
-#                    dlm: Wed Mar 11 16:54:26 2015
-#                    (c) 1999 A.M. Thurnherr
-#                    uE-Info: 188 1 NIL 0 0 72 10 2 4 NIL ofnI
+#                    L I B S V D . P L 
+#                    doc: Sat Jul 31 22:47:03 1999
+#                    dlm: Fri Mar 13 20:53:26 2015
+#                    (c) 2015 A.M. Thurnherr
+#                    uE-Info: 305 1 NIL 0 0 72 2 2 4 NIL ofnI
 #======================================================================
 
-# SVDCMP routine from Numerical Recipes adapted to ANTS
-
 # HISTORY:
-#	Aug 01, 1999: - manually converted from c-source
+#	Jul 31, 1999: - created
 #	Jul 19, 2001: - done *something* (message only?)
-#	Mar 11, 2015: - picked up this never-used code because of need to fit circles
-
-
-# Notes:
-#   - everything passed as refs
+#	Mar 11, 2015: - fixed syntax errors (code had never been used before)
+#	Mar 13, 2015: - combined from [sbbksb.pl] [svdcmp.pl] [pythag.pl] [svdfit.pl]
 
 require "$ANTS/nrutil.pl";
-require "$ANTS/pythag.pl";
-
 use strict;
+
+#----------------------------------------------------------------------
+# SVBKSB routine from Numerical Recipes adapted to ANTS
+#
+#	solves Ax = b for x, given b
+#
+#	Notes:
+#		- A = U W V' as done in [svdcmp.pl]
+#----------------------------------------------------------------------
+
+sub svbksb($$$$$)
+{
+	my($uR,$wR,$vR,$bR,$xR) = @_;
+	my($jj,$j,$i);									# int
+	my($s);										# float
+	my(@tmp);									# float[]
+
+	&vector(\@tmp,1,$#{$wR});
+	for ($j=1; $j<=$#{$wR}; $j++) {
+		$s = 0;
+		if ($wR->[$j]) {
+			for ($i=1; $i<=$#{$uR}; $i++) {
+				$s += $uR->[$i][$j] * $bR->[$i];
+			}
+			$s /= $wR->[$j];
+		}
+		$tmp[$j]=$s;
+	}
+	for ($j=1; $j<=$#{$wR}; $j++) {
+		$s = 0;
+		for ($jj=1; $jj<=$#{$wR}; $jj++) {
+			$s += $vR->[$j][$jj] * $tmp[$jj];
+		}
+		$xR->[$j] = $s;
+	}
+}
+
+#----------------------------------------------------------------------
+# PYTHAG routine
+#----------------------------------------------------------------------
+
+sub pythag($$)
+{
+	my($a,$b) = @_;							# params
+	my($absa,$absb);						# float 
+
+	$absa = abs($a);
+	$absb = abs($b);
+	return $absa*sqrt(1.0+SQR($absb/$absa))
+		if ($absa > $absb);
+	return ($absb == 0 ? 0 : $absb*sqrt(1+$absa*$absa/$absb/$absb));
+}
+
+
+#----------------------------------------------------------------------
+# SVDCMP routine from Numerical Recipes adapted to ANTS
+#----------------------------------------------------------------------
 
 sub svdcmp($$$)
 {	
@@ -241,4 +291,63 @@ sub svdcmp($$$)
 	}
 }
 
+#----------------------------------------------------------------------
+# SVDFIT routine from Numerical Recipes adapted to ANTS
+#
+# UNTESTED CODE!!!!!
+#
+# Notes:
+#   - x,y,sig are field numbers for data in $ants_
+#   - if sig is a negative number, -sig is used as constant input stddev
+#   - @a, @u, @v, @w, &funcs passed as refs
+#	- chi square is returned
+#----------------------------------------------------------------------
+#
+#{ # BEGIN static scope
+#
+#my($TOL) = 1.0e-5;
+#
+#sub svdfit($$$$$$$$)
+#{
+#	die("untested code");
+#	my($xfnr,$yfnr,$sig,$aR,$uR,$vR,$wR,$funcsR) = @_;
+#	my($j,$i);										# int
+#	my($chisq,$wmax,$tmp,$thresh,$sum);					# float
+#	my(@b,@afunc);									# float[]
+#
+#	&vector(\@b,1,$#ants_);
+#	&vector(\@afunc,1,$#{$aR});
+#	for ($i=0; $i<=$#ants_; $i++) {
+#		next if ($antsFlagged[$i]);
+#		&$funcsR($ants_[$i][$xfnr],\@afunc);
+#		$tmp = 1.0 / (($sig > 0) ? $ants_[$i][$sig] : -$sig);
+#		for ($j=1; $j<=$#{$aR}; $j++) {
+#			$uR->[$i][$j] = $afunc[$j]*$tmp;
+#		}
+#		$b[$i] = $ants_[$i][$yfnr]*$tmp;
+#	}
+#	&svdcmp($uR,$wR,$vR);
+#	for ($j=1; $j<=$#{$aR}; $j++) {
+#		$wmax = $wR->[$j] if ($wR->[$j] > $wmax);
+#	}
+#	$thresh = $TOL*$wmax;
+#	for ($j=1; $j<=$#{$aR}; $j++) {
+#		$wR->[$j] = 0 if ($wR->[$j] < $thresh);
+#	}
+#	&svbksb($uR,$wR,$vR,\@b,$aR);
+#	for ($i=0; $i<=$#ants_; $i++) {
+#		next if ($antsFlagged[$i]);
+#		&$funcsR($ants_[$i][$xfnr],\@afunc);
+#		for ($j=1; $j<=$#{$aR}; $j++) {
+#			$sum += $aR->[$j]*$afunc[$j];
+#		}
+#		$tmp = ($ants_[$i][$yfnr] - $sum) /
+#				(($sig > 0) ? $ants_[$i][$sig] : -$sig);
+#		$chisq += $tmp * $tmp;
+#	}
+#	return $chisq;
+#}
+#
+#} # END static scope
 
+1;

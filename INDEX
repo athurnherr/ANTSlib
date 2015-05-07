@@ -1,9 +1,9 @@
 ======================================================================
                     I N D E X 
                     doc: Wed Jun 18 09:46:58 1997
-                    dlm: Mon Nov  3 12:42:00 2014
+                    dlm: Fri Mar 13 20:55:01 2015
                     (c) 1997 Andreas Thurnherr
-                    uE-Info: 186 41 NIL 0 0 72 2 2 4 NIL ofnI
+                    uE-Info: 195 48 NIL 0 0 72 2 2 4 NIL ofnI
 ======================================================================
 
 NOTES:
@@ -189,7 +189,10 @@ NOTES:
 [libvec.pl]			vector stuff, including distance on globe
 [libWOCE.pl]		WOCE conversions
 
-=Numerical Recipes Routines=
+=Numerical Routines=
+
+[libQZ.pl]			generalized eigenvalue problem (eig(A,B))
+[libSVD.pl]			singular value decomposition
 
 [covsrt.pl]			for [lmfit]
 [fft.pl]			FFT
