@@ -1,9 +1,9 @@
 #======================================================================
 #                    L I B L A D C P . P L 
 #                    doc: Wed Jun  1 20:38:19 2011
-#                    dlm: Wed Jun 26 11:47:45 2013
+#                    dlm: Mon May 18 09:49:19 2015
 #                    (c) 2011 A.M. Thurnherr
-#                    uE-Info: 211 0 NIL 0 0 70 2 2 4 NIL ofnI
+#                    uE-Info: 49 12 NIL 0 0 70 2 2 4 NIL ofnI
 #======================================================================
 
 # HISTORY:
@@ -22,6 +22,7 @@
 #	Oct 25, 2012: - renamed T_SM() to T_ASM()
 #	Jun 26. 2013: - added T_w_z()
 #				  - added parameter checks to processing-specific corrections
+#	May 18, 2015: - added pulse length to T_w() and T_w_z()
 
 require "$ANTS/libvec.pl";
 require "$ANTS/libfuns.pl";
@@ -40,16 +41,17 @@ require "$ANTS/libfuns.pl";
 #----------------------------------------------------------------------
 
 #------------------------------------------------------------------------------
-# T_ravg(k,blen)
+# T_ravg(k,blen[,plen])
 #	- correct for range averaging due to finite pulse and finite receive window
-# 	- this version assumes bin-length == pulse-length
+# 	- when called with 2 arguments, bin-length == pulse-length assumed
 #------------------------------------------------------------------------------
 
-sub T_ravg($$)
+sub T_ravg(@)
 {
-    my($k,$blen) =
-        &antsFunUsage(2,'ff','<vertical wavenumber[rad/s]> <pulse/bin-length[m]>',@_);
-    return 1 / sinc($k*$blen/2/$PI)**4;
+    my($k,$blen,$plen) =
+        &antsFunUsage(-2,'ff','<vertical wavenumber[rad/s]> <bin-length[m]> [pulse-length[m]]',@_);
+	$plen = $blen unless defined($plen);        
+    return 1 / sinc($k*$blen/2/$PI)**2 / sinc($k*$plen/2/$PI)**2;
 }
 
 #-------------------------------------------------------------
@@ -175,7 +177,7 @@ sub T_VI_alt($$$$$)
 }
 
 #----------------------------------------------------------------------
-# T_w(k,blen,dz,range_max)
+# T_w(k,blen,plen,dz,range_max)
 #	- vertical-velocity method of Thurnherr (IEEE 2011)
 #	- range_max == 0 disables tilt correction
 #----------------------------------------------------------------------
@@ -183,18 +185,18 @@ sub T_VI_alt($$$$$)
 { my(@fc);
 	sub T_w(@)
 	{
-		my($k,$blen,$dz,$range_max) =
-			&antsFunUsage(4,'ffff',
-				'[vertical wavenumber[rad/s]] <ADCP bin size[m]> <output grid resolution[m]> <range max[m]>',
-				\@fc,'k',undef,undef,undef,@_);
-		croak("T_w($k,$blen,$dz,$range_max): bad parameters\n")
-			unless ($k>=0 && $blen>0 && $dz>0 && $range_max>=0);				
-		return T_ravg($k,$blen) * T_binavg($k,$dz) * T_tilt($k,dprime($range_max));
+		my($k,$blen,$plen,$dz,$range_max) =
+			&antsFunUsage(5,'fffff',
+				'[vertical wavenumber[rad/s]] <ADCP bin length[m]> <pulse length[m]> <output grid resolution[m]> <range max[m]>',
+				\@fc,'k',undef,undef,undef,undef,@_);
+		croak("T_w($k,$blen,$plen,$dz,$range_max): bad parameters\n")
+			unless ($k>=0 && $blen>0 && $plen>0 && $dz>0 && $range_max>=0);				
+		return T_ravg($k,$blen,$plen) * T_binavg($k,$dz) * T_tilt($k,dprime($range_max));
 	}
 }
 
 #----------------------------------------------------------------------
-# T_w_z(k,blen,dz,range_max)
+# T_w_z(k,blen,plen,dz,range_max)
 #	- vertical-velocity method of Thurnherr (IEEE 2011)
 #	- first differencing of gridded shear to calculate dw/dz
 #	- NB: grid-scale differentiation assumed
@@ -204,13 +206,13 @@ sub T_VI_alt($$$$$)
 { my(@fc);
 	sub T_w_z(@)
 	{
-		my($k,$blen,$dz,$range_max) =
-			&antsFunUsage(4,'ffff',
-				'[vertical wavenumber[rad/s]] <ADCP bin size[m]> <output grid resolution[m]> <range max[m]>',
-				\@fc,'k',undef,undef,undef,@_);
-		croak("T_w_z($k,$blen,$dz,$range_max): bad parameters\n")
-			unless ($k>=0 && $blen>0 && $dz>0 && $range_max>=0);				
-		return T_ravg($k,$blen) * T_binavg($k,$dz) * T_tilt($k,dprime($range_max)) * T_fdiff($k,$dz);
+		my($k,$blen,$plen,$dz,$range_max) =
+			&antsFunUsage(5,'fffff',
+				'[vertical wavenumber[rad/s]] <ADCP bin size[m]> <pulse length[m]> <output grid resolution[m]> <range max[m]>',
+				\@fc,'k',undef,undef,undef,undef,@_);
+		croak("T_w_z($k,$blen,$plen,$dz,$range_max): bad parameters\n")
+			unless ($k>=0 && $blen>0 && $plen>0 && $dz>0 && $range_max>=0);				
+		return T_ravg($k,$blen,$plen) * T_binavg($k,$dz) * T_tilt($k,dprime($range_max)) * T_fdiff($k,$dz);
 	}
 }
 

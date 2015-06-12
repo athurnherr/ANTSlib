@@ -1,9 +1,9 @@
 #======================================================================
 #                    F F T . P L 
 #                    doc: Fri Mar 12 09:20:33 1999
-#                    dlm: Mon Jul 24 14:58:04 2006
+#                    dlm: Sun May 17 19:50:39 2015
 #                    (c) 1999 A.M. Thurnherr
-#                    uE-Info: 241 36 NIL 0 0 72 66 2 4 NIL ofnI
+#                    uE-Info: 43 50 NIL 0 0 72 66 2 4 NIL ofnI
 #======================================================================
 
 # Notes:
@@ -40,6 +40,7 @@
 #	Feb  9, 2005: - added &phase_pos(), &phase_neg()
 #   Jul  1, 2006: - Version 3.3 [HISTORY]
 #   Jul 24, 2006: - modified to use $PRACTICALLY_ZERO
+#	May 15, 2015: - added $skip argument to cFFT()
 
 #----------------------------------------------------------------------
 # FOUR1 routine
@@ -172,34 +173,35 @@ sub TWOFFT($$$$$$)
 
 sub cFFT($$$) { return cFFT_bufR(\@ants_,@_); }
 
-sub cFFT_bufR($$$) # ($bufR, $rfnr, $ifnr, [$N]) => @coeff
+sub cFFT_bufR($$$) # ($bufR, $rfnr, $ifnr, [$N[, $skip]]) => @coeff
 {
-	my($bufR,$fnr,$ifnr,$N) = @_;
-	my(@data,$i,$lastSet);
+	my($bufR,$fnr,$ifnr,$N,$skip) = @_;
+	my(@data,$i,$r,$lastSet);
 
 	unless ($N) {									# $N not set
 		for ($N=1; $N <= $#ants_; $N <<= 1) {}		# next greater pwroftwo
 		&antsInfo("(fft.pl) N set to $N")
 			unless ($N == $#ants_+1);
 	}
-	for ($i=0; $i<$N && $i<=$#ants_; $i++) {		# PAD
-		last if (numberp($bufR->[$i][$fnr]) &&
-				 (isnan($ifnr) || numberp($bufR->[$i][$ifnr])));
+	for ($i=0,$r=$skip; $i<$N && $r<=$#ants_; $i++,$r++) {		# PAD
+		last if (numberp($bufR->[$r][$fnr]) &&
+				 (isnan($ifnr) || numberp($bufR->[$r][$ifnr])));
 		$data[2*$i]   = 0;
 		$data[2*$i+1] = 0;
 	}
 	$lastSet = $i - 1;
 	&antsInfo("(fft.pl) WARNING: $i initial non-numbers padded with 0es!!!"),
 		$padded=1 if ($i);
-	while ($i<$N && $i<=$#ants_) {					# fill
-		$i++,next unless (numberp($bufR->[$i][$fnr]) &&	# skip non-numbers 
-				          (isnan($ifnr) || numberp($bufR->[$i][$ifnr])));
-		croak("$0: (fft.pl) $lastSet, $i can't handle missing values ($bufR->[$lastSet+1][$fnr])!\n")
+	while ($i<$N && $r<=$#ants_) {					# fill
+		$i++,$r++,next
+			unless (numberp($bufR->[$r][$fnr]) &&	# skip non-numbers 
+				    (isnan($ifnr) || numberp($bufR->[$r][$ifnr])));
+		croak("$0: (fft.pl) $lastSet, $i can't handle missing values ($bufR->[$lastSet+$skip+1][$fnr])!\n")
 			if ($lastSet != $i-1);					# missing values
-		$data[2*$i]   = $bufR->[$i][$fnr];			# real
-		$data[2*$i+1] = isnan($ifnr) ? 0 : $bufR->[$i][$ifnr];	# imag
+		$data[2*$i]   = $bufR->[$r][$fnr];			# real
+		$data[2*$i+1] = isnan($ifnr) ? 0 : $bufR->[$r][$ifnr];	# imag
 		$lastSet = $i;
-		$i++;
+		$i++; $r++;
 	}
 	&antsInfo("(fft.pl) WARNING: %d final non-numbers padded with 0es!!!",$i-$lastSet-1),
 		$padded=1 if ($i > $lastSet+1);

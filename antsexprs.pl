@@ -2,8 +2,8 @@
 #                    A N T S E X P R S . P L 
 #					 (c) 2005 Andreas Thurnherr
 #                    doc: Sat Dec 31 18:35:33 2005
-#                    dlm: Sat Mar 10 16:28:46 2012
-#                    uE-Info: 207 38 NIL 0 0 70 2 2 4 NIL ofnI
+#                    dlm: Fri May 15 20:12:34 2015
+#                    uE-Info: 183 56 NIL 0 0 70 2 2 4 NIL ofnI
 #======================================================================
 
 # HISTORY:
@@ -42,6 +42,7 @@
 #	May 22, 2011: - made it work
 #	Feb 20, 2012: - BUG: quoting had not been implemented
 #	Mar 10, 2012: - added ${field..field} syntax to edit exprs
+#	May 15, 2015: - BUG: -S did not work with :: %PARAMs
 
 $DEBUG = 0;
 
@@ -80,8 +81,10 @@ sub antsCompileAddrExpr($)								# subst fields/%PARAMs
 			$expr =~ /^\$?([\w\.]+)\s*>$/ ||
 			$expr =~ /^>\$?([\w\.]+)$/);
 
-	if ($expr =~ /^(%?[\w\.]+):/ || $expr =~ /^(\$\d+):/) {	# old -G syntax
+	$expr =~ s/::/QquOte/g;										# new-style :: %PARAMs
+	if ($expr =~ /^(%?[\w\.]+):/ || $expr =~ /^(\$\d+):/) {		# old -G syntax
 		my($fname) = $1; my($range) = $';
+		$fname =~ s/QquOte/::/g;
 		if ($range =~ /(.*)\.\.(.*)/) {
 			my($min) = ($1 eq '*') ? -1e99 : $1;
 			my($max) = ($2 eq '*') ?  1e99 : $2;
@@ -112,7 +115,8 @@ sub antsCompileAddrExpr($)								# subst fields/%PARAMs
 		}
 		print(STDERR "-G  AddrExpr = $expr\n") if ($DEBUG);
 	}
-	
+	$expr =~ s/QquOte/::/g;
+
 	my($relop) 	  = '<|<=|>|>=|!=|~=|<>|==';		# relational ops
 	my($comparee) = '-?%?\$?[\w\.\+\-]+';			# nums, fields, PARAMs
 	my($numvar)	  = '^[\w\.]+$';					# fields
@@ -176,7 +180,7 @@ sub antsCompileAddrExpr($)								# subst fields/%PARAMs
 		$expr =~ s{\$\+$1}{(AnTsDtArEf\[$fnr\]-AnTsDtArEf0\[$fnr\])};
 	}
 	$expr =~ s{%%}{ AnTsPeRcEnT }g;						# escape
-	while ($expr =~ /%([\w\.]+)/) {						# %PARAMs
+	while ($expr =~ /%([\w\.:]+)/) {					# %PARAMs
 		my($p) = $1;
 		croak("$0: Undefined PARAM %$p\n")
 			unless defined($P{$p});

@@ -2,9 +2,9 @@
 #======================================================================
 #                    A N T S . P L 
 #                    doc: Fri Jun 19 14:01:06 1998
-#                    dlm: Thu Oct 30 09:33:41 2014
+#                    dlm: Sun May 17 20:18:01 2015
 #                    (c) 1998 A.M. Thurnherr
-#                    uE-Info: 22 55 NIL 0 0 72 2 2 4 NIL ofnI
+#                    uE-Info: 17 34 NIL 0 0 72 2 2 4 NIL ofnI
 #======================================================================
 
 # HISTORY:
@@ -13,12 +13,13 @@
 #  Jul  5, 2006: - removed `basename`
 #  Jul 19, 2006: - added error if exec($ANTS_PERL) fails
 #  Sep 24, 2012: - added support for $ANTSLIB
-#  Oct 29, 2014: - added $antsLibVersion with compile-time version check
+#  Oct 29, 2014: - added $antsLibVersion with compile-time version check (V6.0)
+#  May 17, 2015: - updated to V6.1
 
 exec($ENV{ANTS_PERL},$0,@ARGV),die("$ENV{ANTS_PERL}: $!")
     if (defined($ENV{ANTS_PERL}) && $^X ne $ENV{ANTS_PERL});
 
-$antsLibVersion = 6.0;
+$antsLibVersion = 6.1;
 die(sprintf("$0: obsolete library V%.1f; V%.1f required\n",
 	$antsLibVersion,$antsMinLibVersion))
 		if (!defined($antsMinLibVersion) || $antsMinLibVersion>$antsLibVersion);

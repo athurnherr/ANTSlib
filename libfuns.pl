@@ -1,9 +1,9 @@
 #======================================================================
 #                    L I B F U N S . P L 
 #                    doc: Wed Mar 24 11:49:13 1999
-#                    dlm: Fri Sep  7 11:11:09 2012
+#                    dlm: Thu Jun  4 17:56:37 2015
 #                    (c) 1999 A.M. Thurnherr
-#                    uE-Info: 286 38 NIL 0 0 72 2 2 4 NIL ofnI
+#                    uE-Info: 306 13 NIL 0 0 72 2 2 4 NIL ofnI
 #======================================================================
 
 # HISTORY:
@@ -14,9 +14,13 @@
 #	Jan 25, 2001: - added f(), sgn()
 #	Apr 16, 2010: - added sinc()
 #	Sep  7, 2012: - added acosh()
+#	Jun  4, 2015: - added gaussRand()
+#			 	  - made normal() more efficient
 
 require	"$ANTS/libvec.pl";								# rad()
 
+#----------------------------------------------------------------------
+# gaussians/normal distribution
 #----------------------------------------------------------------------
 
 sub gauss(@)
@@ -28,8 +32,8 @@ sub gauss(@)
 sub normal(@)
 {
 	my($x,$area,$mean,$sigma) = &antsFunUsage(4,"ffff","x, area, mean, stddev",@_);
-	my($pi) = 3.14159265358979;
-	return $area/(sqrt(2*$pi)*$sigma) * exp(-((($x-$mean) / $sigma)**2)/2);
+	my($sqrt2pi) = 2.506628274631;
+	return $area/($sqrt2pi*$sigma) * exp(-((($x-$mean) / $sigma)**2)/2);
 }
 
 #----------------------------------------------------------------------
@@ -284,6 +288,44 @@ sub sinc($)
 sub acosh($)
 {
 	return log($_[0] + sqrt($_[0]**2-1));
+}
+
+#----------------------------------------------------------------------
+# Gaussian random numbers
+#	- optional argument is seed
+#	- http://www.design.caltech.edu/erik/Misc/Gaussian.html
+#	- algorithm generates 2 random numbers
+#	- validated with plot '<count -o samp 1-100000 | list -Lfuns -c x=gaussRand() | Hist -cs 0.05 x',100000.0*0.05/sqrt(2*3.14159265358979)*exp(-x**2/2) wi li
+#----------------------------------------------------------------------
+
+{ my($y2);
+  my($srand_called);
+
+sub gaussRand(@)
+{
+	if (@_ && !$srand_called) {
+		srand(@_);
+		$srand_called = 1;
+	}
+	
+	if (defined($y2)) {
+		my($temp) = $y2;
+		undef($y2);
+		return $temp;
+	}
+	
+	my($x1,$x2,$w);
+	do {
+		$x1 = 2 * rand() - 1;
+		$x2 = 2 * rand() - 1;
+		$w = $x1**2 + $x2**2;
+	} while ($w >= 1);
+	
+	$w = sqrt((-2 * log($w)) / $w);
+	$y2 = $x2 * $w;
+	return $x1 * $w;
+}
+
 }
 
 #----------------------------------------------------------------------

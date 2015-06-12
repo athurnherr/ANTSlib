@@ -2,9 +2,9 @@
 #======================================================================
 #                    A N T S U S A G E . P L 
 #                    doc: Fri Jun 19 13:43:05 1998
-#                    dlm: Thu Mar  5 12:58:27 2015
+#                    dlm: Fri May 15 18:46:22 2015
 #                    (c) 1998 A.M. Thurnherr
-#                    uE-Info: 161 0 NIL 0 0 70 2 2 4 NIL ofnI
+#                    uE-Info: 161 75 NIL 0 0 70 2 2 4 NIL ofnI
 #======================================================================
 
 # HISTORY:
@@ -158,6 +158,7 @@
 #	Jul 30, 2014: - added special args to -U)sage output
 #	Jan 30, 2015: - added &antsFunOpt()
 #	Jan 31, 2015: - made it work
+#	May 15, 2015: - changed (()) semantics to expand only to existing files
 
 # NOTES:
 #	- ksh expands {}-arguments with commas in them!!! Use + instead
@@ -371,11 +372,13 @@ sub antsUsage($$@) {									# handle options
 							   sprintf("$pref%%0%dd$suff",length($1)) : "$pref%d$suff";
 					if ($2 > $1) {
 						for (my($i)=$1; $i<=$2; $i++) {
-							push(@exp,sprintf($fmt,$i));
+							my($f) = sprintf($fmt,$i);
+							push(@exp,$f) if (-f $f);
 						}
 					} else {
 						for (my($i)=$1; $i>=$2; $i--) {
-							push(@exp,sprintf($fmt,$i));
+							my($f) = sprintf($fmt,$i);
+							push(@exp,$f) if (-f $f);
 	                    }
 	                }
 				} else {

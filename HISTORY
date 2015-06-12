@@ -1,11 +1,24 @@
 #======================================================================
 #                    H I S T O R Y 
 #                    doc: Thu May  7 13:12:05 2015
-#                    dlm: Thu May  7 13:12:52 2015
+#                    dlm: Fri Jun 12 07:24:38 2015
 #                    (c) 2015 A.M. Thurnherr
-#                    uE-Info: 10 10 NIL 0 0 72 0 2 4 NIL ofnI
+#                    uE-Info: 24 13 NIL 0 0 70 0 2 4 NIL ofnI
 #======================================================================
 
 May  7, 2015:
-  - V6.0 [ants.pl] [.hg/hgrc] published for release of LADCPproc V1.2 (Slocum/Explorer processing
+  	- V6.0 [ants.pl] [.hg/hgrc] 
+	- published for release of LADCPproc V1.2 (Slocum/Explorer processing)
 
+May 17, 2015:
+	- V6.1 [ants.pl] [.hg/hgrc] 
+	- added $skip to cFFT to for LADCP_w_spec and binpgrams
+	- NOT YET PUBLISHED
+
+May 18, 2015:
+	- added &antsFindParam() to [antsutils.pl] for LADCP_w_regrid
+	- added pulse length to [libLADCP.pl] for LADCP_VKE
+	- added rec indices to [lfit.pl] for binpgrams
+
+Jun 12, 2015: 
+	- added &

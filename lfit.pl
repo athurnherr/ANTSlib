@@ -1,9 +1,9 @@
 #======================================================================
 #                    L F I T . P L 
 #                    doc: Sat Jul 31 11:24:47 1999
-#                    dlm: Thu Jan  5 12:53:11 2012
+#                    dlm: Mon May 18 10:07:47 2015
 #                    (c) 1999 A.M. Thurnherr
-#                    uE-Info: 19 60 NIL 0 0 72 2 2 4 NIL ofnI
+#                    uE-Info: 20 61 NIL 0 0 72 2 2 4 NIL ofnI
 #======================================================================
 
 # LFIT routine from Numerical Recipes adapted to ANTS
@@ -17,6 +17,7 @@
 #	Jan  5, 2012: - BUG: non-numeric x/y were not handled correctly;
 #						 this was only easily apparent when the last
 #						 record contained non-numeric values
+#	May 18, 2015: - added firstRec, lastRec parameters (V6.1)
 
 # Notes:
 #   - x,y,sig are field numbers for data in $ants_
@@ -29,9 +30,11 @@ require "$ANTS/nrutil.pl";
 require "$ANTS/covsrt.pl";
 require "$ANTS/gaussj.pl";
 
-sub lfit($$$$$$$)
+sub lfit(@)
 {
-	my($xfnr,$yfnr,$sig,$aR,$iaR,$covarR,$funcsR) = @_;
+	my($xfnr,$yfnr,$sig,$aR,$iaR,$covarR,$funcsR,$firstRec,$lastRec) = @_;
+	$firstRec = 0 unless defined($firstRec);
+	$lastRec = $#ants_ unless defined($lastRec);
 
 	my($i,$j,$k,$l,$m,$mfit);			# int
 	my($ym,$wt,$sum,$sig2i,$chisq);		# float
@@ -49,7 +52,7 @@ sub lfit($$$$$$$)
 		}
 		$beta[$j][1] = 0;
 	}
-	for ($i=0; $i<=$#ants_; $i++) {
+	for ($i=$firstRec; $i<=$lastRec; $i++) {
 		next if ($antsFlagged[$i]);
 		next unless numberp($ants_[$i][$xfnr]) && numberp($ants_[$i][$yfnr]);
 		&$funcsR($i,$xfnr,\@afunc);
@@ -84,7 +87,7 @@ sub lfit($$$$$$$)
 	for ($j=0,$l=1;$l<=$#{$aR};$l++) {
 		$aR->[$l]=$beta[++$j][1] if ($iaR->[$l]);
 	}
-	for ($i=0; $i<=$#ants_; $i++) {
+	for ($i=$firstRec; $i<=$lastRec; $i++) {
 		next if ($antsFlagged[$i]);
 		next unless numberp($ants_[$i][$xfnr]) && numberp($ants_[$i][$yfnr]);
 		&$funcsR($i,$xfnr,\@afunc);

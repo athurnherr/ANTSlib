@@ -2,9 +2,9 @@
 #======================================================================
 #                    A N T S U T I L S . P L 
 #                    doc: Fri Jun 19 23:25:50 1998
-#                    dlm: Tue Jul 22 20:35:50 2014
+#                    dlm: Fri Jun 12 07:31:08 2015
 #                    (c) 1998 A.M. Thurnherr
-#                    uE-Info: 91 56 NIL 0 0 70 10 2 4 NIL ofnI
+#                    uE-Info: 103 66 NIL 0 0 70 10 2 4 NIL ofnI
 #======================================================================
 
 # Miscellaneous auxillary functions
@@ -99,6 +99,8 @@
 #	Sep  5, 2013: - FINALLY: added $pi
 #	May 23, 2014: - made ismember understand "123,1-10"
 #	Jul 22, 2014: - removed support for antsFnrNegativeOk
+#	May 18, 2015: - added antsFindParam()
+#	Jun 21, 2015: - added antsParam(), modified antsRequireParam()
 
 # fnr notes:
 #	- matches field names starting with the string given, i.e. "sig" is
@@ -589,14 +591,42 @@ sub antsFunUsage($$$@)
 	return @params;
 } # sub antsfunusage()
 
+#----------------------------------------------------------------------
+
 sub antsRequireParam($)
 {
 	my($pn) = @_;
+	my($pv) = antsParam($pn);
 	croak("$0: required PARAM $pn not set\n")
-		unless (defined($P{$pn}));
-	return $P{$pn};
+		unless defined($pv);
+	return $pv;
 }
 
+
+sub antsFindParam($)								# find parameter using RE (e.g. antsFindParam('dn\d\d'))
+{
+	my($re) = @_;
+	foreach my $k (keys(%P)) {
+		return ($k,$P{$k}) if ($k =~ /^$re$/);
+	}
+	return (undef,undef);
+}
+
+sub antsParam($)									# get parameter value for any ::-prefix
+{
+	my($pn) = @_;
+	my($nfound,$val);
+	foreach my $k (keys(%P)) {
+		next unless ($k eq $pn) || ($k =~ /::$pn$/);
+		$val = $P{$k};
+		$nfound++;
+	}
+	croak("$0: %PARAM $pn ambiguous\n")
+		if ($nfound > 1);
+	return $val;
+}
+
+#----------------------------------------------------------------------
 
 { my($term);	# STATIC
 
