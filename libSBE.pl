@@ -1,13 +1,16 @@
 #======================================================================
 #                    L I B S B E . P L 
 #                    doc: Mon Nov  3 12:42:14 2014
-#                    dlm: Mon Nov  3 19:35:53 2014
+#                    dlm: Thu Jun 18 10:17:03 2015
 #                    (c) 2014 A.M. Thurnherr
-#                    uE-Info: 83 13 NIL 0 0 72 2 2 4 NIL ofnI
+#                    uE-Info: 13 49 NIL 0 0 72 2 2 4 NIL ofnI
 #======================================================================
 
 # HISTORY:
 #	Nov  3, 2014: - exported from [importCNV]
+#	Jun 16, 2015: - cosmetics
+#	Jun 17, 2015: - ensured numeric retvals of SBE_parseheader are returned as numbers
+#	Jun 18, 2015: - BUG: binary code had several bugs
 
 #----------------------------------------------------------------------
 # fname_SBE2std($)
@@ -179,7 +182,7 @@ sub SBE_parseHeader($$$)
 			next;
 		}
 		    
-		SBE_checkTime($1,$tc),next 							# sanity time check
+		SBE_checkTime($1,$tc),next 						# sanity time check
 			if ($hdr =~ /NMEA UTC \(Time\) = (.*)/);
 		SBE_checkTime($1,$tc),next
 			if ($hdr =~ /System UpLoad Time = (.*)/);
@@ -242,7 +245,7 @@ sub SBE_parseHeader($$$)
 	    unless defined($badval);
 
 	@antsLayout = @antsNewLayout;
-	return ($nfields,$nrecs,$sampint,$badval,$ftype,$lat,$lon);
+	return (1*$nfields,1*$nrecs,1*$sampint,1*$badval,$ftype,1*$lat,1*$lon);
 }
 
 #----------------------------------------------------------------------
@@ -282,13 +285,13 @@ sub SBEin($$$$$)
 			@dta = unpack("f*",$dta);
 			for ($r=0; $r<$nr; $r++) {
 				for ($f=0; $f<$nf; $f++) {
-					@add[$f] = $dta[$r*$nf+$f] == $bad ? nan : $dta[$r*$nf+$f];
+					$dta[$r*$nf+$f] = nan if ($dta[$r*$nf+$f] == $bad);
 				}
 	        }
 	    }
 		until ($#ants_>=0 && &antsBufFull()) {					# copy next out
 			return undef unless ($nextR < $nr);
-			@add = $dta[$nextR*$nf..($nextR+1)*$nr+$nf];
+			@add = @dta[$nextR*$nf..($nextR+1)*$nf-1];
 			push(@ants_,[@add]);
 			$nextR++;
         }
