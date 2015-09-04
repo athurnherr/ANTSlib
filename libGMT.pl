@@ -1,19 +1,48 @@
 #======================================================================
 #                    L I B G M T . P L 
 #                    doc: Sun Jun 14 13:45:47 2015
-#                    dlm: Thu Jun 18 20:13:24 2015
+#                    dlm: Thu Jul 30 10:12:19 2015
 #                    (c) 2015 A.M. Thurnherr
-#                    uE-Info: 16 1 NIL 0 0 72 2 2 4 NIL ofnI
+#                    uE-Info: 45 10 NIL 0 0 72 2 2 4 NIL ofnI
 #======================================================================
 
 # perl implementation of /Data/Makefiles/Makefile.GMT
+
+#----------------------------------------------------------------------
+# USAGE
+#----------------------------------------------------------------------
+#
+# Basic Example
+# -------------
+# GMT_begin('temp_prof.ps','-JX10/-10','-R0/30/0/5000');
+# GMT_psxy('-W1,red');
+# print(GMT "$temp $depth\n");
+# GMT_end('-Ba5f1:"Temperature [degC]":/a500f100:"Depth [m]":WeSn');
+#
+# Other GMT Utilities
+# -------------------
+# GMT_pstext(<opts>)			x y size angle fontno justify(ML,BC,TR,...) "text"
+# GMT_psbasemap(<opts>)			often implies GMT_end() w/o args
+# GMT_psscale(<opts>)			scale bar
+#
+# Other Extensions
+# ----------------
+# GMT_unitcoords();				afterwards, x and y range from 0 to 1; useful for legends
+# GMT_setR('-R0/1/0/1')			subsequent GMT utilities use this ROI
+# GMT_setJ('-JX10/-1-')			subsequent GMT utilities use this projection
+# GMT_setAnnotFontSize(7)		set primary annotation font size
+#
+#----------------------------------------------------------------------
 
 # HISTORY:
 #	Jun 14, 2015: - created
 #	Jun 16, 2015: - BUG: forgot to return to PWD
 #	Jun 18, 2015: - added $DEBUG
+#	Jul 26, 2015: - added usage documentation
+#				  - simplified GMT_unitcoords()
+#	Jul 28, 2015: - added GMT_setAnnotFontSize(), GMT_psscale()
 
-#$DEBUG = 1;
+$DEBUG = 0;
 
 #----------------------------------------------------------------------
 # Library
@@ -73,6 +102,11 @@ sub GMT_begin(@)
 	close(GMT);
 }
 
+sub GMT_setAnnotFontSize($)
+{
+	GMT_set("ANNOT_FONT_SIZE_PRIMARY $_[0]");
+}
+
 #----------------------------------------------------------------------
 # GMT_end(B)
 #	1) chdir to temp-dir
@@ -100,6 +134,11 @@ sub GMT_end(@)
 
 sub GMT_unitcoords()
 {
+	GMT_setR('-R0/1/0/1');
+}
+
+sub GMT_unitcoords_logscale()
+{
 	($jx,$jy) = ($GMT_J =~ m{-J.-?(\d+)[a-z]*/-?(\d+)});
 	if (defined($jy)) {
 		GMT_setJ("-JX$jx/$jy");
@@ -112,14 +151,15 @@ sub GMT_unitcoords()
 		}
 	}
 	GMT_setR('-R0/1/0/1');
-	GMT_spawn("| psxy -O -K $GMT_J $GMT_R >> $GMT_plotfile");
-	close(GMT);
+#	GMT_spawn("| psxy -O -K $GMT_J $GMT_R >> $GMT_plotfile");
+#	close(GMT);
 }
 
 #----------------------------------------------------------------------
 # GMT_psxy(opts)
 # GMT_psbasemap(opts)
 # GMT_pstext(opts)
+# GMT_psscale(opts)
 #----------------------------------------------------------------------
 
 sub GMT_psxy(@)
@@ -138,6 +178,12 @@ sub GMT_pstext(@)
 {
 	my($opts) = @_;
 	GMT_spawn("| pstext -O -K $GMT_J $GMT_R $opts >> $GMT_plotfile");
+}
+
+sub GMT_psscale(@)
+{
+	my($opts) = @_;
+	GMT_spawn("| psscale -O -K $opts >> $GMT_plotfile");
 }
 
 1;
