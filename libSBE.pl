@@ -1,9 +1,9 @@
 #======================================================================
 #                    L I B S B E . P L 
 #                    doc: Mon Nov  3 12:42:14 2014
-#                    dlm: Thu Jun 18 10:17:03 2015
+#                    dlm: Tue Sep 29 11:01:30 2015
 #                    (c) 2014 A.M. Thurnherr
-#                    uE-Info: 13 49 NIL 0 0 72 2 2 4 NIL ofnI
+#                    uE-Info: 45 54 NIL 0 0 72 2 2 4 NIL ofnI
 #======================================================================
 
 # HISTORY:
@@ -11,6 +11,7 @@
 #	Jun 16, 2015: - cosmetics
 #	Jun 17, 2015: - ensured numeric retvals of SBE_parseheader are returned as numbers
 #	Jun 18, 2015: - BUG: binary code had several bugs
+#	Sep 29, 2015: - added potemp and sigma standard field names
 
 #----------------------------------------------------------------------
 # fname_SBE2std($)
@@ -30,6 +31,10 @@ sub fname_SBE2std($)
 	return 'salin' 		if /^sal00/;
 	return 'alt_salin' 	if /^sal11/;
 	return 'elapsed'	if /^timeS/;
+	return 'sigma0' 	if /^sigma.*00/;
+	return 'alt_sigma0' if /^sigma.*11/;
+	return 'rho0' 		if /^density00/;
+	return 'alt_rho0'	if /^density11/;
 	
 	if (/^t090/) {											# temperatures with different scales
 		croak("$0: inconsistent temperature scales\n")
@@ -53,6 +58,30 @@ sub fname_SBE2std($)
 			if defined($P{ITS}) && ($P{ITS} != 68);
 		&antsAddParams('ITS',68); $P{ITS} = 68;
 		return 'alt_temp';
+	}
+
+	if (/^potemp090/) {											# potential temperatures with different scales
+		croak("$0: inconsistent temperature scales\n")
+			if defined($P{ITS}) && ($P{ITS} != 90);
+		&antsAddParams('ITS',90); $P{ITS} = 90;
+		return 'theta0';
+	} elsif (/^potemp068/) {
+		croak("$0: inconsistent temperature scales\n")
+			if defined($P{ITS}) && ($P{ITS} != 68);
+		&antsAddParams('ITS',68); $P{ITS} = 68;
+		return 'theta0';
+	}
+		
+	if (/^potemp190/) {
+		croak("$0: inconsistent temperature scales\n")
+			if defined($P{ITS}) && ($P{ITS} != 90);
+		&antsAddParams('ITS',90); $P{ITS} = 90;
+		return 'alt_theta0';
+	} elsif (/^potemp168/) {
+		croak("$0: inconsistent temperature scales\n")
+			if defined($P{ITS}) && ($P{ITS} != 68);
+		&antsAddParams('ITS',68); $P{ITS} = 68;
+		return 'alt_theta0';
 	}
 
 	if (m{^c0S/m}) {										# conductivity with different units
@@ -102,6 +131,26 @@ sub fname_SBE($)
 			if defined($P{ITS}) && ($P{ITS} != 90);
 		&antsAddParams('ITS',90); $P{ITS} = 90;
 	} elsif (/^t168/) {
+		croak("$0: inconsistent temperature scales\n")
+			if defined($P{ITS}) && ($P{ITS} != 68);
+		&antsAddParams('ITS',68); $P{ITS} = 68;
+	}
+
+	if (/^potemp090/) {
+		croak("$0: inconsistent temperature scales\n")
+			if defined($P{ITS}) && ($P{ITS} != 90);
+		&antsAddParams('ITS',90); $P{ITS} = 90;
+	} elsif (/^potemp068/) {
+		croak("$0: inconsistent temperature scales\n")
+			if defined($P{ITS}) && ($P{ITS} != 68);
+		&antsAddParams('ITS',68); $P{ITS} = 68;
+	}
+		
+	if (/^potemp190/) {
+		croak("$0: inconsistent temperature scales\n")
+			if defined($P{ITS}) && ($P{ITS} != 90);
+		&antsAddParams('ITS',90); $P{ITS} = 90;
+	} elsif (/^potemp168/) {
 		croak("$0: inconsistent temperature scales\n")
 			if defined($P{ITS}) && ($P{ITS} != 68);
 		&antsAddParams('ITS',68); $P{ITS} = 68;

@@ -2,9 +2,9 @@
 #======================================================================
 #                    A N T S I O . P L 
 #                    doc: Fri Jun 19 19:22:51 1998
-#                    dlm: Thu Mar  5 12:57:33 2015
+#                    dlm: Sun Sep 27 16:06:45 2015
 #                    (c) 1998 A.M. Thurnherr
-#                    uE-Info: 206 0 NIL 0 0 70 2 2 4 NIL ofnI
+#                    uE-Info: 209 33 NIL 0 0 70 2 2 4 NIL ofnI
 #======================================================================
 
 # HISTORY:
@@ -203,6 +203,10 @@
 #				  - removed antsPadIn flag (made it always be true)
 #	Aug  7, 2014: - allow optional % in param name in &antsFileScanParam()
 #	Oct 29, 2014: - implemented abbreviated Layout and %PARAM definitions
+#	Sep 27, 2015: - BUG: antsDeps() accumulate with multiple input files; solution is to make sure that
+#						 antsCheckDeps() is called whenever a new input file has been read for the first
+#						 time (as in [list]), because antsCheckDeps() deletes the dependencies after
+#						 checking
 
 # GENERAL NOTES:
 #	- %P was named without an ants-prefix because associative arrays
@@ -285,12 +289,12 @@ sub antsActivateOut()
 
   sub antsCheckDeps()
   {
+#	  print(STDERR "checking dependencies of file $infile (deps = @antsDeps)\n");
+	  return unless (@antsDeps);					# no dependency info
+	  return if ($opt_D);							# suppressed by user
+
 	  my($infile) = @_ ? $_[0] : $ARGV; 			# default: check current input
 	  my($indir) = ($infile =~ m{^(.*)/[^/]*$});
-#	  print(STDERR "checking dependencies of file $infile (deps = @antsDeps)\n");
-	  
-	  return if ($opt_D);							# suppress
-	  return unless (@antsDeps);					# no dependency info
 	  return if defined($indir) && $indir ne '.';	# not in current directory
 	  
 	  my(@stat) = stat($infile);					# get time
@@ -306,7 +310,8 @@ sub antsActivateOut()
 			  &antsInfo("WARNING: dependency $antsDeps[$d] (&, possibly, others) not found");
 			  $warned = 1;
 		  }
-	  }   
+	  }
+	  undef(@antsDeps);								# don't check again
   }
 } # static scope
 
