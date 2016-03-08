@@ -1,9 +1,9 @@
 #======================================================================
 #                    A N T S N C . P L 
 #                    doc: Mon Jul 17 11:59:37 2006
-#                    dlm: Tue Jul 21 21:50:44 2009
+#                    dlm: Fri Jan 15 10:17:51 2016
 #                    (c) 2006 A.M. Thurnherr
-#                    uE-Info: 24 54 NIL 0 0 72 2 2 4 NIL ofnI
+#                    uE-Info: 25 56 NIL 0 0 72 2 2 4 NIL ofnI
 #======================================================================
 
 # ANTS netcdf library
@@ -22,6 +22,7 @@
 #	Jul 16, 2008: - remove \0s from strings in NC_stringify
 #	Mar 20, 2008: - added progress output to NC_stringify
 #	Jul 21, 2009: - allowed for suppression of %PARAMs
+#	Jan 15, 2016: - BUG: %DEPS pseudo-%PARAM was encoded
 
 # NOTES:
 #	- multi-valued attribs are not loaded by getInfo()
@@ -282,7 +283,7 @@ sub NC_writeMData($$$)
 			next unless defined($P{$anm});
 			next if ($anm eq 'FILENAME' || $anm eq 'DIRNAME' || # skip pseudo 
 					 $anm eq 'BASENAME' || $anm eq 'EXTN' ||
-					 $anm eq 'PATHNAME' || 
+					 $anm eq 'PATHNAME' || $anm eq 'DEPS' ||
 					 $anm eq 'RECNO'	|| $anm eq 'LINENO');
 			next if $attrDone{$anm};
 			if (numberp($P{$anm}) || lc($P{$anm}) eq nan) {

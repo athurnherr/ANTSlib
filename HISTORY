@@ -1,9 +1,9 @@
 #======================================================================
 #                    H I S T O R Y 
 #                    doc: Thu May  7 13:12:05 2015
-#                    dlm: Mon Oct 12 16:34:10 2015
+#                    dlm: Tue Mar  8 15:53:24 2016
 #                    (c) 2015 A.M. Thurnherr
-#                    uE-Info: 30 52 NIL 0 0 70 0 2 4 NIL ofnI
+#                    uE-Info: 43 23 NIL 0 0 70 0 2 4 NIL ofnI
 #======================================================================
 
 May  7, 2015:
@@ -28,3 +28,18 @@ Jun 12, 2015:
 Oct 12, 2015:
 	- V6.2 [ants.pl] [.hg/hgrc] 
 	- published on Mercurial server for LADCP_w V1.0
+
+Nov 19, 2015:
+	- [librand.pl] created
+
+Dec 30, 2015:
+	- [libstats.pl] added log_avg(), noise_avg()
+
+Jan 15, 2016:
+	- [antsio.pl] minor bug
+	- [antsnc.pl] minor bug
+
+Mar  8, 2016:
+	- updated [HISTORY]
+	- V6.3 [ants.pl] [.hg/hgrc] 
+

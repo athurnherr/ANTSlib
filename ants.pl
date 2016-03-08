@@ -2,9 +2,9 @@
 #======================================================================
 #                    A N T S . P L 
 #                    doc: Fri Jun 19 14:01:06 1998
-#                    dlm: Mon Oct 12 16:30:36 2015
+#                    dlm: Tue Mar  8 15:53:49 2016
 #                    (c) 1998 A.M. Thurnherr
-#                    uE-Info: 23 21 NIL 0 0 72 2 2 4 NIL ofnI
+#                    uE-Info: 19 51 NIL 0 0 72 2 2 4 NIL ofnI
 #======================================================================
 
 # HISTORY:
@@ -16,11 +16,12 @@
 #  Oct 29, 2014: - added $antsLibVersion with compile-time version check (V6.0)
 #  May 17, 2015: - updated to V6.1
 #  Oct 12, 2015: - updated to V6.2 (for LADCP_w 1.0)
+#  Mar  8, 2016: - updated to V6.3 (for LADCP_w 1.2)
 
 exec($ENV{ANTS_PERL},$0,@ARGV),die("$ENV{ANTS_PERL}: $!")
     if (defined($ENV{ANTS_PERL}) && $^X ne $ENV{ANTS_PERL});
 
-$antsLibVersion = 6.2;
+$antsLibVersion = 6.3;
 die(sprintf("$0: obsolete library V%.1f; V%.1f required\n",
 	$antsLibVersion,$antsMinLibVersion))
 		if (!defined($antsMinLibVersion) || $antsMinLibVersion>$antsLibVersion);

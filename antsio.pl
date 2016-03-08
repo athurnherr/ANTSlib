@@ -2,9 +2,9 @@
 #======================================================================
 #                    A N T S I O . P L 
 #                    doc: Fri Jun 19 19:22:51 1998
-#                    dlm: Sun Sep 27 16:06:45 2015
+#                    dlm: Fri Jan 15 10:15:22 2016
 #                    (c) 1998 A.M. Thurnherr
-#                    uE-Info: 209 33 NIL 0 0 70 2 2 4 NIL ofnI
+#                    uE-Info: 212 33 NIL 0 0 70 2 2 4 NIL ofnI
 #======================================================================
 
 # HISTORY:
@@ -207,6 +207,9 @@
 #						 antsCheckDeps() is called whenever a new input file has been read for the first
 #						 time (as in [list]), because antsCheckDeps() deletes the dependencies after
 #						 checking
+#	Jan 15, 2016: - BUG: antsCheckDeps() cannot delete the dependencies after checking because,
+#						 otherwise, dependencies are not inherited => presumably, Sep 27 bug fix has been
+#						 reversed
 
 # GENERAL NOTES:
 #	- %P was named without an ants-prefix because associative arrays
@@ -311,7 +314,7 @@ sub antsActivateOut()
 			  $warned = 1;
 		  }
 	  }
-	  undef(@antsDeps);								# don't check again
+#	  undef(@antsDeps);								# don't check again; BUG: 01/15/2016
   }
 } # static scope
 
