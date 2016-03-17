@@ -1,9 +1,9 @@
 #======================================================================
 #                    L I B G M T . P L 
 #                    doc: Sun Jun 14 13:45:47 2015
-#                    dlm: Wed Mar 16 16:12:38 2016
+#                    dlm: Thu Mar 17 12:19:42 2016
 #                    (c) 2015 A.M. Thurnherr
-#                    uE-Info: 188 49 NIL 0 0 72 2 2 4 NIL ofnI
+#                    uE-Info: 45 48 NIL 0 0 72 2 2 4 NIL ofnI
 #======================================================================
 
 # perl implementation of /Data/Makefiles/Makefile.GMT
@@ -41,9 +41,22 @@
 #	Jul 26, 2015: - added usage documentation
 #				  - simplified GMT_unitcoords()
 #	Jul 28, 2015: - added GMT_setAnnotFontSize(), GMT_psscale()
-#	Mar 16, 2016: - began adaptation to GMT5
+#	Mar 16, 2016: - adapted to GMT5
+#	Mar 17, 2016: - added check for gmt5 on load
 
 $DEBUG = 0;
+
+#----------------------------------------------------------------------
+# Make sure gmt5 is installed
+#----------------------------------------------------------------------
+
+if (`which gmt` eq '') {
+	if (`which psxy` eq '') {
+		croak("$0: [libGMT.pl] gmt5 required, please install\n");
+	} else {
+		croak("$0: [libGMT.pl] gmt5 required (gmt4 installed on the system), please upgrade\n");
+	}
+}
 
 #----------------------------------------------------------------------
 # Library
