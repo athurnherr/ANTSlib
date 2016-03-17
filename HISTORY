@@ -1,9 +1,9 @@
 #======================================================================
 #                    H I S T O R Y 
 #                    doc: Thu May  7 13:12:05 2015
-#                    dlm: Tue Mar  8 15:53:24 2016
+#                    dlm: Thu Mar 17 07:48:16 2016
 #                    (c) 2015 A.M. Thurnherr
-#                    uE-Info: 43 23 NIL 0 0 70 0 2 4 NIL ofnI
+#                    uE-Info: 51 37 NIL 0 0 72 0 2 4 NIL ofnI
 #======================================================================
 
 May  7, 2015:
@@ -42,4 +42,12 @@ Jan 15, 2016:
 Mar  8, 2016:
 	- updated [HISTORY]
 	- V6.3 [ants.pl] [.hg/hgrc] 
+
+Mar 16, 2016:
+	- V6.4 [ants.pl] [.hg/hgrc] 
+	- adapted [libGMT.pl] to gmt5 => [libGMT4.pl]
+
+Mar 17, 2016:
+	- published for LADCP_w V1.2beta5
+	
 
