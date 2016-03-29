@@ -1,9 +1,9 @@
 #======================================================================
 #                    L I B S B E . P L 
 #                    doc: Mon Nov  3 12:42:14 2014
-#                    dlm: Tue Sep 29 11:01:30 2015
+#                    dlm: Sat Mar 19 18:17:54 2016
 #                    (c) 2014 A.M. Thurnherr
-#                    uE-Info: 45 54 NIL 0 0 72 2 2 4 NIL ofnI
+#                    uE-Info: 18 71 NIL 0 0 72 2 2 4 NIL ofnI
 #======================================================================
 
 # HISTORY:
@@ -12,6 +12,10 @@
 #	Jun 17, 2015: - ensured numeric retvals of SBE_parseheader are returned as numbers
 #	Jun 18, 2015: - BUG: binary code had several bugs
 #	Sep 29, 2015: - added potemp and sigma standard field names
+#	Mar 19, 2016: - BUG: conductivity unit checking on input had multiple bugs
+#				  - solution for files with multiple conductivity units: ignore
+#				    all conducitivities with units not equal to the first cond var
+#				  - added $libSBE_quiet to suppress diagnostic messages
 
 #----------------------------------------------------------------------
 # fname_SBE2std($)
@@ -37,74 +41,74 @@ sub fname_SBE2std($)
 	return 'alt_rho0'	if /^density11/;
 	
 	if (/^t090/) {											# temperatures with different scales
-		croak("$0: inconsistent temperature scales\n")
+		return undef
 			if defined($P{ITS}) && ($P{ITS} != 90);
 		&antsAddParams('ITS',90); $P{ITS} = 90;
 		return 'temp';
 	} elsif (/^t068/) {
-		croak("$0: inconsistent temperature scales\n")
+		return undef
 			if defined($P{ITS}) && ($P{ITS} != 68);
 		&antsAddParams('ITS',68); $P{ITS} = 68;
 		return 'temp';
 	}
 		
 	if (/^t190/) {
-		croak("$0: inconsistent temperature scales\n")
+		return undef
 			if defined($P{ITS}) && ($P{ITS} != 90);
 		&antsAddParams('ITS',90); $P{ITS} = 90;
 		return 'alt_temp';
 	} elsif (/^t168/) {
-		croak("$0: inconsistent temperature scales\n")
+		return undef
 			if defined($P{ITS}) && ($P{ITS} != 68);
 		&antsAddParams('ITS',68); $P{ITS} = 68;
 		return 'alt_temp';
 	}
 
 	if (/^potemp090/) {											# potential temperatures with different scales
-		croak("$0: inconsistent temperature scales\n")
+		return undef
 			if defined($P{ITS}) && ($P{ITS} != 90);
 		&antsAddParams('ITS',90); $P{ITS} = 90;
 		return 'theta0';
 	} elsif (/^potemp068/) {
-		croak("$0: inconsistent temperature scales\n")
+		return undef
 			if defined($P{ITS}) && ($P{ITS} != 68);
 		&antsAddParams('ITS',68); $P{ITS} = 68;
 		return 'theta0';
 	}
 		
 	if (/^potemp190/) {
-		croak("$0: inconsistent temperature scales\n")
+		return undef
 			if defined($P{ITS}) && ($P{ITS} != 90);
 		&antsAddParams('ITS',90); $P{ITS} = 90;
 		return 'alt_theta0';
 	} elsif (/^potemp168/) {
-		croak("$0: inconsistent temperature scales\n")
+		return undef
 			if defined($P{ITS}) && ($P{ITS} != 68);
 		&antsAddParams('ITS',68); $P{ITS} = 68;
 		return 'alt_theta0';
 	}
 
 	if (m{^c0S/m}) {										# conductivity with different units
-		croak("$0: inconsistent conductivity units\n")
-			if defined($P{cond.unit}) && ($P{cond.unit} ne 'S/m');
-		&antsAddParams('cond.unit','S/m'); $P{cond.unit} = 'S/m';
+		return undef
+			if defined($P{'cond.unit'}) && ($P{'cond.unit'} ne 'S/m');
+		&antsAddParams('cond.unit','S/m');
 		return 'cond';
 	} elsif (m{^c0mS/cm}) {
-		croak("$0: inconsistent conductivity units\n")
-			if defined($P{cond.unit}) && ($P{cond.unit} != 'mS/cm');
-		&antsAddParams('cond.unit','mS/cm'); $P{cond.unit} = 'mS/cm';
+		return undef
+			if defined($P{'cond.unit'}) && ($P{'cond.unit'} ne 'mS/cm');
+		&antsAddParams('cond.unit','mS/cm');
 		return 'cond';
 	}
 		
 	if (m{^c1S/m}) {
-		croak("$0: inconsistent conductivity units\n")
-			if defined($P{cond.unit}) && ($P{cond.unit} != 'S/m');
-		&antsAddParams('cond.unit','S/m'); $P{cond.unit} = 'S/m';
+		return undef
+			if defined($P{'cond.unit'}) && ($P{'cond.unit'} ne 'S/m');
+		&antsAddParams('cond.unit','S/m');
 		return 'alt_cond';
 	} elsif (m{^c1mS/cm}) {
-		croak("$0: inconsistent conductivity units\n")
-			if defined($P{cond.unit}) && ($P{cond.unit} != 'mS/cm');
-		&antsAddParams('cond.unit','mS/cm'); $P{cond.unit} = 'mS/cm';
+		return undef
+			if defined($P{'cond.unit'}) && ($P{'cond.unit'} ne 'mS/cm');
+		&antsAddParams('cond.unit','mS/cm');
 		return 'alt_cond';
 	}
 
@@ -117,63 +121,63 @@ sub fname_SBE($)
 	$_ = $_[0];
 
 	if (/^t090/) {											# temperatures with different scales
-		croak("$0: inconsistent temperature scales\n")
+		return undef
 			if defined($P{ITS}) && ($P{ITS} != 90);
 		&antsAddParams('ITS',90); $P{ITS} = 90;
 	} elsif (/^t068/) {
-		croak("$0: inconsistent temperature scales\n")
+		return undef
 			if defined($P{ITS}) && ($P{ITS} != 68);
 		&antsAddParams('ITS',68); $P{ITS} = 68;
 	}
 		
 	if (/^t190/) {
-		croak("$0: inconsistent temperature scales\n")
+		return undef
 			if defined($P{ITS}) && ($P{ITS} != 90);
 		&antsAddParams('ITS',90); $P{ITS} = 90;
 	} elsif (/^t168/) {
-		croak("$0: inconsistent temperature scales\n")
+		return undef
 			if defined($P{ITS}) && ($P{ITS} != 68);
 		&antsAddParams('ITS',68); $P{ITS} = 68;
 	}
 
 	if (/^potemp090/) {
-		croak("$0: inconsistent temperature scales\n")
+		return undef
 			if defined($P{ITS}) && ($P{ITS} != 90);
 		&antsAddParams('ITS',90); $P{ITS} = 90;
 	} elsif (/^potemp068/) {
-		croak("$0: inconsistent temperature scales\n")
+		return undef
 			if defined($P{ITS}) && ($P{ITS} != 68);
 		&antsAddParams('ITS',68); $P{ITS} = 68;
 	}
 		
 	if (/^potemp190/) {
-		croak("$0: inconsistent temperature scales\n")
+		return undef
 			if defined($P{ITS}) && ($P{ITS} != 90);
 		&antsAddParams('ITS',90); $P{ITS} = 90;
 	} elsif (/^potemp168/) {
-		croak("$0: inconsistent temperature scales\n")
+		return undef
 			if defined($P{ITS}) && ($P{ITS} != 68);
 		&antsAddParams('ITS',68); $P{ITS} = 68;
 	}
 
 	if (m{^c0S/m}) {										# conductivity with different units
-		croak("$0: inconsistent conductivity units\n")
-			if defined($P{cond.unit}) && ($P{cond.unit} ne 'S/m');
-		&antsAddParams('cond.unit','S/m'); $P{cond.unit} = 'S/m';
+		return undef
+			if defined($P{'cond.unit'}) && ($P{'cond.unit'} ne 'S/m');
+		&antsAddParams('cond.unit','S/m');
 	} elsif (m{^c0mS/cm}) {
-		croak("$0: inconsistent conductivity units\n")
-			if defined($P{cond.unit}) && ($P{cond.unit} != 'mS/cm');
-		&antsAddParams('cond.unit','mS/cm'); $P{cond.unit} = 'mS/cm';
+		return undef
+			if defined($P{'cond.unit'}) && ($P{'cond.unit'} ne 'mS/cm');
+		&antsAddParams('cond.unit','mS/cm');
 	}
 		
 	if (m{^c1S/m}) {
-		croak("$0: inconsistent conductivity units\n")
-			if defined($P{cond.unit}) && ($P{cond.unit} != 'S/m');
-		&antsAddParams('cond.unit','S/m'); $P{cond.unit} = 'S/m';
+		return undef
+			if defined($P{'cond.unit'}) && ($P{'cond.unit'} ne 'S/m');
+		&antsAddParams('cond.unit','S/m');
 	} elsif (m{^c1mS/cm}) {
-		croak("$0: inconsistent conductivity units\n")
-			if defined($P{cond.unit}) && ($P{cond.unit} != 'mS/cm');
-		&antsAddParams('cond.unit','mS/cm'); $P{cond.unit} = 'mS/cm';
+		return undef
+			if defined($P{'cond.unit'}) && ($P{'cond.unit'} ne 'mS/cm');
+		&antsAddParams('cond.unit','mS/cm');
 	}
 
 	return $_;
@@ -211,7 +215,10 @@ sub SBE_checkTime($$)
 #----------------------------------------------------------------------
 # sub SBE_parseHeader(FP,std-field-names,time-check)
 #	- parse header information
+#	- set @ignore_input_fields with fields with inconsistent units
 #----------------------------------------------------------------------
+
+my(@ignore_input_fields);								# in reverse order!!!
 
 sub SBE_parseHeader($$$)
 {
@@ -227,8 +234,14 @@ sub SBE_parseHeader($$$)
 		$nfields = $',next if ($hdr =~ /nquan = /); 	# Layout
 		$nrecs = $',next if ($hdr =~ /nvalues = /);
 		if ($hdr =~ /name (\d+) = ([^:]+):/) {
-			$antsNewLayout[$1] = $sfn ? fname_SBE2std($2) : fname_SBE($2);
-			next;
+			my($fn) = $sfn ? fname_SBE2std($2) : fname_SBE($2);
+			if (defined($fn)) {
+				push(@antsNewLayout,$fn);
+			} else {
+				unshift(@ignore_input_fields,$1);
+				&antsInfo("CNV input field \#$1 ($2) ignored, because of unit inconsistency")
+					unless defined($libSBE_quiet);
+			}
 		}
 		    
 		SBE_checkTime($1,$tc),next 						# sanity time check
@@ -314,8 +327,11 @@ sub SBEin($$$$$)
 	if ($ftype eq 'ascii') {
 		until ($#ants_>=0 && &antsBufFull()) {
 			return undef unless (@add = &antsFileIn($FP));
-			for (my($f)=0; $f<$nf; $f++) {
+			for (my($f)=0; $f<=$nf; $f++) {
 				$add[$f] = nan if ($add[$f] == $bad);
+			}
+			foreach my $sf (@ignore_input_fields) {
+				splice(@add,$sf,1);
 			}
 			push(@ants_,[@add]);
 		}
@@ -341,6 +357,9 @@ sub SBEin($$$$$)
 		until ($#ants_>=0 && &antsBufFull()) {					# copy next out
 			return undef unless ($nextR < $nr);
 			@add = @dta[$nextR*$nf..($nextR+1)*$nf-1];
+			foreach my $sf (@ignore_input_fields) {
+				splice(@add,$sf,1);
+			}
 			push(@ants_,[@add]);
 			$nextR++;
         }
