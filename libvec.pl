@@ -1,9 +1,9 @@
 #======================================================================
 #                    L I B V E C . P L 
 #                    doc: Sat Mar 20 12:50:32 1999
-#                    dlm: Sun Jul  6 15:33:50 2014
+#                    dlm: Fri Jul 29 15:26:45 2016
 #                    (c) 1999 A.M. Thurnherr
-#                    uE-Info: 150 24 NIL 0 0 70 2 2 4 NIL ofnI
+#                    uE-Info: 42 32 NIL 0 0 70 2 2 4 NIL ofnI
 #======================================================================
 
 # HISTORY:
@@ -36,6 +36,10 @@
 #	Nov 27, 2013: - added &angle_pos(), mag_heading()
 #	Mar  3, 2014: - made deg(), rad() handle nans
 #	Mar  4, 2014: - made some angle funs handle nans
+#	Jul 29, 2016: - BUG: mag_heading was inconsistent with ADCP headings
+#						 (previous version only used for 2014 CLIVAR P06
+#						 processing with IMP data with confused coord
+#						 system)
 
 require "$ANTS/libPOSIX.pl";	# acos()
 
@@ -146,13 +150,17 @@ sub vel_v(@) { return &cartesian_y($_[0],90-$_[1]); }
 #----------------------------------------------------------------------
 # magnetic heading from magnetometers
 #	- atan2 handles all the singularities
-#	- without the minus, the heading turns the wrong way when comparing
-#	  IMP and WH300 data
+#	- the current version (7/29/2016) was verified with ECOGIG EN586
+#	  data, where the IMP Mk.3 rev 2 (i.e. with coordinate mapping
+#	  in the sensor board) on profiles 1-15 was accidentally installed
+#	  in a consistent orientation with the DL (very similar pitch/roll
+#	  measured by both instruments) => heading is directly comparable
 #----------------------------------------------------------------------
 
 sub mag_heading($$)
 {
-    return angle_pos(deg(-atan2($_[0],$_[1])));
+#    return angle_pos(deg(-atan2($_[0],$_[1])));	# used for 2014 CLIVAR P06 IMP processing with confused coord systems
+	return angle_pos(deg(atan2($_[1],$_[0])));
 }
 
 #----------------------------------------------------------------------

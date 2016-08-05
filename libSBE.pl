@@ -1,9 +1,9 @@
 #======================================================================
 #                    L I B S B E . P L 
 #                    doc: Mon Nov  3 12:42:14 2014
-#                    dlm: Sat Mar 19 18:17:54 2016
+#                    dlm: Tue May 31 13:12:22 2016
 #                    (c) 2014 A.M. Thurnherr
-#                    uE-Info: 18 71 NIL 0 0 72 2 2 4 NIL ofnI
+#                    uE-Info: 287 43 NIL 0 0 72 2 2 4 NIL ofnI
 #======================================================================
 
 # HISTORY:
@@ -16,6 +16,7 @@
 #				  - solution for files with multiple conductivity units: ignore
 #				    all conducitivities with units not equal to the first cond var
 #				  - added $libSBE_quiet to suppress diagnostic messages
+#	May 31, 2016: - made successfully decoding lat/lon optional
 
 #----------------------------------------------------------------------
 # fname_SBE2std($)
@@ -267,19 +268,25 @@ sub SBE_parseHeader($$$)
 	
 		if (($hdr =~ /Latitude\s*[:=]\s*/) && !defined($lat)) {
 			($deg,$min,$NS) = split(/\s+/,$');
-			croak("$0: cannot decode latitude ($')\n")
-				unless ($NS eq 'N' || $NS eq 'S');
-			$lat = $deg + $min/60;
-			$lat *= -1 if ($NS eq 'S');
+			if ($NS eq 'N' || $NS eq 'S') {
+				$lat = $deg + $min/60;
+				$lat *= -1 if ($NS eq 'S');
+			} else {
+				print(STDERR "$0: WARNING: cannot decode latitude ($')\n");
+				$lat = nan;
+			}
 			&antsAddParams('lat',$lat);
 			next;
 		}
 		if (($hdr =~ /Longitude\s*[:=]\s*/) && !defined($lon)) {
 			($deg,$min,$EW) = split(/\s+/,$');
-			croak("$0: cannot decode longitude ($')\n")
-				unless ($EW eq 'E' || $EW eq 'W');
-			$lon = $deg + $min/60;
-			$lon *= -1 if ($EW eq 'W');
+			if ($EW eq 'E' || $EW eq 'W') {
+				$lon = $deg + $min/60;
+				$lon *= -1 if ($EW eq 'W');
+			} else {
+				print(STDERR "$0: WARNING: cannot decode longitude ($')\n");
+				$lon= nan;
+			}
 			&antsAddParams('lon',$lon);
 			next;
 		}

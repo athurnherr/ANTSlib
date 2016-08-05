@@ -2,9 +2,9 @@
 #======================================================================
 #                    A N T S U T I L S . P L 
 #                    doc: Fri Jun 19 23:25:50 1998
-#                    dlm: Fri Jun 12 07:31:08 2015
+#                    dlm: Wed May 25 12:16:39 2016
 #                    (c) 1998 A.M. Thurnherr
-#                    uE-Info: 103 66 NIL 0 0 70 10 2 4 NIL ofnI
+#                    uE-Info: 104 31 NIL 0 0 70 10 2 4 NIL ofnI
 #======================================================================
 
 # Miscellaneous auxillary functions
@@ -101,6 +101,7 @@
 #	Jul 22, 2014: - removed support for antsFnrNegativeOk
 #	May 18, 2015: - added antsFindParam()
 #	Jun 21, 2015: - added antsParam(), modified antsRequireParam()
+#	May 12, 2016: - added &div2() to prevent division by zero errors
 
 # fnr notes:
 #	- matches field names starting with the string given, i.e. "sig" is
@@ -146,6 +147,9 @@ sub numbersp(@)
 
 sub equal($$)
 { return (@_ >= 2) && (abs($_[0]-$_[1]) < $PRACTICALLY_ZERO); }
+
+sub div2($$)
+{ return $_[1] ? $_[0]/$_[1] : inf; }
 
 #----------------------------------------------------------------------
 # check whether given val is member of a set
