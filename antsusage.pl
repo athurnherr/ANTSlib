@@ -2,9 +2,9 @@
 #======================================================================
 #                    A N T S U S A G E . P L 
 #                    doc: Fri Jun 19 13:43:05 1998
-#                    dlm: Fri May 15 18:46:22 2015
+#                    dlm: Wed Aug 24 15:06:44 2016
 #                    (c) 1998 A.M. Thurnherr
-#                    uE-Info: 161 75 NIL 0 0 70 2 2 4 NIL ofnI
+#                    uE-Info: 163 46 NIL 0 0 70 2 2 4 NIL ofnI
 #======================================================================
 
 # HISTORY:
@@ -159,6 +159,8 @@
 #	Jan 30, 2015: - added &antsFunOpt()
 #	Jan 31, 2015: - made it work
 #	May 15, 2015: - changed (()) semantics to expand only to existing files
+#	Aug 24, 2016: - removed -ve number heuristics (unshifting a -- under certain conditions),
+#				  	which I believe is ancient
 
 # NOTES:
 #	- ksh expands {}-arguments with commas in them!!! Use + instead
@@ -208,7 +210,10 @@ sub antsUsage($$@) {									# handle options
 	&antsUsageError()									# no args && tty stdin
 		if (!$antsInteractive && $min == 0 && @ARGV == 0 && -t 0);
 	
-	unshift(@ARGV,'--') if ($ARGV[0] =~ /^-\d/);		# -ve number heuristics
+#		The following line of code, disabled Aug 24, 2016, prevents
+#		numerical options from working, e.g. in LADCP_w.
+#
+#	unshift(@ARGV,'--') if ($ARGV[0] =~ /^-\d/);		# -ve number heuristics
 
 	chomp($0 = `basename $0`);							# set scriptname
 	chop($d = `date +%D`);								# build header line

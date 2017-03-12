@@ -1,9 +1,9 @@
 #======================================================================
 #                    L I B S B E . P L 
 #                    doc: Mon Nov  3 12:42:14 2014
-#                    dlm: Tue May 31 13:12:22 2016
+#                    dlm: Fri Mar 10 09:46:42 2017
 #                    (c) 2014 A.M. Thurnherr
-#                    uE-Info: 287 43 NIL 0 0 72 2 2 4 NIL ofnI
+#                    uE-Info: 20 55 NIL 0 0 72 2 2 4 NIL ofnI
 #======================================================================
 
 # HISTORY:
@@ -17,6 +17,7 @@
 #				    all conducitivities with units not equal to the first cond var
 #				  - added $libSBE_quiet to suppress diagnostic messages
 #	May 31, 2016: - made successfully decoding lat/lon optional
+#	Mar 10, 2017: - made lat/lon decoding more flexible
 
 #----------------------------------------------------------------------
 # fname_SBE2std($)
@@ -271,6 +272,8 @@ sub SBE_parseHeader($$$)
 			if ($NS eq 'N' || $NS eq 'S') {
 				$lat = $deg + $min/60;
 				$lat *= -1 if ($NS eq 'S');
+			} elsif (!defined($NS) && abs($deg)<=90 && ($min >= 0) && ($min <= 60)) {
+				$lat = $deg + $min/60;
 			} else {
 				print(STDERR "$0: WARNING: cannot decode latitude ($')\n");
 				$lat = nan;
@@ -283,6 +286,8 @@ sub SBE_parseHeader($$$)
 			if ($EW eq 'E' || $EW eq 'W') {
 				$lon = $deg + $min/60;
 				$lon *= -1 if ($EW eq 'W');
+			} elsif (!defined($EW) && abs($deg)<=360 && ($min >= 0) && ($min <= 60)) {
+				$lon = $deg + $min/60;
 			} else {
 				print(STDERR "$0: WARNING: cannot decode longitude ($')\n");
 				$lon= nan;

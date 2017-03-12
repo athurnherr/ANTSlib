@@ -2,8 +2,8 @@
 #                    A N T S E X P R S . P L 
 #					 (c) 2005 Andreas Thurnherr
 #                    doc: Sat Dec 31 18:35:33 2005
-#                    dlm: Fri May 15 20:12:34 2015
-#                    uE-Info: 183 56 NIL 0 0 70 2 2 4 NIL ofnI
+#                    dlm: Thu Mar  9 10:12:48 2017
+#                    uE-Info: 46 74 NIL 0 0 72 0 2 4 NIL ofnI
 #======================================================================
 
 # HISTORY:
@@ -43,6 +43,7 @@
 #	Feb 20, 2012: - BUG: quoting had not been implemented
 #	Mar 10, 2012: - added ${field..field} syntax to edit exprs
 #	May 15, 2015: - BUG: -S did not work with :: %PARAMs
+#	Mar  9, 2017: - removed perl 5.22 warning about re (non-quoted braces)
 
 $DEBUG = 0;
 
@@ -164,7 +165,7 @@ sub antsCompileAddrExpr($)								# subst fields/%PARAMs
 	print(STDERR "MID AddrExpr = $expr\n") if ($DEBUG);
 	$expr =~ s{\$%}{%}g;								# allow for $%param
 	$expr =~ s{\$\$}{ AnTsDoLlAr }g;					# escape
-	while ($expr =~ /\${([^}]*)}/) {					# ${field}
+	while ($expr =~ /\$\{([^}]*)\}/) {					# ${field}
 		my($fnr) = cardinalp($1) ? $1-1 : fnr($1);
 		croak("$0: unknown field $1\n") unless ($fnr >= 0);
 		$expr =~ s(\${$1})(AnTsDtArEf\[$fnr\]);
@@ -226,7 +227,7 @@ sub antsCompileEditExpr($)								# subst fields/%PARAMs
 
 	$expr =~ s{\$%}{%}g;								# allow for $%param
 	$expr =~ s{\$\$}{AnTsDoLlAr}g;						# escape
-	while ($expr =~ /\${([^}]*)\.\.([^}]*)}/) {			# ${field..field}
+	while ($expr =~ /\$\{([^}]*)\.\.([^}]*)\}/) {			# ${field..field}
 		$antsEditExprUsesFields |= 1;
 		my($ffnr) = cardinalp($1) ? $1-1 : fnr($1);
 		croak("$0: unknown field $1\n") unless ($ffnr >= 0);
@@ -241,7 +242,7 @@ sub antsCompileEditExpr($)								# subst fields/%PARAMs
 		}
 		$expr =~ s(\${$1\.\.$2})($expanded);
 	}
-	while ($expr =~ /\${([^}]*)}/) {					# ${field}
+	while ($expr =~ /\$\{([^}]*)\}/) {					# ${field}
 		$antsEditExprUsesFields |= 1;
 		my($fnr) = cardinalp($1) ? $1-1 : fnr($1);
 		croak("$0: unknown field $1\n") unless ($fnr >= 0);

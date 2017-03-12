@@ -2,9 +2,9 @@
 #======================================================================
 #                    A N T S I O . P L 
 #                    doc: Fri Jun 19 19:22:51 1998
-#                    dlm: Fri Jan 15 10:15:22 2016
+#                    dlm: Fri Mar 10 09:53:21 2017
 #                    (c) 1998 A.M. Thurnherr
-#                    uE-Info: 212 33 NIL 0 0 70 2 2 4 NIL ofnI
+#                    uE-Info: 214 71 NIL 0 0 70 2 2 4 NIL ofnI
 #======================================================================
 
 # HISTORY:
@@ -210,6 +210,8 @@
 #	Jan 15, 2016: - BUG: antsCheckDeps() cannot delete the dependencies after checking because,
 #						 otherwise, dependencies are not inherited => presumably, Sep 27 bug fix has been
 #						 reversed
+#	Sep 13, 2016: - modified &antsAddParams to make more flexible
+#	Mar 10, 2017: - BUT: antsCheckDeps() used ctime instead of mtime!!!
 
 # GENERAL NOTES:
 #	- %P was named without an ants-prefix because associative arrays
@@ -303,12 +305,12 @@ sub antsActivateOut()
 	  my(@stat) = stat($infile);					# get time
 	  return unless (@stat);						# happens on stdin?
 	  
-	  my($ctimef) = 10; my($ctime) = $stat[$ctimef];
+	  my($mtimef) = 9; my($mtime) = $stat[$mtimef];
 	  for (my($d)=0; $d<=$#antsDeps; $d++) {
 		  @stat = stat($antsDeps[$d]);
 		  if (@stat) {
-			  croak("$0: <$infile> is stale with respect to <$antsDeps[$d]>\n")
-				  unless ($stat[$ctimef] <= $ctime);
+			  croak("$0: <$infile> ($mtime) is stale with respect to <$antsDeps[$d]> ($stat[$mtime])\n")
+				  unless ($stat[$mtimef] <= $mtime);
 		  } elsif (!$warned) {
 			  &antsInfo("WARNING: dependency $antsDeps[$d] (&, possibly, others) not found");
 			  $warned = 1;
@@ -872,14 +874,19 @@ sub antsAddParams(@)							# add params
 {
 	my($i);	
 
-	$antsCurParams .= "#ANTS#PARAMS#";
+	$antsCurParams .= "#ANTS#PARAMS#";			# first, create new param spec
 	for ($i=0; $i<$#_; $i+=2) {
 		my($v) = $_[$i+1];
 		$v =~ s/\n/\\n/g;
-		$P{$_[$i]} = $v;
 		$antsCurParams .= " $_[$i]\{$v\}";
 	}
 	$antsCurParams .= "\n";
+
+	for ($i=0; $i<$#_; $i+=2) {					# then, set (overwrite) param vals
+		my($v) = $_[$i+1];
+		$v =~ s/\n/\\n/g;
+		$P{$_[$i]} = $v;
+	}
 }
 
 sub antsFileParams()							# get params from file

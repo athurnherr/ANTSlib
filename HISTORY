@@ -1,9 +1,9 @@
 #======================================================================
 #                    H I S T O R Y 
 #                    doc: Thu May  7 13:12:05 2015
-#                    dlm: Fri Aug  5 10:34:27 2016
+#                    dlm: Sun Mar 12 11:59:12 2017
 #                    (c) 2015 A.M. Thurnherr
-#                    uE-Info: 83 10 NIL 0 0 72 0 2 4 NIL ofnI
+#                    uE-Info: 108 10 NIL 0 0 72 0 2 4 NIL ofnI
 #======================================================================
 
 May  7, 2015:
@@ -82,3 +82,27 @@ Aug  5, 2016:
 	- updated [HISTORY]
 	- V6.7 [ants.pl] [.hg/hgrc] 
 
+Aug  7, 2016:
+	- improved vel_u() vel_v()
+
+Aug 24, 2016:
+	- removed ancient heuristics in [antsusage.pl]
+
+Sep 13, 2016:
+	- updated [HISTORY]
+	- made &antsAddParams() more flexible
+
+Jan 27, 2017:
+	- bug in dayNo()
+
+Mar  9, 2017:
+	- adapted [antsexprs.pl] to perl 5.22
+	- updated [HISTORY]
+
+Mar 10, 2017: 
+	- made [libSBE.pl] more flexible
+
+Mar 12, 2017:
+	- hard-linked .lsfit.poly .nminterp.linear from ../bin because these two
+	  are required by LADCP_VKE
+	- V6.8 [ants.pl] [.hg/hgrc] 

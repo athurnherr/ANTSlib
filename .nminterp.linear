@@ -1,0 +1,108 @@
+#======================================================================
+#                    . N M I N T E R P . L I N E A R 
+#                    doc: Wed Nov 22 21:01:09 2000
+#                    dlm: Thu Jan 23 13:39:13 2014
+#                    (c) 2000 A.M. Thurnherr
+#                    uE-Info: 19 61 NIL 0 0 72 2 2 4 NIL ofnI
+#======================================================================
+
+# linear interpolation for [fillgaps]
+
+# HISTORY:
+#	Apr  6, 2006: - created from [.interp.linear]
+#	Jul 28, 2006: - added xf to ISInit() args
+#	Jul 30, 2006: - added max-gap support
+#	Aug  8, 2008: - documentation
+#	Sep 23, 2011: - added support for %RECNO
+#				  - removed xv from interp() args
+#	Oct 19, 2011: - code did not work for %RECNO and trailing missing vals
+#	Jan 23, 2014: - implemented huge speedup for sparse files
+
+# NOTES:
+#	- in contrast to the [.interp.*] routines, the [.nminterp.*] routines:
+#		1) do not assume that x values increase monotonically
+#		2) can handle nans
+#		3) cannot be used with multiple buffers
+#		4) use %RECNO when xfnr==-1
+
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+#
+# THE FOLLOWING VARIABLES MUST BE SET GLOBALLY (i.e. during loading)
+#
+#	$ISOpts				string of allowed options
+#	$ISOptsUsage		usage information string for options
+#
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+$ISOpts = "";
+$ISOptsUsage = "";
+
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+#
+# &ISUsage() 	mangle parameters (options, really)
+#
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+sub ISUsage() {}
+
+#+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+#
+# &ISInit(f,xf)				init interpolation of field f
+#       f					field number
+#		xf					x field number or -1 for %RECNO
+#       <ret val>           none
+#
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+sub ISInit($$) {}
+
+#+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+#
+# &interpolate(xf,mg,f,lvr,cr)		interpolate field f
+#		xf							x field or -1 for %RECNO
+#		mg							max allowed x gap
+#		f							field number to interpolate
+#		lvr							last record with valid y val
+#		cr							current record
+#		<ret val>					interpolated value
+#
+# NB:
+#	- handle f == xf
+#	- return undef if interpolation cannot be carried out
+#	- x VALUES MAY NOT BE MONOTONIC
+#
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+{ my(@nvr);		# static: next valid record (per field)
+
+	sub interpolate($$$$$$)
+	{
+		my($xf,$mg,$f,$lvr,$cr) = @_;
+	
+		return $ants_[$cr][$xf] if ($xf == $f);
+		return $ants_[$lvr][$f] 				# edge value is ok
+			if ($xf>=0 && equal($ants_[$cr][$xf],$ants_[$lvr][$xf])) ||
+			   ($xf<0 && $cr==$lvr);
+	
+		unless ($nvr[$f] > $cr) {
+			$nvr[$f] = $cr + 1;
+			while ($nvr[$f] <= $#ants_ && !numberp($ants_[$nvr[$f]][$f])) { $nvr[$f]++; }
+		}
+	
+		return undef if ($nvr[$f] > $#ants_);
+		return undef
+			if ($xf>=0 && abs($ants_[$nvr[$f]][$xf]-$ants_[$lvr][$xf])>$mg);
+		return $ants_[$nvr[$f]][$f] 				# edge value is ok
+			if ($xf>=0 && equal($ants_[$cr][$xf],$ants_[$nvr[$f]][$xf])) ||
+			   ($xf<0 && $cr==$nvr[$f]);
+	
+		my($sc) = ($xf >= 0)
+				? ($ants_[$cr][$xf] - $ants_[$lvr][$xf]) / ($ants_[$nvr[$f]][$xf] - $ants_[$lvr][$xf])
+				: ($cr - $lvr) / ($nvr[$f] - $lvr);
+		return $ants_[$lvr][$f] + $sc * ($ants_[$nvr[$f]][$f] - $ants_[$lvr][$f]);
+	}
+} # static scope
+
+#----------------------------------------------------------------------
+
+1;

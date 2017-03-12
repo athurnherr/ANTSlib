@@ -1,9 +1,9 @@
 #======================================================================
 #                    L I B C O N V . P L 
 #                    doc: Sat Dec  4 13:03:49 1999
-#                    dlm: Thu Aug  7 09:17:59 2014
+#                    dlm: Fri Jan 27 10:47:21 2017
 #                    (c) 1999 A.M. Thurnherr
-#                    uE-Info: 203 27 NIL 0 0 70 2 2 4 NIL ofnI
+#                    uE-Info: 194 13 NIL 0 0 70 2 2 4 NIL ofnI
 #======================================================================
 
 # HISTORY:
@@ -62,6 +62,7 @@
 #	May 22, 2012: - BUG: illegal time spec error was also produced on missing seconds
 #				  - BUG: mmddyy2dec_time() did not allow for optional epoch argument
 #	Aug  7, 2014: - finally cleaned up date conversions
+#	Jan 27, 2017: - BUG: dayNO() numeric month could have leading/trailing whitespace
 
 require "$ANTS/libEOS83.pl";                        # &sigma()
 require "$ANTS/libPOSIX.pl";                        # &floor()
@@ -99,6 +100,8 @@ sub dayNo(@)										# day number, starting at 1
     my($y,$m,$d,$epoch) =
         &antsFunUsage(-3,"c..","year, month, day[, epoch]",@_);
 	$epoch = $y unless defined($epoch);
+
+	$m =~ s/\s//g;
 
 	unless (cardinalp($m)) {
 		$m = lc($m);
@@ -188,6 +191,8 @@ sub dec_time(@)										# decimal time
 	{
 		my($ds,$ts,$epoch) =
 			&antsFunUsage(-2,"..","date, hh:mm[:ss][, epoch]",@_);
+		$ds =~ s/\s//g;
+		$ts =~ s/\s//g;
 	
 		croak("$0 str2dec_time: date required\n") unless ($ds ne '');
 

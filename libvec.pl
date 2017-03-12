@@ -1,9 +1,9 @@
 #======================================================================
 #                    L I B V E C . P L 
 #                    doc: Sat Mar 20 12:50:32 1999
-#                    dlm: Fri Jul 29 15:26:45 2016
+#                    dlm: Sun Aug  7 22:06:57 2016
 #                    (c) 1999 A.M. Thurnherr
-#                    uE-Info: 42 32 NIL 0 0 70 2 2 4 NIL ofnI
+#                    uE-Info: 137 37 NIL 0 0 70 2 2 4 NIL ofnI
 #======================================================================
 
 # HISTORY:
@@ -40,6 +40,7 @@
 #						 (previous version only used for 2014 CLIVAR P06
 #						 processing with IMP data with confused coord
 #						 system)
+#	Aug  7, 2016: - made vel_u and vel_v deal with nans
 
 require "$ANTS/libPOSIX.pl";	# acos()
 
@@ -133,7 +134,8 @@ sub polar_phi(@)
 
 sub cartesian_x(@)
 {
-	my($r,$phi) = &antsFunUsage(2,"ff","<r> <phi>",@_);
+	my($r,$phi) = &antsFunUsage(2,"..","<r> <phi>",@_);
+	return nan unless numbersp($r,$phi);
 	return $r * cos($PI*$phi/180);
 }
 
@@ -141,7 +143,8 @@ sub vel_u(@) { return &cartesian_x($_[0],90-$_[1]); }
 
 sub cartesian_y(@)
 {
-	my($r,$phi) = &antsFunUsage(2,"ff","<r> <phi>",@_);
+	my($r,$phi) = &antsFunUsage(2,"..","<r> <phi>",@_);
+	return nan unless numbersp($r,$phi);
 	return $r * sin($PI*$phi/180);
 }
 

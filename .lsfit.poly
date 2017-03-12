@@ -1,0 +1,125 @@
+#======================================================================
+#                    . L S F I T . P O L Y 
+#                    doc: Wed Feb 24 09:40:06 1999
+#                    dlm: Thu Jan 10 16:47:06 2013
+#                    (c) 1999 A.M. Thurnherr
+#                    uE-Info: 118 16 NIL 0 0 72 2 2 4 NIL ofnI
+#======================================================================
+
+# What you need to provide if you wanna fit a different
+# linear model function to your data:
+#	- a number of global variables to be set during loading
+#	- a number of subs to perform admin tasks (usage, init, ...)
+#	- a sub to evaluate the basis funs at a given x value; each
+#	  y value must be stored in @A (beginning with
+#	  A[1]!!!).
+#	- the interface is documented between +++++++ lines
+
+# fit polynomial (sum of A_i x^i) to data
+# NB: - preferable to [./.lmfit.poly]
+
+# HISTORY:
+#	Jul 31, 1999: - adapted from [./.lmfit.poly]
+#	Aug 01, 1999: - changed &modelEvaluate() interface
+#	Aug 02, 1999: - added &antsDescription()
+#   Mar 17, 2001: - param->arg
+#	Jul 12, 2004: - made poly-order argument into -o option
+#	Jul 28, 2006: - Version 3.3 [HISTORY]
+#	Sep 19, 2011: - moved part of the usage code into init() to allow use in [pgram]
+#	Jan 10, 2013: - added extremum output when fitting parabola (-o 2)
+
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+#
+# THE FOLLOWING VARIABLES MUST BE SET GLOBALLY (i.e. during loading)
+#
+#	$modelOpts			string of allowed options
+#	$modelOptsUsage		usage information string for options
+#	$modelMinArgs		min # of arguments of model
+#	$modelArgsUsage		usage information string for arguments
+#
+# The following variables may be set later but not after &modelInit()
+#
+#	$modelNFit			number of params to fit in model
+#	@nameA				symbolic names of model parameters
+#
+# You should call &antsDescription() for the -c option here
+#
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+$modelOpts = "o:";
+$modelOptsUsage = "-o)rder <n>";
+$modelMinArgs = 0;
+$modelArgsUsage = "";
+
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+#
+# &modelUsage()		mangle parameters; NB: there may be `infinite' # of
+#					filenames after model arguments; this usually sets
+#					@A (the model parameters) but these can later be
+#					calculated heuristically during &modelInit()
+#
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+sub modelUsage()
+{
+	my($c);
+	
+	$modelNFit = &antsCardOpt($opt_o) + 1;						# order of polynomial
+	die("$0 (.lsfit.poly): ERROR! -o required\n")
+		unless (defined($opt_o) && $opt_o >= 0);
+	&antsUsageError() unless ($#ARGV < 0 || -r $ARGV[0]);
+}
+
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+#
+# &modelInit()		initializes model after reading of data
+#
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+sub modelInit()
+{
+	for ($c=0; $c<$modelNFit; $c++) {				# init coefficients
+		$A[$c+1] = nan;
+		$nameA[$c+1] = "c$c";						# and names
+	}
+}
+
+#+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+#
+# &modelEvaluate(idx,xfnr,vals)	evaluate polynomial basis funs at x
+#		idx				       	current index in @ants_
+#		xfnr					field number of x field
+#		vals					reference to return values (1-relative!)
+#
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+sub modelEvaluate($$$)
+{
+	my($idx,$xfnr,$valsR) = @_;
+	my($i);
+
+	$valsR->[1] = 1;
+	for ($i=2; $i<=$#{$valsR}; $i++) {
+		$valsR->[$i] = $valsR->[$i-1] * $ants_[$idx][$xfnr];
+    }
+}
+
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+# &modelCleanup()	cleans up after fitting but before output
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+sub modelCleanup() 
+{
+	return unless ($opt_o == 2);		# calculate loc of extremum on parabolic fits
+
+	my($extX) = -$A[2] / (2 * $A[3]);
+	if ($A[3] > 0) {
+		&antsInfo(".lsfit.poly: minimum at %.1f",$extX);
+	} elsif ($A[3] < 0) {
+		&antsInfo(".lsfit.poly: maximum at %.1f",$extX);
+	} else {
+		&antsInfo(".lsfit.poly: saddle point at %.1f",$extX);
+	}
+}
+
+1;
