@@ -1,9 +1,9 @@
 #======================================================================
 #                    H I S T O R Y 
 #                    doc: Thu May  7 13:12:05 2015
-#                    dlm: Sun Mar 12 11:59:12 2017
+#                    dlm: Thu Mar 16 11:49:59 2017
 #                    (c) 2015 A.M. Thurnherr
-#                    uE-Info: 108 10 NIL 0 0 72 0 2 4 NIL ofnI
+#                    uE-Info: 112 15 NIL 0 0 72 0 2 4 NIL ofnI
 #======================================================================
 
 May  7, 2015:
@@ -106,3 +106,7 @@ Mar 12, 2017:
 	- hard-linked .lsfit.poly .nminterp.linear from ../bin because these two
 	  are required by LADCP_VKE
 	- V6.8 [ants.pl] [.hg/hgrc] 
+
+Mar 15, 2017:
+	- V6.8 [ants.pl] [.hg/hgrc] 
+	- published
