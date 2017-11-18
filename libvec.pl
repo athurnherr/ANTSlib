@@ -1,9 +1,9 @@
 #======================================================================
-#                    L I B V E C . P L 
+#                    . . / L I B / L I B V E C . P L 
 #                    doc: Sat Mar 20 12:50:32 1999
-#                    dlm: Sun Aug  7 22:06:57 2016
+#                    dlm: Wed Nov 15 18:30:55 2017
 #                    (c) 1999 A.M. Thurnherr
-#                    uE-Info: 137 37 NIL 0 0 70 2 2 4 NIL ofnI
+#                    uE-Info: 44 70 NIL 0 0 70 2 2 4 NIL ofnI
 #======================================================================
 
 # HISTORY:
@@ -41,6 +41,7 @@
 #						 processing with IMP data with confused coord
 #						 system)
 #	Aug  7, 2016: - made vel_u and vel_v deal with nans
+#	Nov 15, 2017: - re-enabled usage-message (of sorts) for vel_u only
 
 require "$ANTS/libPOSIX.pl";	# acos()
 
@@ -139,7 +140,10 @@ sub cartesian_x(@)
 	return $r * cos($PI*$phi/180);
 }
 
-sub vel_u(@) { return &cartesian_x($_[0],90-$_[1]); }
+sub vel_u(@) {
+	if (@_) { return &cartesian_x($_[0],90-$_[1]); }
+	else 	{ return &cartesian_x(); }
+}
 
 sub cartesian_y(@)
 {

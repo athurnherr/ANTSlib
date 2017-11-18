@@ -2,9 +2,9 @@
 #======================================================================
 #                    A N T S I O . P L 
 #                    doc: Fri Jun 19 19:22:51 1998
-#                    dlm: Fri Mar 10 09:53:21 2017
+#                    dlm: Wed Apr  5 13:45:32 2017
 #                    (c) 1998 A.M. Thurnherr
-#                    uE-Info: 214 71 NIL 0 0 70 2 2 4 NIL ofnI
+#                    uE-Info: 215 83 NIL 0 0 70 2 2 4 NIL ofnI
 #======================================================================
 
 # HISTORY:
@@ -211,7 +211,8 @@
 #						 otherwise, dependencies are not inherited => presumably, Sep 27 bug fix has been
 #						 reversed
 #	Sep 13, 2016: - modified &antsAddParams to make more flexible
-#	Mar 10, 2017: - BUT: antsCheckDeps() used ctime instead of mtime!!!
+#	Mar 10, 2017: - BUG: antsCheckDeps() used ctime instead of mtime!!!
+#	Apr  5, 2017: - BUG: stale file mtime dependency info was not printed correctly
 
 # GENERAL NOTES:
 #	- %P was named without an ants-prefix because associative arrays
@@ -309,7 +310,7 @@ sub antsActivateOut()
 	  for (my($d)=0; $d<=$#antsDeps; $d++) {
 		  @stat = stat($antsDeps[$d]);
 		  if (@stat) {
-			  croak("$0: <$infile> ($mtime) is stale with respect to <$antsDeps[$d]> ($stat[$mtime])\n")
+			  croak("$0: <$infile> ($mtime) is stale with respect to <$antsDeps[$d]> ($stat[$mtimef])\n")
 				  unless ($stat[$mtimef] <= $mtime);
 		  } elsif (!$warned) {
 			  &antsInfo("WARNING: dependency $antsDeps[$d] (&, possibly, others) not found");

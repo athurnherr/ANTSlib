@@ -2,9 +2,9 @@
 #======================================================================
 #                    A N T S U S A G E . P L 
 #                    doc: Fri Jun 19 13:43:05 1998
-#                    dlm: Wed Aug 24 15:06:44 2016
+#                    dlm: Wed Aug 30 16:21:35 2017
 #                    (c) 1998 A.M. Thurnherr
-#                    uE-Info: 163 46 NIL 0 0 70 2 2 4 NIL ofnI
+#                    uE-Info: 164 80 NIL 0 0 70 2 2 4 NIL ofnI
 #======================================================================
 
 # HISTORY:
@@ -161,6 +161,7 @@
 #	May 15, 2015: - changed (()) semantics to expand only to existing files
 #	Aug 24, 2016: - removed -ve number heuristics (unshifting a -- under certain conditions),
 #				  	which I believe is ancient
+#	Aug 30, 2017: - BUG: new (()) semantics did not work for single-value ranges
 
 # NOTES:
 #	- ksh expands {}-arguments with commas in them!!! Use + instead
@@ -387,7 +388,7 @@ sub antsUsage($$@) {									# handle options
 	                    }
 	                }
 				} else {
-					push(@exp,"$pref$_$suff");
+					push(@exp,"$pref$_$suff") if (-f "$pref$_$suff");
 	            }
 	        }
 			close(F);

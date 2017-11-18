@@ -1,17 +1,48 @@
 #======================================================================
 #                    L I B R A N D . P L 
 #                    doc: Thu Nov 19 14:27:19 2015
-#                    dlm: Tue Mar  8 15:50:35 2016
+#                    dlm: Wed Sep  6 10:18:42 2017
 #                    (c) 2015 A.M. Thurnherr
-#                    uE-Info: 10 27 NIL 0 0 72 2 2 4 NIL ofnI
+#                    uE-Info: 17 61 NIL 0 0 70 2 2 4 NIL ofnI
 #======================================================================
 
 # HISTORY:
 #	Nov 19, 2015: - created
+#	Sep  6, 2017: - finally implemented gauss_rand()
 
-sub gauss_rand($$)
+#----------------------------------------------------------------------------------------------------
+# From info found at [http://www.design.caltech.edu/erik/Misc/Gaussian.html]
+#
+# verified with:
+#	plot '<Cat -Lrand -f =1,1,1e5 -F r=gauss_rand() | Hist  r
+#----------------------------------------------------------------------------------------------------
+
+{ my($cached);	# NB: cached values is normalized
+
+sub gauss_rand(@)
 {
-	my($mu,$sigma) = &antsFunUsage(2,'ff','mu, sigma',@_);
+	my($mu,$sigma) = &antsFunUsage(-1,'ff','[mu[,sigma]]',@_)
+		if (@_);
+	$sigma = 1 unless defined($sigma);
+	$mu	   = 0 unless defined($mu);
+
+	if (defined($cached)) {
+		my($Y) = $cached * $sigma + $mu;
+		undef($cached);
+		return $Y;
+	}
+
+	my($X1,$X2,,$w);
+	do {
+		$X1 = 2*rand() - 1;
+		$X2 = 2*rand() - 1;
+		$w  = $X1**2 + $X2**2;
+	} while ($w >= 1);
+	$w = sqrt((-2 * log($w)) / $w);
+	my($cached) = $X2 * $w;	
+	return $X1 * $w * $sigma + $mu;
+}
+
 }
 
 #----------------------------------------------------------------------------------------------------
