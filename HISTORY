@@ -1,9 +1,9 @@
 #======================================================================
 #                    H I S T O R Y 
 #                    doc: Thu May  7 13:12:05 2015
-#                    dlm: Thu Mar 16 11:49:59 2017
+#                    dlm: Mon Nov 20 10:35:43 2017
 #                    (c) 2015 A.M. Thurnherr
-#                    uE-Info: 112 15 NIL 0 0 72 0 2 4 NIL ofnI
+#                    uE-Info: 131 0 NIL 0 0 72 0 2 4 NIL ofnI
 #======================================================================
 
 May  7, 2015:
@@ -110,3 +110,23 @@ Mar 12, 2017:
 Mar 15, 2017:
 	- V6.8 [ants.pl] [.hg/hgrc] 
 	- published
+
+Apr 5, 2017:
+	- BUG: stale file mtime dependency info was not printed correctly [antsio.pl]
+
+Jul 6, 2017: 
+	- BUG: date conversion routines did not parse 1/5/12 correctly [libconv.pl]
+
+Aug 30, 2017: 
+	- BUG: new (()) semantics did not work for single-value ranges [antsusage.pl]
+
+Sep 6, 2017: 
+	- finally implemented gauss_rand() [librandpl]
+
+Nov 15, 2017: 
+	- added [libALEC.pl]
+	- [libvec.pl] re-enabled usage-message (of sorts) for vel_u only
+
+Nov 20, 2017:
+	- V6.9 [ants.pl] 
+	- cleanup of [libIMP.pl] 

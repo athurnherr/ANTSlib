@@ -1,9 +1,9 @@
 #======================================================================
 #                    L I B C O N V . P L 
 #                    doc: Sat Dec  4 13:03:49 1999
-#                    dlm: Fri Jan 27 10:47:21 2017
+#                    dlm: Thu Jul  6 15:27:13 2017
 #                    (c) 1999 A.M. Thurnherr
-#                    uE-Info: 194 13 NIL 0 0 70 2 2 4 NIL ofnI
+#                    uE-Info: 66 80 NIL 0 0 70 2 2 4 NIL ofnI
 #======================================================================
 
 # HISTORY:
@@ -62,7 +62,8 @@
 #	May 22, 2012: - BUG: illegal time spec error was also produced on missing seconds
 #				  - BUG: mmddyy2dec_time() did not allow for optional epoch argument
 #	Aug  7, 2014: - finally cleaned up date conversions
-#	Jan 27, 2017: - BUG: dayNO() numeric month could have leading/trailing whitespace
+#	Jan 27, 2017: - BUG: dayNo() numeric month could have leading/trailing whitespace
+#	Jul  6, 2017: - BUG: date conversion routines did not parse 1/5/12 correctly
 
 require "$ANTS/libEOS83.pl";                        # &sigma()
 require "$ANTS/libPOSIX.pl";                        # &floor()
@@ -225,7 +226,7 @@ sub mmddyy2dec_time(@)
 	my($time) = 0;
 	if ($ds ne '') {
 		my($yy,$mm,$dd);
-		if (length($ds) == 6) {
+		if (length($ds) == 6 && $ds =~ m{^\d+$}) {
 			$mm = substr($ds,0,2);
 			$dd = substr($ds,2,2);
 			$yy = substr($ds,4,2);
@@ -250,7 +251,7 @@ sub ddmmyy2dec_time(@)
 	my($time) = 0;
 	if ($ds ne '') {
 		my($yy,$mm,$dd);
-		if (length($ds) == 6) {
+		if (length($ds) == 6 && $ds =~ m{^\d+$}) {
 			$dd = substr($ds,0,2);
 			$mm = substr($ds,2,2);
 			$yy = substr($ds,4,2);
@@ -277,7 +278,7 @@ sub yymmdd2dec_time(@)
 	my($time) = 0;
 	if ($ds ne '') {								
 		my($yy,$mm,$dd);
-		if (length($ds) == 6) {
+		if (length($ds) == 6 && $ds =~ m{^\d+$}) {
 			$yy = substr($ds,0,2);
 			$mm = substr($ds,2,2);
 			$dd = substr($ds,4,2);
