@@ -1,9 +1,9 @@
 #======================================================================
 #                    H I S T O R Y 
 #                    doc: Thu May  7 13:12:05 2015
-#                    dlm: Mon Nov 20 10:35:43 2017
+#                    dlm: Wed Dec  6 13:06:19 2017
 #                    (c) 2015 A.M. Thurnherr
-#                    uE-Info: 131 0 NIL 0 0 72 0 2 4 NIL ofnI
+#                    uE-Info: 135 32 NIL 0 0 72 0 2 4 NIL ofnI
 #======================================================================
 
 May  7, 2015:
@@ -130,3 +130,6 @@ Nov 15, 2017:
 Nov 20, 2017:
 	- V6.9 [ants.pl] 
 	- cleanup of [libIMP.pl] 
+
+Dec  6, 2017:
+	- published [README.Publish]
