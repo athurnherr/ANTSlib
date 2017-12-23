@@ -1,9 +1,9 @@
 #======================================================================
 #                    L I B C O N V . P L 
 #                    doc: Sat Dec  4 13:03:49 1999
-#                    dlm: Thu Jul  6 15:27:13 2017
+#                    dlm: Mon Dec 18 14:27:19 2017
 #                    (c) 1999 A.M. Thurnherr
-#                    uE-Info: 66 80 NIL 0 0 70 2 2 4 NIL ofnI
+#                    uE-Info: 67 36 NIL 0 0 70 2 2 4 NIL ofnI
 #======================================================================
 
 # HISTORY:
@@ -64,6 +64,7 @@
 #	Aug  7, 2014: - finally cleaned up date conversions
 #	Jan 27, 2017: - BUG: dayNo() numeric month could have leading/trailing whitespace
 #	Jul  6, 2017: - BUG: date conversion routines did not parse 1/5/12 correctly
+#	Dec 18, 2017: - removed ambiguous-date warning
 
 require "$ANTS/libEOS83.pl";                        # &sigma()
 require "$ANTS/libPOSIX.pl";                        # &floor()
@@ -206,7 +207,7 @@ sub dec_time(@)										# decimal time
 			} elsif ($Y > 12) { 							# MM/DD/YY
 				$date_fmt = 3;
 			} else {
-				&antsInfo("str2dec_time: ambiguous date <$ds>; MM/DD/YY assumed");
+#				&antsInfo("str2dec_time: ambiguous date <$ds>; MM/DD/YY assumed");
 				$date_fmt = 3;
 	        }
 	    }

@@ -2,9 +2,9 @@
 #======================================================================
 #                    A N T S U S A G E . P L 
 #                    doc: Fri Jun 19 13:43:05 1998
-#                    dlm: Wed Aug 30 16:21:35 2017
+#                    dlm: Wed Dec 13 09:09:58 2017
 #                    (c) 1998 A.M. Thurnherr
-#                    uE-Info: 164 80 NIL 0 0 70 2 2 4 NIL ofnI
+#                    uE-Info: 167 49 NIL 0 0 70 2 2 4 NIL ofnI
 #======================================================================
 
 # HISTORY:
@@ -162,6 +162,9 @@
 #	Aug 24, 2016: - removed -ve number heuristics (unshifting a -- under certain conditions),
 #				  	which I believe is ancient
 #	Aug 30, 2017: - BUG: new (()) semantics did not work for single-value ranges
+#	Dec  9, 2017: - added -E, $antsSuppressCommonOptions
+#				  - common options cosmetics
+#	Dec 13, 2017: - BUG: common options cosmetics
 
 # NOTES:
 #	- ksh expands {}-arguments with commas in them!!! Use + instead
@@ -176,15 +179,18 @@ sub antsUsageError() {									# die with Usage error
 	}
 	if ($opt_U) {
 		print(STDERR "Options & Arguments: $antsCurUsage$_[0]\n\n" .
-			"Common Options:\n" .
+			"Common Input Options:\n" .
+	            "\t[-I)nput <field-separator>]\n" .
+				"\t[-S)elect <addr-expr>] [-N)ums f[,...]] [-H)ead <n lines>]\n" .
+				"\t[-L)oad <lib,...>]\n" .
+				"\t[allows -E)mbedded layout changes]\n\n" .
+			"Common Output Options:\n" .
 				"\t[-F)ields {%P|f|[\$@]|[f]=expr}[,...]]\n" .
 				"\t[num for-M)at] [-C)anonical numbers] [-G)eographic lat/lon]\n" .
 				"\t[-A)ctivate output] [LaTeX -T)able output]\n" .
-				"\t[-S)elect <addr-expr>] [-N)ums f[,...]] [-H)ead <n lines>]\n" .
 				"\t[-P)ass comments] [-Q)uiet (no headers)] [-X (no new header)]\n" .
 				"\t[suppress -D)ependency checks & addition of new dependencies]\n" .
-				"\t[-L)oad <lib,...>]\n" .
-	            "\t[-I)n field-sep] [-O)ut field-sep] [-R)ecord sep]\n\n" .
+	            "\t[-O)utput <field-separator>] [output -R)ecord <separator>]\n\n" .
 			"Special Argument Expansion:\n" .
 				"\t@<file>:<field>\t\t\t<field> values in <file>\n" .
 				"\t#<from>-<to>[:<step>]\t\tenumerated values\n" .
@@ -200,9 +206,15 @@ sub antsUsageError() {									# die with Usage error
 
 sub antsUsage($$@) {									# handle options
 	my($opts,$min,@usage) = @_;
-	my($cOpts) = 'ADM:QN:XCGPH:UI:O:R:L:F:S:T';
+	my($cOpts) = 'ADEM:QN:XCGPH:UI:O:R:L:F:S:T';
 	my($d,$p);
-	$antsCurUsage .= "\n\t[print full -U)sage]";
+
+	if ($antsSuppressCommonOptions) {					# non-core utilites (e.g. LADCP_w) do not use common options
+		$cOpts = ''
+	} else {
+		$antsCurUsage .= "\n\t[print full -U)sage]"
+	}
+	
 	foreach my $uln (@usage) {
 		$antsCurUsage .= "\n\t$uln"						# suppress emtpy, e.g.
 			unless ($uln eq '');						# for interp. model usage
@@ -256,6 +268,8 @@ sub antsUsage($$@) {									# handle options
 			if ($opt_P && $opt_Q);
 
 		&antsActivateOut() if ($opt_A);					# activate output
+
+		$antsAllowEmbeddedLayoutChange = $opt_E;		# allow embedded layout changes
 
 		if ($opt_T) {									# LaTeX table output
 			croak("$0: illegal option combination (-T & -G)\n")

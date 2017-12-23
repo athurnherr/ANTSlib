@@ -1,9 +1,9 @@
 #======================================================================
 #                    L I B I M P . P L 
 #                    doc: Tue Nov 26 21:59:40 2013
-#                    dlm: Wed Nov 22 11:17:51 2017
+#                    dlm: Fri Dec  8 13:44:41 2017
 #                    (c) 2017 A.M. Thurnherr
-#                    uE-Info: 437 47 NIL 0 0 70 2 2 4 NIL ofnI
+#                    uE-Info: 42 73 NIL 0 0 70 2 2 4 NIL ofnI
 #======================================================================
 
 # HISTORY:
@@ -39,6 +39,7 @@
 #				  - made sensor information optional in
 #	Nov 20, 2017: - major code cleanup
 #	Nov 22, 2017: - replaced "IMP" output in routines used by KVH by "IMU"
+#	Dec  8, 2017: - replaced remaing "IMP" output (e.g. in plot) by "IMU"
 
 #----------------------------------------------------------------------
 # gRef() library
@@ -232,10 +233,10 @@ sub trim_out_of_water($)
 	if ($dAhdt_rms[$i] * cos(rad(sqrt($pitch[$i]**2+$roll[$i]**2))) > 1.0) {
 		for ($si=0; $ants_[$si][$elapsedF]<=$elapsed[$i]; $si++) {}
 		splice(@ants_,0,$si);
-		printf(STDERR "\n\t\t%5d  leading out-of-water IMP records removed",$si)
+		printf(STDERR "\n\t\t%5d  leading out-of-water IMU records removed",$si)
 			if ($si>0 && $verbose);
 	} else {
-		print(STDERR "\n\t\tWARNING: no leading out-of-water IMP records detected/removed") if $verbose;
+		print(STDERR "\n\t\tWARNING: no leading out-of-water IMU records detected/removed") if $verbose;
 	}
 	
 	for ($i=int(@dAhdt_rms/2); $i<@dAhdt_rms; $i++) {
@@ -353,7 +354,7 @@ sub pl_hdg_offset($@)
 		next unless $dhist[$i];
 		printf(GMT "%f $dhist[$i]\n",$i*$dhist_binsize>180 ? $i*$dhist_binsize-360 : $i*$dhist_binsize);
 	}
-	GMT_psbasemap('-Bg45a90f15:"IMP Heading Offset [\260]":/ga100f10:"Frequency":WeSn');
+	GMT_psbasemap('-Bg45a90f15:"IMU Heading Offset [\260]":/ga100f10:"Frequency":WeSn');
 	GMT_unitcoords();
 	GMT_pstext('-F+f14,Helvetica,CornFlowerBlue+jTR -N');
 	printf(GMT "0.99 1.06 %g \260 offset (%d%% agreement)\n",angle($HDG_offset),100*$modefrac);
@@ -366,20 +367,20 @@ sub calc_hdg_offset($)
 {
 	my($verbose) = @_;
 
-	print(STDERR "\n\tRe-calculating IMP pitch/roll anomalies") if $verbose;
+	print(STDERR "\n\tRe-calculating IMU pitch/roll anomalies") if $verbose;
 	($IMP_pitch_mean,$IMP_roll_mean,$nPR) = (0,0,0);
 	for (my($ens)=$LADCP_begin; $ens<=$LADCP_end; $ens++) {
 		my($r) = int(($LADCP{ENSEMBLE}[$ens]->{ELAPSED_TIME} + $IMP{TIME_LAG} - $ants_[0][$elapsedF]) / $IMP{DT});
 		if ($r < 0 && $ens == $LADCP_begin) {
 			$r = int(($LADCP{ENSEMBLE}[++$ens]->{ELAPSED_TIME} + $IMP{TIME_LAG} - $ants_[0][$elapsedF]) / $IMP{DT})
 				while ($r < 0);
-			printf(STDERR "\n\tIMP data begin with instrument already in water => skipping %ds of LADCP data",
+			printf(STDERR "\n\tIMU data begin with instrument already in water => skipping %ds of LADCP data",
 				$LADCP{ENSEMBLE}[$ens]->{ELAPSED_TIME}-$LADCP{ENSEMBLE}[$LADCP_begin]->{ELAPSED_TIME})
 					if ($verbose);
 			$LADCP_begin = $ens;
 		}
 		if ($r > $#ants_) {
-			printf(STDERR "\n\tIMP data end while instrument is still in water => truncating %ds of LADCP data",
+			printf(STDERR "\n\tIMU data end while instrument is still in water => truncating %ds of LADCP data",
 				$LADCP{ENSEMBLE}[$LADCP_end]->{ELAPSED_TIME}-$LADCP{ENSEMBLE}[$ens]->{ELAPSED_TIME})
 					if ($verbose);
 			$LADCP_end = $ens - 1;
@@ -404,7 +405,7 @@ sub calc_hdg_offset($)
 													  $ants_[$r][$rollF] -$IMP_roll_mean);
 	}
 	
-	printf(STDERR "\n\t\tIMP mean pitch/roll: %.1f/%.1f deg",$IMP_pitch_mean,$IMP_roll_mean)
+	printf(STDERR "\n\t\tIMU mean pitch/roll: %.1f/%.1f deg",$IMP_pitch_mean,$IMP_roll_mean)
 			if $verbose;
 	
 	if (defined($opt_s)) {
@@ -445,7 +446,7 @@ sub calc_hdg_offset($)
 		}
 	
 		printf(STDERR "\n\t") if $verbose;
-		printf(STDERR "IMP heading offset = %g deg (%d%% agreement)\n",angle($HDG_offset),100*$modefrac) if $verbose;
+		printf(STDERR "IMU heading offset = %g deg (%d%% agreement)\n",angle($HDG_offset),100*$modefrac) if $verbose;
 	}
 	return ($HDG_offset,$IMP_pitch_mean,$IMP_roll_mean);
 }

@@ -1,9 +1,9 @@
 #======================================================================
 #                    H I S T O R Y 
 #                    doc: Thu May  7 13:12:05 2015
-#                    dlm: Wed Dec  6 13:06:19 2017
+#                    dlm: Sat Dec 23 16:20:34 2017
 #                    (c) 2015 A.M. Thurnherr
-#                    uE-Info: 135 32 NIL 0 0 72 0 2 4 NIL ofnI
+#                    uE-Info: 10 11 NIL 0 0 70 0 2 4 NIL ofnI
 #======================================================================
 
 May  7, 2015:
@@ -78,6 +78,8 @@ Jul 29, 2016:
 	- [libvec.pl] mag_heading() was inconsistent
 	  with TRDI ADCP heading convention
 
+----------------------------------------------------------------------
+
 Aug  5, 2016:
 	- updated [HISTORY]
 	- V6.7 [ants.pl] [.hg/hgrc] 
@@ -107,6 +109,8 @@ Mar 12, 2017:
 	  are required by LADCP_VKE
 	- V6.8 [ants.pl] [.hg/hgrc] 
 
+----------------------------------------------------------------------
+
 Mar 15, 2017:
 	- V6.8 [ants.pl] [.hg/hgrc] 
 	- published
@@ -127,9 +131,26 @@ Nov 15, 2017:
 	- added [libALEC.pl]
 	- [libvec.pl] re-enabled usage-message (of sorts) for vel_u only
 
+----------------------------------------------------------------------
+
 Nov 20, 2017:
 	- V6.9 [ants.pl] 
 	- cleanup of [libIMP.pl] 
 
 Dec  6, 2017:
 	- published [README.Publish]
+
+----------------------------------------------------------------------
+
+Dec  8, 2017:
+	- made [libRDI_Coords.pl] into a hard link (instead of absolute-path symlink)
+	- made sure [libIMP.pl] does not produce "IMP" output
+	- V7.0 [ants.pl] 
+	
+Dec  9, 2017: 
+	- added -E, $antsSuppressCommonOptions
+
+Dec 18, 2017:
+	- improvements to [libALEC.pl]
+	- removed ambiguous date warning from [libconv.pl]
+

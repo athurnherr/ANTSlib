@@ -1,19 +1,22 @@
 #======================================================================
-#                    . . / L I B / L I B A L E C . P L 
+#                    L I B A L E C . P L 
 #                    doc: Wed Jun  1 20:38:19 2011
-#                    dlm: Thu Nov 16 09:20:00 2017
+#                    dlm: Mon Dec 18 10:29:08 2017
 #                    (c) 2011 A.M. Thurnherr
-#                    uE-Info: 36 30 NIL 0 0 70 2 2 4 NIL ofnI
+#                    uE-Info: 71 31 NIL 0 0 70 2 2 4 NIL ofnI
 #======================================================================
 
 # HISTORY:
 #	Nov 15, 2017: - created
+#	Dec 18, 2017: - turned vel output into m/s
 
 require "$ANTS/libvec.pl";
 require "$ANTS/libfuns.pl";
 
 #----------------------------------------------------------------------
 # User Routines
+#	- from manual
+#	- also transform velocities to m/s
 #----------------------------------------------------------------------
 
 sub ALEC_u($$$$$$$)
@@ -38,7 +41,7 @@ sub ALEC_v($$$$$$$)
 
 #------------------------------------------------------------------------------
 # Routines mostly as per ALEC manual
-#		- weird atan corrections cause data discontinuities
+#		- weird atan corrections in manual cause data discontinuities
 #			=> removed
 #		- routines verified with first PITTA time series
 # 	ALEC_vel_speed(vx,vy,alpha)
@@ -52,7 +55,7 @@ sub ALEC_vel_speed(@)
     my($vx,$vy,$alpha) = &antsFunUsage(3,'fff','<vx[cm/s]> <vy[cm/s]> <alpha>',@_);
 	my($ssq) = ($vx**2 + $vy**2);
 	return inf unless ($ssq > 1e-6);
-	return (1 + $alpha*(4*$vx**2*$vy**2)/($ssq**2)) * sqrt($ssq);
+	return (1 + $alpha*(4*$vx**2*$vy**2)/($ssq**2)) * sqrt($ssq) / 100;
 }
 
 sub ALEC_heading(@)
