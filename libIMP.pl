@@ -1,9 +1,9 @@
 #======================================================================
 #                    L I B I M P . P L 
 #                    doc: Tue Nov 26 21:59:40 2013
-#                    dlm: Fri Dec  8 13:44:41 2017
+#                    dlm: Sat Jun  9 12:07:15 2018
 #                    (c) 2017 A.M. Thurnherr
-#                    uE-Info: 42 73 NIL 0 0 70 2 2 4 NIL ofnI
+#                    uE-Info: 52 109 NIL 0 0 70 2 2 4 NIL ofnI
 #======================================================================
 
 # HISTORY:
@@ -40,6 +40,16 @@
 #	Nov 20, 2017: - major code cleanup
 #	Nov 22, 2017: - replaced "IMP" output in routines used by KVH by "IMU"
 #	Dec  8, 2017: - replaced remaing "IMP" output (e.g. in plot) by "IMU"
+#	May 22, 2018: - added data trimming to rot_vec
+#	May 23, 2018: - added horizontal field strength to mag calib plot
+#				  - added support for S/N 8 board inside UL WH300 (neg_piro == 2)
+#	May 24, 2018: - continued working (coord_trans == 2)
+#	May 25, 2018: - continued working
+#	May 30, 2018: - BUG: trimming did not re-calculate elapsed time
+#	Jun  5, 2018: - BUG: on -c main magnetometer and accelerometer vectors were
+#						 modified twice
+#	Jun  7, 2018: - relaxed definition of -e
+#	Jun  9, 2018: - BUG: some "edge" data (beyond the valid profile) were bogus (does not matter in practice)
 
 #----------------------------------------------------------------------
 # gRef() library
@@ -75,67 +85,98 @@ sub pl_mag_calib_end($$)															# finish mag_calib plot
 	} else {
 		GMT_psbasemap('-Bg1a.1f.01:"X Magnetic Field [Gauss]":/g1a0.1f0.01:"Y Magnetic Field [Gauss]":WeSn');
 	}
-    GMT_unitcoords();																# sensor info
-	if ($sensor_info ne '') {
-	    GMT_pstext('-F+f12,Helvetica,blue+jTR -N');
-    	printf(GMT "0.98 0.98 $sensor_info\n");
-    }
-    GMT_pstext('-F+f14,Helvetica,blue+jTL -N');
+    GMT_unitcoords();																# horizontal field strength
+    GMT_pstext('-F+f12,Helvetica,blue+jTR -N');
+   	printf(GMT "0.98 0.98 HF = %.2f Gauss\n",$HF_mag);
+   	
+   	printf(GMT "0.98 0.94 $sensor_info\n")											# sensor info
+		if ($sensor_info ne '');
+
+    GMT_pstext('-F+f14,Helvetica,blue+jTL -N');										# profile id
     printf(GMT "0.01 1.06 $P{profile_id}\n");
 	GMT_end();
 }
 
-sub rot_vecs($) 																	# rotate & output IMU vector data 
+sub rot_vecs(@) 																	# rotate & output IMU vector data 
 {
-	my($neg_piro) = @_;																# negate KVH pitch/roll data
+	my($coord_trans,$min_elapsed,$max_elapsed,$plot_milapsed,$plot_malapsed) = @_;		# negate KVH pitch/roll data if first arg set to 1
+	$min_elapsed = 0 unless defined($min_elapsed);
+	$max_elapsed = 9e99 unless defined($max_elapsed);
+	$plot_milapsed = $min_elapsed unless defined($plot_milapsed);
+	$plot_malapsed = $max_elapsed unless defined($plot_malapsed);
+
 	while (&antsIn()) {
+		next if ($ants_[0][$elapsedF] < $min_elapsed);								# trim data
+		last if ($ants_[0][$elapsedF] > $max_elapsed);
+		
 		my($cpiro) = -1;															# current pitch/roll accelerometer
 		my(@R); 																	# rotation matrix
 		for (my($i)=0; $i<@vecs; $i++) {											# rotate vector data
 			if ($piro[$i][0] != $cpiro) {											# next sensor chip
 				$cpiro = $piro[$i][0];
-				my($pitch) = atan2($ants_[0][$vecs[$cpiro][0]], 					# eqn 25 from Freescale AN3461
-								   sqrt($ants_[0][$vecs[$cpiro][1]]**2+$ants_[0][$vecs[$cpiro][2]]**2));    
-				my($roll)  = atan2($ants_[0][$vecs[$cpiro][1]], 					# eqn 26
-								   $ants_[0][$vecs[$cpiro][2]]);
-				if ($neg_piro) {
+
+				my($accX) = $ants_[0][$vecs[$cpiro][0]];
+				my($accY) = $ants_[0][$vecs[$cpiro][1]];
+				my($accZ) = $ants_[0][$vecs[$cpiro][2]];
+
+				if ($coord_trans == 2) {											# S/N 8 inside UL WH300
+					$accY *= -1; $accZ *= -1;
+				}
+				
+				my($roll)  = atan2($accY,$accZ); 									# eqn 25 from Freescale AN3461
+				my($pitch) = atan2($accX,sqrt($accY**2+$accZ**2));     				# eqn 26 from <Freescale AN3461
+				if ($coord_trans == 1) {											# KVH
 					$pitch *= -1;
 					$roll  *= -1;
-                }								   
+                }
 				$ants_[0][$piro[$i][1]] = deg($pitch);								# add pitch/roll to data
 				$ants_[0][$piro[$i][2]] = deg($roll);
+
 				my($sp) = sin($pitch); my($cp) = cos($pitch);						# define rotation matrix
 				my($sr) = sin($roll);  my($cr) = cos($roll);
 				@R = ([ $cp,	 0,   -$sp	  ],
 					  [-$sp*$sr, $cr, -$cp*$sr],
 					  [ $sp*$cr, $sr,  $cp*$cr]);
 			}
-			my($newX) = ($ants_[0][$vecs[$i][0]]-$bias[$i][0]) * $R[0][0] +
-						($ants_[0][$vecs[$i][1]]-$bias[$i][1]) * $R[0][1] +
-						($ants_[0][$vecs[$i][2]]-$bias[$i][2]) * $R[0][2];
-			my($newY) = ($ants_[0][$vecs[$i][0]]-$bias[$i][0]) * $R[1][0] +
-						($ants_[0][$vecs[$i][1]]-$bias[$i][1]) * $R[1][1] +
-						($ants_[0][$vecs[$i][2]]-$bias[$i][2]) * $R[1][2];
-			my($newZ) = ($ants_[0][$vecs[$i][0]]-$bias[$i][0]) * $R[2][0] +
-						($ants_[0][$vecs[$i][1]]-$bias[$i][1]) * $R[2][1] +
-						($ants_[0][$vecs[$i][2]]-$bias[$i][2]) * $R[2][2];
-			$ants_[0][$vecs[$i][0]] = $newX;
-			$ants_[0][$vecs[$i][1]] = $newY;
-			$ants_[0][$vecs[$i][2]] = $newZ;
+			my($xval) = $ants_[0][$vecs[$i][0]];
+			my($yval) = $ants_[0][$vecs[$i][1]];
+			my($zval) = $ants_[0][$vecs[$i][2]];
+			
+			if ($coord_trans == 2) {												# S/N 8 inside UL WH300
+				$yval *= -1; $zval *= -1;
+			}
+			
+			$ants_[0][$vecs[$i][0]] = ($xval-$bias[$i][0]) * $R[0][0] +
+									  ($yval-$bias[$i][1]) * $R[0][1] +
+									  ($zval-$bias[$i][2]) * $R[0][2];
+			$ants_[0][$vecs[$i][1]] = ($xval-$bias[$i][0]) * $R[1][0] +
+			  						  ($yval-$bias[$i][1]) * $R[1][1] +
+									  ($zval-$bias[$i][2]) * $R[1][2];
+			$ants_[0][$vecs[$i][2]] = ($xval-$bias[$i][0]) * $R[2][0] +
+									  ($yval-$bias[$i][1]) * $R[2][1] +
+									  ($zval-$bias[$i][2]) * $R[2][2];
 		}
 	
 		my($magX) = $ants_[0][$magXF];
 		my($magY) = $ants_[0][$magYF];
 		my($magZ) = $ants_[0][$magZF];
+		my($accX) = $ants_[0][$accXF];
+		my($accY) = $ants_[0][$accYF];
+		my($accZ) = $ants_[0][$accZF];
+
 		my($HF)   = sqrt($magX**2+$magY**2);
 		my($valid)= ($HF >= $minfac*$HF_mag) && ($HF <= $maxfac*$HF_mag);
 		my($hdg)  = $valid ? mag_heading($magX,$magY) : nan;
-		&antsOut($ants_[0][$elapsedF],$ants_[0][$tempF],
+
+		&antsOut($ants_[0][$elapsedF]-$min_elapsed,$ants_[0][$tempF],
 				 RDI_pitch($ants_[0][$pitchF],$ants_[0][$rollF]),$ants_[0][$rollF],
-				 $hdg,$ants_[0][$accXF],$ants_[0][$accYF],$ants_[0][$accZF],
-				 $magX,$magY,$magZ,vel_u($HF,$hdg),vel_v($HF,$hdg),$valid);
+				 $hdg,$accX,$accY,$accZ,$magX,$magY,$magZ,
+				 vel_u($HF,$hdg),vel_v($HF,$hdg),$valid);
+
 		pl_mag_calib_plot($valid,$magX,$magY)
-			if defined($P{profile_id});
+			if defined($P{profile_id}) &&
+				($ants_[0][$elapsedF] >= $plot_milapsed) &&
+				($ants_[0][$elapsedF] <= $plot_malapsed);
 	}
 }
 
@@ -414,7 +455,7 @@ sub calc_hdg_offset($)
 	} else {
 		my($dhist_binsize,$dhist_min_pirom,$dhist_min_mfrac) = split(/,/,$opt_e);
 		croak("$0: cannot decode -e $opt_e\n")
-			unless ($dhist_binsize > 0 && $dhist_min_pirom > 0 && $dhist_min_mfrac > 0);
+			unless ($dhist_binsize > 0 && $dhist_min_pirom > 0 && $dhist_min_mfrac >= 0);
 	
 		my(@dhist); my($nhist) = my($modeFreq) = 0;
 		for (my($ens)=$LADCP_begin; $ens<=$LADCP_end; $ens++) {
@@ -638,15 +679,18 @@ sub output_merged($)
 
 	for (my($ens)=0; $ens<=$#{$LADCP{ENSEMBLE}}; $ens++) {
 		my($r) = int(($LADCP{ENSEMBLE}[$ens]->{ELAPSED_TIME} + $IMP{TIME_LAG} - $ants_[0][$elapsedF]) / $IMP{DT});
-		if ($r<0 || $r>$#ants_) {
+#		print(STDERR "$r\[$ens\,$LADCP{ENSEMBLE}[$ens]->{NUMBER}] = int(($LADCP{ENSEMBLE}[$ens]->{ELAPSED_TIME} + $IMP{TIME_LAG} - $ants_[0][$elapsedF]) / $IMP{DT});\n");
+		if ($r<0 || $r>$#ants_) {												# ensemble beyond limits of IMU data
 			my(@out);
-			$out[$elapsedF] = $LADCP{ENSEMBLE}[$ens]->{ELAPSED_TIME} + $IMP{TIME_LAG};
-			$out[$L_elapsedF] = $LADCP{ENSEMBLE}[$ens]->{ELAPSED_TIME};
-			$out[$L_ensF]		= $LADCP{ENSEMBLE}[$ens]->{NUMBER};
-			$out[$dcF]		= ($ens <= $LADCP_bottom);
+			if ($ens >= $LADCP_begin && $ens <= $LADCP_end) {
+				$out[$elapsedF] 	= $LADCP{ENSEMBLE}[$ens]->{ELAPSED_TIME} + $IMP{TIME_LAG};
+				$out[$L_elapsedF] 	= $LADCP{ENSEMBLE}[$ens]->{ELAPSED_TIME};
+			}
+			$out[$L_ensF]			= $LADCP{ENSEMBLE}[$ens]->{NUMBER};
+			$out[$dcF]				= ($ens <= $LADCP_bottom);
 			&antsOut(@out);
-		} elsif ($ens < $LADCP_begin || $ens > $LADCP_end) {
-			$ants_[$r][$L_elapsedF] = $LADCP{ENSEMBLE}[$ens]->{ELAPSED_TIME};
+		} elsif ($ens < $LADCP_begin || $ens > $LADCP_end) {					# pre deplyment or post recovery
+			$ants_[$r][$L_elapsedF] = undef;
 			$ants_[$r][$L_ensF] 	= $LADCP{ENSEMBLE}[$ens]->{NUMBER};
 			$ants_[$r][$L_pitchF]	= undef;
 			$ants_[$r][$L_rollF]	= undef;

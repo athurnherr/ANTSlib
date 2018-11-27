@@ -1,9 +1,9 @@
 #======================================================================
 #                    R D I _ C O O R D S . P L 
 #                    doc: Sun Jan 19 17:57:53 2003
-#                    dlm: Mon Nov 27 07:13:25 2017
+#                    dlm: Wed Mar 28 12:30:12 2018
 #                    (c) 2003 A.M. Thurnherr
-#                    uE-Info: 58 62 NIL 0 0 72 10 2 4 NIL ofnI
+#                    uE-Info: 109 22 NIL 0 0 72 10 2 4 NIL ofnI
 #======================================================================
 
 # RDI Workhorse Coordinate Transformations
@@ -56,6 +56,7 @@
 #	Oct 12, 2017: - documentation
 #	Nov 26, 2017: - BUG: velBeamtoBPEarth() did not respect missing values
 #	Nov 27, 2017: - BUG: numbersp() from [antslib.pl] was used
+#	Mar 28, 2018: - added &loadInstrumentTransformation()
 
 use strict;
 use POSIX;
@@ -74,7 +75,15 @@ $RDI_Coords::binMapping = 'linterp';		# 'linterp' or 'none' (earthVels, BPearthV
 $RDI_Coords::beamTransformation = 'LHR90';	# set to 'RDI' to use 1st order transformations from RDI manual
 
 #----------------------------------------------------------------------
-# beam to earth transformation 
+# beam to earth transformation
+#	- loadInstrumentTransformation(filename) loads a file that contains the
+#	  output from the PS3 command, which includes the instrument transformation
+#	  matrix as follows:
+#	Instrument Transformation Matrix (Down):    Q14:
+#	  1.4689   -1.4682    0.0030   -0.0035       24067  -24055      49     -58
+#	 -0.0036    0.0029   -1.4664    1.4673         -59      48  -24025   24041
+#	  0.2658    0.2661    0.2661    0.2657        4355    4359    4359    4354
+#	  1.0373    1.0382   -1.0385   -1.0373       16995   17010  -17015  -16995
 #----------------------------------------------------------------------
 
 $RDI_Coords::threeBeam_1 = 0;			# stats from velBeamToInstrument
@@ -87,6 +96,35 @@ $RDI_Coords::threeBeamFlag = 0;			# flag last transformation
 
 { # STATIC SCOPE
 	my(@B2I);
+
+	sub loadInstrumentTransformation($)
+	{
+		die("loadInstrumentTransformation(): B2I matrix already defined\n")
+			if (@B2I);
+		open(ITF,$_[0]) || die("$_[0]: $!\n");
+		my($row) = 0;
+		while (<ITF>) {
+			if ($row == 0) {
+				next unless m{^Instrument Transformation Matrix \(Down\):};
+				$row = 1;
+			} elsif ($row <= 4) {
+				my(@vals) = split;
+				die("$_[0]: cannot decode row #$row of Instrument Transformation Matrix\n")
+					unless (@vals == 8);
+				for (my($i)=0; $i<4; $i++) {
+					die("$_[0]: cannot decode row #$row of Instrument Transformation Matrix\n")
+						unless numberp($vals[$i]);
+					$B2I[$row-1][$i] = $vals[$i];
+				}
+				$row++;
+			} else {
+				last;
+			}
+		}
+		die("$_[0]: cannot decode Instrument Transformation Matrix (row = $row)\n")
+			unless ($row == 5);
+		close(ITF);
+	}
 
 	sub velBeamToInstrument(@)
 	{
@@ -134,22 +172,21 @@ $RDI_Coords::threeBeamFlag = 0;			# flag last transformation
 	}
 } # STATIC SCOPE
 
-#----------------------------------------------------------------------
+#--------------------------------------------------------------------------------------------------------------
 # velInstrumentToEarth(\%ADCP,ens,v1,v2,v3,v4) => (u,v,w,e)
 #	- $RDI_Coords::beamTransformation = 'LHR90'
 #		- from Lohrmann, Hackett & Roet (J. Tech., 1990)
 #		- eq A1 maps to RDI matrix M (sec 5.6) with
 #			alpha = roll
 #			beta = gimball_pitch
-#			psi = calculation_pitch
-#			psi = asin{sin(beta) cos(alpha) / sqrt[1- sin(alpha)^2 sin(beta)^2]}
+#			psi (pitch used for calculation) =  asin{sin(beta) cos(alpha) / sqrt[1- sin(alpha)^2 sin(beta)^2]}
 #		- (I only checked for 0 heading, but this is sufficient)
 #	- $RDI_Coords::beamTransformation = 'RDI'
 #		- default prior to LADCP_w V1.3
 #		- from RDI manual
 #		- 99% accurate for p/r<8deg
 #			=> 1cm/s error for 1m/s winch speed!
-#----------------------------------------------------------------------
+#--------------------------------------------------------------------------------------------------------------
 
 { # STATIC SCOPE
 	my($hdg,$pitch,$roll,@I2E);

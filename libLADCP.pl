@@ -1,9 +1,9 @@
 #======================================================================
 #                    L I B L A D C P . P L 
 #                    doc: Wed Jun  1 20:38:19 2011
-#                    dlm: Mon May 18 09:49:19 2015
+#                    dlm: Wed Apr 25 17:41:36 2018
 #                    (c) 2011 A.M. Thurnherr
-#                    uE-Info: 49 12 NIL 0 0 70 2 2 4 NIL ofnI
+#                    uE-Info: 46 27 NIL 0 0 70 2 2 4 NIL ofnI
 #======================================================================
 
 # HISTORY:
@@ -23,9 +23,30 @@
 #	Jun 26. 2013: - added T_w_z()
 #				  - added parameter checks to processing-specific corrections
 #	May 18, 2015: - added pulse length to T_w() and T_w_z()
+#	Apr 25, 2018: - added eps_VKE() parameterization
 
 require "$ANTS/libvec.pl";
 require "$ANTS/libfuns.pl";
+
+#------------------------------------------------------------------------------
+# VKE parameterization for epsilon
+#
+# NOTES:
+#	- see Thurnherr et al. (GRL 2015)
+#	- calculate eps from p0
+#	- optional second argument allows free choice of parameterization constant
+#	- default value is from paper, which is slightly lower than the current value
+#	  used in [LADCP_VKE], which applies the parameterization only to spectra
+#	  passing a few tests
+#------------------------------------------------------------------------------
+
+sub eps_VKE(@)
+{
+    my($p0,$c) =
+        &antsFunUsage(-1,'.','<p0[m^2/s^2/(rad/m)]> [c[0.021 [1/sqrt(s)]]]',@_);
+	$c = 0.021 unless defined($c);
+    return numberp($p0) ? ($p0 / $c) ** 2 : nan;
+}
 
 #------------------------------------------------------------------------------
 # Spectral corrections for LADCP data
@@ -35,7 +56,6 @@ require "$ANTS/libfuns.pl";
 #	- to correct, multiply power densities (or power, I think) with corrections
 #	- apply to down-/up-cast data only
 #------------------------------------------------------------------------------
-
 #----------------------------------------------------------------------
 # 1. Corrections for individual data acquisition and processing steps
 #----------------------------------------------------------------------

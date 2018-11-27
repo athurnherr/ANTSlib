@@ -1,9 +1,9 @@
 #======================================================================
 #                    . L S F I T . P O L Y 
 #                    doc: Wed Feb 24 09:40:06 1999
-#                    dlm: Thu Jan 10 16:47:06 2013
+#                    dlm: Sun May 13 08:25:37 2018
 #                    (c) 1999 A.M. Thurnherr
-#                    uE-Info: 118 16 NIL 0 0 72 2 2 4 NIL ofnI
+#                    uE-Info: 114 36 NIL 0 0 72 2 2 4 NIL ofnI
 #======================================================================
 
 # What you need to provide if you wanna fit a different
@@ -27,6 +27,7 @@
 #	Jul 28, 2006: - Version 3.3 [HISTORY]
 #	Sep 19, 2011: - moved part of the usage code into init() to allow use in [pgram]
 #	Jan 10, 2013: - added extremum output when fitting parabola (-o 2)
+#	May 13, 2018: - BUG: replaced opt_o with modelNFit in &modelCleanup()
 
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 #
@@ -110,7 +111,7 @@ sub modelEvaluate($$$)
 
 sub modelCleanup() 
 {
-	return unless ($opt_o == 2);		# calculate loc of extremum on parabolic fits
+	return unless ($0 eq 'lsfit' && $modelNFit == 3);		# calculate loc of extremum on parabolic fits with lsfit only
 
 	my($extX) = -$A[2] / (2 * $A[3]);
 	if ($A[3] > 0) {

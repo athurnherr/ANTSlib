@@ -1,9 +1,9 @@
 #======================================================================
 #                    H I S T O R Y 
 #                    doc: Thu May  7 13:12:05 2015
-#                    dlm: Sat Dec 23 16:20:34 2017
+#                    dlm: Tue Nov 27 12:57:11 2018
 #                    (c) 2015 A.M. Thurnherr
-#                    uE-Info: 10 11 NIL 0 0 70 0 2 4 NIL ofnI
+#                    uE-Info: 184 51 NIL 0 0 70 0 2 4 NIL ofnI
 #======================================================================
 
 May  7, 2015:
@@ -154,3 +154,33 @@ Dec 18, 2017:
 	- improvements to [libALEC.pl]
 	- removed ambiguous date warning from [libconv.pl]
 
+Dec 23, 2017:
+	- published V7.0
+
+----------------------------------------------------------------------
+
+Mar 3 - Apr 23, 2018:
+	- multiple improvements to [libSBE.pl]
+
+Mar 28, 2018: 
+	- added &loadInstrumentTransformation() to [libRDI_coords.pl]
+
+Apr 23, 2018:
+	- bugfix in [antsio.pl]
+
+Apr 25, 2018:
+	- added eps_VKE() to [libLADCP.pl]
+
+May 13, 2018:
+	- bugfix in [.lsfit.poly]
+
+May 22, 2018: 
+	- added NMEA2dec_time() to [libconv.pl]
+
+May 22 - Jun 9, 2018:
+	- multiple improvements to [libIMP.pl]
+
+Nov 27, 2018:
+	- update version number in [ants.pl] [.hg/hgrc]
+	- updated HISTORY
+	- published V7.1

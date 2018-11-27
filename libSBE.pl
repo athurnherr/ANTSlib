@@ -1,9 +1,9 @@
 #======================================================================
 #                    L I B S B E . P L 
 #                    doc: Mon Nov  3 12:42:14 2014
-#                    dlm: Fri Mar 10 09:46:42 2017
+#                    dlm: Mon Apr 23 21:03:27 2018
 #                    (c) 2014 A.M. Thurnherr
-#                    uE-Info: 20 55 NIL 0 0 72 2 2 4 NIL ofnI
+#                    uE-Info: 25 105 NIL 0 0 72 2 2 4 NIL ofnI
 #======================================================================
 
 # HISTORY:
@@ -18,6 +18,11 @@
 #				  - added $libSBE_quiet to suppress diagnostic messages
 #	May 31, 2016: - made successfully decoding lat/lon optional
 #	Mar 10, 2017: - made lat/lon decoding more flexible
+#	Mar  3, 2018: - adapted SBE37 fields (multiple changes)
+#				  - added default field name for sound speed (sspd)
+#	Mar  8, 2018: - BUG: SBE_parseHeader() did not correctly detect missing lat/lon
+#				  - suppressed warnings in SBE_parseHeader()
+#	Apr 23, 2018: - BUG: header lat/lon was incorrectly parsed when there was no spaced before hemisphere
 
 #----------------------------------------------------------------------
 # fname_SBE2std($)
@@ -30,13 +35,15 @@ sub fname_SBE2std($)
 
 	return 'lat' 		if /^lat/;
 	return 'lon' 		if /^lon/;
-	return 'press'		if /^prDM/;
+	return 'press'		if /^pr[dD]M/;
+	return 'sspd'		if /^sv[dD]M/;
 	return 'depth'		if /^depSM/;
 	return 'O2' 		if /^sbeox0/;
 	return 'alt_O2' 	if /^sbeox1/;
 	return 'salin' 		if /^sal00/;
 	return 'alt_salin' 	if /^sal11/;
 	return 'elapsed'	if /^timeS/;
+	return 'time_jday'	if /^timeJV2/;
 	return 'sigma0' 	if /^sigma.*00/;
 	return 'alt_sigma0' if /^sigma.*11/;
 	return 'rho0' 		if /^density00/;
@@ -90,24 +97,24 @@ sub fname_SBE2std($)
 		return 'alt_theta0';
 	}
 
-	if (m{^c0S/m}) {										# conductivity with different units
+	if (m{^c0S/m} || m{^cond0S/m}) {										# conductivity with different units
 		return undef
 			if defined($P{'cond.unit'}) && ($P{'cond.unit'} ne 'S/m');
 		&antsAddParams('cond.unit','S/m');
 		return 'cond';
-	} elsif (m{^c0mS/cm}) {
+	} elsif (m{^c0mS/cm} || m{^cond0mS/cm}) {
 		return undef
 			if defined($P{'cond.unit'}) && ($P{'cond.unit'} ne 'mS/cm');
 		&antsAddParams('cond.unit','mS/cm');
 		return 'cond';
 	}
 		
-	if (m{^c1S/m}) {
+	if (m{^c1S/m} || m{^cond1S/m}) {
 		return undef
 			if defined($P{'cond.unit'}) && ($P{'cond.unit'} ne 'S/m');
 		&antsAddParams('cond.unit','S/m');
 		return 'alt_cond';
-	} elsif (m{^c1mS/cm}) {
+	} elsif (m{^c1mS/cm} || m{^cond1mS/cm}) {
 		return undef
 			if defined($P{'cond.unit'}) && ($P{'cond.unit'} ne 'mS/cm');
 		&antsAddParams('cond.unit','mS/cm');
@@ -162,21 +169,21 @@ sub fname_SBE($)
 		&antsAddParams('ITS',68); $P{ITS} = 68;
 	}
 
-	if (m{^c0S/m}) {										# conductivity with different units
+	if (m{^c0S/m} || m{^cond0S/m}) {										# conductivity with different units
 		return undef
 			if defined($P{'cond.unit'}) && ($P{'cond.unit'} ne 'S/m');
 		&antsAddParams('cond.unit','S/m');
-	} elsif (m{^c0mS/cm}) {
+	} elsif (m{^c0mS/cm} || m{^cond0mS/cm}) {
 		return undef
 			if defined($P{'cond.unit'}) && ($P{'cond.unit'} ne 'mS/cm');
 		&antsAddParams('cond.unit','mS/cm');
 	}
 		
-	if (m{^c1S/m}) {
+	if (m{^c1S/m} || m{^cond1S/m}) {
 		return undef
 			if defined($P{'cond.unit'}) && ($P{'cond.unit'} ne 'S/m');
 		&antsAddParams('cond.unit','S/m');
-	} elsif (m{^c1mS/cm}) {
+	} elsif (m{^c1mS/cm} || m{^cond1mS/cm}) {
 		return undef
 			if defined($P{'cond.unit'}) && ($P{'cond.unit'} ne 'mS/cm');
 		&antsAddParams('cond.unit','mS/cm');
@@ -268,28 +275,30 @@ sub SBE_parseHeader($$$)
 			if ($hdr =~ /Date\s*:\s*(.*)/);
 	
 		if (($hdr =~ /Latitude\s*[:=]\s*/) && !defined($lat)) {
-			($deg,$min,$NS) = split(/\s+/,$');
+#			($deg,$min,$NS) = split(/\s+/,$');
+			($deg,$min,$NS) = ($' =~ m{([^\s]+)\s+(\d+\.\d*)\s*([NS])});
 			if ($NS eq 'N' || $NS eq 'S') {
 				$lat = $deg + $min/60;
 				$lat *= -1 if ($NS eq 'S');
-			} elsif (!defined($NS) && abs($deg)<=90 && ($min >= 0) && ($min <= 60)) {
+			} elsif (!defined($NS) && defined($deg) && abs($deg)<=90 && ($min >= 0) && ($min <= 60)) {
 				$lat = $deg + $min/60;
 			} else {
-				print(STDERR "$0: WARNING: cannot decode latitude ($')\n");
+#				print(STDERR "$0: WARNING: cannot decode latitude ($')\n");
 				$lat = nan;
 			}
 			&antsAddParams('lat',$lat);
 			next;
 		}
 		if (($hdr =~ /Longitude\s*[:=]\s*/) && !defined($lon)) {
-			($deg,$min,$EW) = split(/\s+/,$');
+#			($deg,$min,$EW) = split(/\s+/,$');
+			($deg,$min,$EW) = ($' =~ m{([^\s]+)\s+(\d+\.\d*)\s*([EW])});
 			if ($EW eq 'E' || $EW eq 'W') {
 				$lon = $deg + $min/60;
 				$lon *= -1 if ($EW eq 'W');
-			} elsif (!defined($EW) && abs($deg)<=360 && ($min >= 0) && ($min <= 60)) {
+			} elsif (!defined($EW) && defined($deg) && abs($deg)<=360 && ($min >= 0) && ($min <= 60)) {
 				$lon = $deg + $min/60;
 			} else {
-				print(STDERR "$0: WARNING: cannot decode longitude ($')\n");
+#				print(STDERR "$0: WARNING: cannot decode longitude ($')\n");
 				$lon= nan;
 			}
 			&antsAddParams('lon',$lon);

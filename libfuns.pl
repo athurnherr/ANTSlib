@@ -1,9 +1,9 @@
 #======================================================================
 #                    L I B F U N S . P L 
 #                    doc: Wed Mar 24 11:49:13 1999
-#                    dlm: Thu Jun  4 17:56:37 2015
+#                    dlm: Fri May 11 11:40:05 2018
 #                    (c) 1999 A.M. Thurnherr
-#                    uE-Info: 306 13 NIL 0 0 72 2 2 4 NIL ofnI
+#                    uE-Info: 31 77 NIL 0 0 70 2 2 4 NIL ofnI
 #======================================================================
 
 # HISTORY:
@@ -16,8 +16,22 @@
 #	Sep  7, 2012: - added acosh()
 #	Jun  4, 2015: - added gaussRand()
 #			 	  - made normal() more efficient
+#	May 11, 2018: - added Nsq()
 
 require	"$ANTS/libvec.pl";								# rad()
+
+#----------------------------------------------------------------------
+# Buoyancy-Freuquency Squared
+#	- based on signed buoyancy frequency => propagate sign
+#----------------------------------------------------------------------
+
+{ my(@fc);
+	sub Nsq(@)
+	{
+		my($N) = &antsFunUsage(1,'.','[(signed) buoyancy frequency]',\@fc,'N',@_);
+		return ($N < 0) ? -($N**2) : $N**2;
+	}
+}
 
 #----------------------------------------------------------------------
 # gaussians/normal distribution

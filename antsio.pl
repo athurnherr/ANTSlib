@@ -2,9 +2,9 @@
 #======================================================================
 #                    A N T S I O . P L 
 #                    doc: Fri Jun 19 19:22:51 1998
-#                    dlm: Wed Apr  5 13:45:32 2017
+#                    dlm: Mon Apr 23 14:20:58 2018
 #                    (c) 1998 A.M. Thurnherr
-#                    uE-Info: 215 83 NIL 0 0 70 2 2 4 NIL ofnI
+#                    uE-Info: 216 82 NIL 0 0 70 2 2 4 NIL ofnI
 #======================================================================
 
 # HISTORY:
@@ -213,6 +213,7 @@
 #	Sep 13, 2016: - modified &antsAddParams to make more flexible
 #	Mar 10, 2017: - BUG: antsCheckDeps() used ctime instead of mtime!!!
 #	Apr  5, 2017: - BUG: stale file mtime dependency info was not printed correctly
+#	Apr 23, 2018: - BUG: @antsLayout was not kept up-to-date when layout-changes are allowed
 
 # GENERAL NOTES:
 #	- %P was named without an ants-prefix because associative arrays
@@ -486,10 +487,12 @@ sub antsIn()
 
 		# DONE WITH HEADER PARSING
 		
+		# Handle Layout changes:
+		#	- only allow when $antsAllowEmbeddedLayoutChange is set
+		#	- ensure that antsLayout always contains up-to-date Layout
 		croak("$0: embedded layout change when reading file $ARGV <@antsLayout> -> <@Layout>")
 			if (!$antsAllowEmbeddedLayoutChange && @Layout && @antsLayout && ("@Layout" ne "@antsLayout"));
-
-		@antsLayout = @Layout unless (@antsLayout);
+		@antsLayout = @Layout if (@Layout);
 
 		$P{RECNO} = -1 unless defined($P{RECNO});	# set pseudo %PARAMs
 		$P{LINENO} = -1 unless defined($P{LINENO});

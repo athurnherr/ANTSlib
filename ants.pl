@@ -2,9 +2,9 @@
 #======================================================================
 #                    A N T S . P L 
 #                    doc: Fri Jun 19 14:01:06 1998
-#                    dlm: Fri Dec  8 13:11:21 2017
+#                    dlm: Tue Nov 27 12:57:36 2018
 #                    (c) 1998 A.M. Thurnherr
-#                    uE-Info: 31 20 NIL 0 0 72 2 2 4 NIL ofnI
+#                    uE-Info: 27 60 NIL 0 0 72 2 2 4 NIL ofnI
 #======================================================================
 
 # HISTORY:
@@ -24,11 +24,12 @@
 #  Mar 12, 2017: - updated to V6.8 (for LADCP_w 1.3 release)
 #  Nov 20, 2017: - updated to V6.9 (for DT KVH software)
 #  Dec  8, 2017: - updated to V7.0 (to avoid absolute-path symlink)
+#  Nov 27, 2018: - updaetd to V7.1 (for LADCP_w 1.4 release)
 
 exec($ENV{ANTS_PERL},$0,@ARGV),die("$ENV{ANTS_PERL}: $!")
     if (defined($ENV{ANTS_PERL}) && $^X ne $ENV{ANTS_PERL});
 
-$antsLibVersion = 7.0;
+$antsLibVersion = 7.1;
 
 die(sprintf("$0: obsolete library V%.1f; V%.1f required\n",
 	$antsLibVersion,$antsMinLibVersion))

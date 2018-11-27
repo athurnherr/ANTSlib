@@ -1,9 +1,9 @@
 #======================================================================
 #                    L I B C P T . P L 
 #                    doc: Wed Nov 15 12:28:49 2000
-#                    dlm: Fri May  9 11:40:01 2008
+#                    dlm: Mon May 14 21:29:00 2018
 #                    (c) 2000 A.M. Thurnherr
-#                    uE-Info: 25 31 NIL 0 0 72 2 2 4 NIL ofnI
+#                    uE-Info: 75 58 NIL 0 0 72 2 2 4 NIL ofnI
 #======================================================================
 
 # HISTORY:
@@ -23,6 +23,9 @@
 #	Aug 16, 2006: - BUG: last level was returned on value < first level
 #	May  9, 2008: - adapted to GMT 4.3 (see also IMPLEMENTATION NOTES
 #					in [mkCPT])
+#	Mar 26, 2018: - BUG: fg colors could not be set?!?!?!?! (both F and B set bg color)
+#				  - implemented color scaling for input files with rgb vals 0-1
+#	May 14, 2016: - added input file check
 
 #----------------------------------------------------------------------
 # CPT File Parsing
@@ -65,10 +68,11 @@ sub readCPT($)
 		if ($f[0] eq 'B') {
 			$CPT{bg_R} = $f[1]; $CPT{bg_G} = $f[2]; $CPT{bg_B} = $f[3];
 		} elsif ($f[0] eq 'F') {
-			$CPT{bg_R} = $f[1]; $CPT{bg_G} = $f[2]; $CPT{bg_B} = $f[3];
+			$CPT{fg_R} = $f[1]; $CPT{fg_G} = $f[2]; $CPT{fg_B} = $f[3];
 		} elsif ($f[0] eq 'N') {
 			$CPT{nan_R} = $f[1]; $CPT{nan_G} = $f[2]; $CPT{nan_B} = $f[3];
 		} else {
+			croak("$0: format error - 7 fields expected on line: $_") unless ($#f >= 7);
 			$CPT{from_z}[$CPT{levels}] = $f[0];
 			$CPT{from_R}[$CPT{levels}] = $f[1];
 			$CPT{from_G}[$CPT{levels}] = $f[2];
@@ -82,7 +86,27 @@ sub readCPT($)
     }
     $CPT{color_model} = 'RGB' unless defined($CPT{color_model});
     croak("$0: color model $CPT{color_model} not implemented\n")
-    	unless ($CPT{color_model} =~ '\+?RGB' || $CPT{color_model} =~ '\+?HSV');
+    	unless ($CPT{color_model} =~ '\+?[Rr][Gg][Bb]' || $CPT{color_model} =~ '\+?[Hh][Ss][Vv]');
+
+	if ($CPT{from_R}[0]>=0 && $CPT{from_R}[0]<=1 &&								# colors in 0-1 range
+		$CPT{from_G}[0]>=0 && $CPT{from_G}[0]<=1 &&
+		$CPT{from_B}[0]>=0 && $CPT{from_B}[0]<=1 &&
+    	$CPT{from_R}[$CPT{levels}-1]>=0 && $CPT{from_R}[$CPT{levels}-1]<=1 &&
+		$CPT{from_G}[$CPT{levels}-1]>=0 && $CPT{from_G}[$CPT{levels}-1]<=1 &&
+		$CPT{from_B}[$CPT{levels}-1]>=0 && $CPT{from_B}[$CPT{levels}-1]<=1) {
+			$CPT{bg_R} = round(255 * $CPT{bg_R}); $CPT{bg_G} = round(255 * $CPT{bg_G}); $CPT{bg_B} = round(255 * $CPT{bg_B});
+			$CPT{fg_R} = round(255 * $CPT{fg_R}); $CPT{fg_G} = round(255 * $CPT{fg_G}); $CPT{fg_B} = round(255 * $CPT{fg_B});
+			$CPT{nan_R} = round(255 * $CPT{nan_R}); $CPT{nan_G} = round(255 * $CPT{nan_G}); $CPT{nan_B} = round(255 * $CPT{nan_B});
+			for (my($i)=0; $i<$CPT{levels}; $i++) {
+				$CPT{from_R}[$i] = round(255 * $CPT{from_R}[$i]);
+				$CPT{from_G}[$i] = round(255 * $CPT{from_G}[$i]);
+				$CPT{from_B}[$i] = round(255 * $CPT{from_B}[$i]);
+				$CPT{to_R}[$i] = round(255 * $CPT{to_R}[$i]);
+				$CPT{to_G}[$i] = round(255 * $CPT{to_G}[$i]);
+				$CPT{to_B}[$i] = round(255 * $CPT{to_B}[$i]);
+			}
+	}
+
 	return %CPT;
 }
 		

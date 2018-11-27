@@ -1,9 +1,9 @@
 #======================================================================
 #                    L I B C O N V . P L 
 #                    doc: Sat Dec  4 13:03:49 1999
-#                    dlm: Mon Dec 18 14:27:19 2017
+#                    dlm: Tue May 22 11:19:54 2018
 #                    (c) 1999 A.M. Thurnherr
-#                    uE-Info: 67 36 NIL 0 0 70 2 2 4 NIL ofnI
+#                    uE-Info: 68 41 NIL 0 0 70 2 2 4 NIL ofnI
 #======================================================================
 
 # HISTORY:
@@ -65,6 +65,7 @@
 #	Jan 27, 2017: - BUG: dayNo() numeric month could have leading/trailing whitespace
 #	Jul  6, 2017: - BUG: date conversion routines did not parse 1/5/12 correctly
 #	Dec 18, 2017: - removed ambiguous-date warning
+#	May 22, 2018: - added NMEA2dec_time()
 
 require "$ANTS/libEOS83.pl";                        # &sigma()
 require "$ANTS/libPOSIX.pl";                        # &floor()
@@ -186,6 +187,16 @@ sub dec_time(@)										# decimal time
 #----------------------------------------------------------------------
 # String to Decimal Time Conversion
 #----------------------------------------------------------------------
+
+sub NMEA2dec_time(@)
+{
+	my($NMEA_string,$epoch) = &antsFunUsage(-1,'.','<NMEA string>[, epoch]',@_);
+
+	# Mar 17 2018 01:23:09
+	my($month,$day,$year,$time) = split(/\s+/,$NMEA_string);
+	$epoch = $year unless defined($epoch);
+	return dayNo($year,$month,$day,$epoch) + frac_day(split(':',$time));
+}
 
 { my($date_fmt); 
 
