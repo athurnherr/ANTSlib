@@ -1,9 +1,9 @@
 #======================================================================
-#                    L I B G M . P L 
+#                    L I B G M 7 6 . P L 
 #                    doc: Sun Feb 20 14:43:47 2011
-#                    dlm: Tue Nov 18 12:42:30 2014
+#                    dlm: Sat Feb  2 02:33:11 2019
 #                    (c) 2011 A.M. Thurnherr
-#                    uE-Info: 22 53 NIL 0 0 70 2 2 4 NIL ofnI
+#                    uE-Info: 144 43 NIL 0 0 70 2 2 4 NIL ofnI
 #======================================================================
 
 # HISTORY:
@@ -20,6 +20,14 @@
 #	Dec 28, 2012: - added allowance for small roundoff error to Sw()
 #	Oct  6, 2014: - made omega optional in Sw()
 #	Nov 18, 2014: - made b & jstar mandatory for Sw()
+#	Feb  2, 2019: - renamed from libGM.pl to libGM76.pl
+#				  - replaced beta with m
+#				  - replaced old code based on Gregg + Kunze formalism with
+#					expressions from Thurnherr et al. (GRL 2015)
+#				  - added GM_strain
+#				  - BUG: Sw usage message had wrong parameter order
+#				  - renamed Sw => GM_VKE; Su_z => GM_shear
+
 
 require "$ANTS/libEOS83.pl";
 
@@ -38,7 +46,7 @@ $GM_jstar = 3;		# dimless		# peak mode number
 # Vertical velocity spectral density
 #
 # Units: K.E. per frequency per wavenumber [m^2/s^2*1/s*1/m = m^3/s]
-# Version: GM79?
+# Version: GM76
 #
 # E. Kunze (email, Feb 2011): The GM vertical velocity w spectrum is described by
 #
@@ -89,11 +97,10 @@ sub B($)											# structure function (omega dependence)
 	return 2 / $pi * $f / $omega / sqrt($omega**2 - $f**2);
 }
 
-
-sub Sw(@)
+sub GM_VKE(@)
 {
 	my($omega,$m,$lat,$b,$jstar,$N) =
-		&antsFunUsage(-5,'fff','[frequency[1/s]] <vertical wavenumber[rad/m]> <lat[deg]> <N[rad/s]> <b[m]> <j*>',@_);
+		&antsFunUsage(-5,'fff','[frequency[1/s]] <vertical wavenumber[rad/m]> <lat[deg]> <b[m]> <j*> <N[rad/s]>',@_);
 
 	if (defined($N)) {									# Sw(omega,m)
 		local($f) = abs(&f($lat));
@@ -102,7 +109,7 @@ sub Sw(@)
 		return nan if ($omega < $f || $omega > $N);
 		my($mstar) = &m($jstar,$N,$omega);
 		return $GM_E0 * $b * 2 * $f**2/$omega**2/B($omega) * $jstar / ($m+$mstar)**2;
-	} else {											# Sw(m)
+	} else {											# Sw(m), i.e. integrated over all omega; as in Thurnherr et al., GRL 2015
 		$N = $lat;										# shift arguments to account for missing omega
 		$lat = $m;
 		local($f) = abs(&f($lat));
@@ -114,22 +121,46 @@ sub Sw(@)
 }
 
 #----------------------------------------------------------------------
-# GM76, as per Gregg and Kunze (JGR 1991)
-#	- beta is vertical wavenumber (m above)
+# Shear and Strain m-spectra (i.e. integrated over f)
+#	- spectral density
+#	- from Thurnherr et al. (GRL 2015)
 #----------------------------------------------------------------------
 
-sub Su($$)
+sub GM_shear(@)
 {
-	my($beta,$N) = @_;
-
-	my($beta_star) = &m($GM_jstar,$N);				# A3
-	return 3*$GM_E0*$GM_b**3*$GM_N0**2 / (2*$GM_jstar*$pi) / (1+$beta/$beta_star)**2;	# A2
+	my($m,$lat,$b,$jstar,$N) =
+		&antsFunUsage(5,'fffff','<vertical wavenumber[rad/m]> <lat[deg]> <b[m]> <j*> <N[rad/s]>',@_);
+	local($f) = abs(&f($lat));
+	my($mstar) = &m($jstar,$N);
+	return 3 * $pi/2 * $GM_E0 * $b * $jstar * $m**2 / ($m+$mstar)**2;
 }
 
-sub Su_z($$)
+sub GM_strain(@)
 {
-	my($beta,$N) = &antsFunUsage(2,'ff','<vertical wavenumber[rad/m]> <N[rad/s]>',@_);
-	return $beta**2 * &Su($beta,$N);
+	my($m,$lat,$b,$jstar,$N) =
+		&antsFunUsage(5,'fffff','<vertical wavenumber[rad/m]> <lat[deg]> <b[m]> <j*> <N[rad/s]>',@_);
+	local($f) = abs(&f($lat));
+	my($mstar) = &m($jstar,$N);
+	return $pi/2 * $GM_E0 * $b * $jstar * $m**2 / ($m+$mstar)**2;
 }
+
+##----------------------------------------------------------------------
+## GM76, as per Gregg and Kunze (JGR 1991)
+##	- beta is vertical wavenumber
+##----------------------------------------------------------------------
+#
+#sub Su($$)
+#{
+#	my($beta,$N) = @_;
+#
+#	my($beta_star) = &m($GM_jstar,$N);				# A3
+#	return 3*$GM_E0*$GM_b**3*$GM_N0**2 / (2*$GM_jstar*$pi) / (1+$beta/$beta_star)**2;	# A2
+#}
+#
+#sub Su_z($$)
+#{
+#	my($beta,$N) = &antsFunUsage(2,'ff','<vertical wavenumber[rad/m]> <N[rad/s]>',@_);
+#	return $beta**2 * &Su($beta,$N);
+#}
 
 1;

@@ -1,9 +1,9 @@
 #======================================================================
 #                    L I B S B E . P L 
 #                    doc: Mon Nov  3 12:42:14 2014
-#                    dlm: Mon Apr 23 21:03:27 2018
+#                    dlm: Thu Jan  3 14:06:25 2019
 #                    (c) 2014 A.M. Thurnherr
-#                    uE-Info: 25 105 NIL 0 0 72 2 2 4 NIL ofnI
+#                    uE-Info: 17 30 NIL 0 0 72 2 2 4 NIL ofnI
 #======================================================================
 
 # HISTORY:
@@ -14,7 +14,7 @@
 #	Sep 29, 2015: - added potemp and sigma standard field names
 #	Mar 19, 2016: - BUG: conductivity unit checking on input had multiple bugs
 #				  - solution for files with multiple conductivity units: ignore
-#				    all conducitivities with units not equal to the first cond var
+#				    all conductivities with units not equal to the first cond var
 #				  - added $libSBE_quiet to suppress diagnostic messages
 #	May 31, 2016: - made successfully decoding lat/lon optional
 #	Mar 10, 2017: - made lat/lon decoding more flexible
@@ -22,7 +22,9 @@
 #				  - added default field name for sound speed (sspd)
 #	Mar  8, 2018: - BUG: SBE_parseHeader() did not correctly detect missing lat/lon
 #				  - suppressed warnings in SBE_parseHeader()
-#	Apr 23, 2018: - BUG: header lat/lon was incorrectly parsed when there was no spaced before hemisphere
+#	Apr 23, 2018: - BUG: header lat/lon was incorrectly parsed when there was no space
+#						 before hemisphere
+#	Jan  3, 2019: - BUG: SBE_parseHeader() did not correctly detect missing lat/lon
 
 #----------------------------------------------------------------------
 # fname_SBE2std($)
@@ -327,8 +329,11 @@ sub SBE_parseHeader($$$)
 	croak("$0: cannot determine missing value\n")
 	    unless defined($badval);
 
+	$lat = nan unless defined($lat);
+	$lon = nan unless defined($lon);
+
 	@antsLayout = @antsNewLayout;
-	return (1*$nfields,1*$nrecs,1*$sampint,1*$badval,$ftype,1*$lat,1*$lon);
+	return (1*$nfields,1*$nrecs,1*$sampint,1*$badval,$ftype,$lat,$lon);
 }
 
 #----------------------------------------------------------------------

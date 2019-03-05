@@ -1,9 +1,9 @@
 #======================================================================
 #                    L I B C O N V . P L 
 #                    doc: Sat Dec  4 13:03:49 1999
-#                    dlm: Tue May 22 11:19:54 2018
+#                    dlm: Fri Feb 15 13:21:08 2019
 #                    (c) 1999 A.M. Thurnherr
-#                    uE-Info: 68 41 NIL 0 0 70 2 2 4 NIL ofnI
+#                    uE-Info: 529 24 NIL 0 0 70 2 2 4 NIL ofnI
 #======================================================================
 
 # HISTORY:
@@ -66,6 +66,8 @@
 #	Jul  6, 2017: - BUG: date conversion routines did not parse 1/5/12 correctly
 #	Dec 18, 2017: - removed ambiguous-date warning
 #	May 22, 2018: - added NMEA2dec_time()
+#	Jan 17, 2019: - added ISO_Datetime()
+#	Feb 15, 3019: - added deg2lat, deg2lon
 
 require "$ANTS/libEOS83.pl";                        # &sigma()
 require "$ANTS/libPOSIX.pl";                        # &floor()
@@ -310,7 +312,7 @@ sub yymmdd2dec_time(@)
 }
 
 #----------------------------------------------------------------------
-# Decimal Time to Strin Conversion
+# Decimal Time to String Conversion
 #----------------------------------------------------------------------
 
 { my(@fc);
@@ -373,6 +375,52 @@ sub yymmdd2dec_time(@)
 		$day++,$hour=0 if ($hour == 24);
 	
 		return sprintf('%02d:%02d:%02d',$hour,$min,$sec);
+	}
+}
+
+{ my(@fc);
+
+	sub ISO_Datetime(@)									# day number -> ISO 8601
+	{
+	
+		my($dnf);										# find std dn field & epoch
+		if (@_ == 0) {
+			for (my($i)=0; $i<@antsLayout; $i++) {
+				next unless ($antsLayout[$i] =~ /^dn(\d\d)$/);
+				$dnf = $antsLayout[$i]; push(@_,$1);
+				last;
+	        }
+	    }
+	    
+		my($year,$fday) = &antsFunUsage(2,"cf","epoch, dayNo",\@fc,undef,$dnf,@_);
+	
+		$year += ($year < 50) ? 2000 : 1900 			# Y2K
+			if ($year < 100);
+	
+		$day = int($fday);								# prevent runover on last day of month
+		$fday -= $day;
+		
+		while ($day > 365+&leapYearP($year)) {			# adjust year
+			$day -= 365 + &leapYearP($year);
+			$year++;
+		}
+	
+		my($month) = 1;
+		while ($day > &monthLength($year,$month)) {
+			$day -= &monthLength($year,$month);
+			$month++;
+		}
+	
+		my($hour) = int(24*$fday);
+		$fday -= $hour/24;
+		my($min) = int(24*60*$fday);
+		$fday -= $min/24/60;
+		my($sec) = round(24*3600*$fday);
+		$min++,$sec=0 if ($sec == 60);
+		$hour++,$min=0 if ($min == 60);
+		$day++,$hour=0 if ($hour == 24);
+
+		return sprintf('%04d-%02d-%02dT%02d:%02d:%02d',$year,$month,$day,$hour,$min,$sec);
 	}
 }
 
@@ -459,12 +507,28 @@ sub str2deg(@)      # string containing dd [mm.m] [NSEW] -> dd.d
 	return ($b eq "") ? &dmh2d($deg,0,$a) : &dmh2d($deg,$a,$b);
 }
 
-sub GMT2deg(@)	# GMT degree format to decimal
+sub GMT2deg(@)	    # GMT degree format to decimal
 {
 	my($GMT) = &antsFunUsage(1,".","GMT-degs ",@_);
 	return (substr($1,0,1) eq "-") ? $1-$2/60.0 : $1+$2/60.0
 		if ($GMT =~ /\s*([^:]+):([^:]+)/);
 	return $GMT;
+}
+
+sub deg2lat(@)		# decimal latitude to degrees:min.xx NS
+{
+	my($deg) = &antsFunUsage(1,'f','decimal latitude',@_);
+	return sprintf("%02d:%06.3f'%s",abs(int($deg)),
+								 (abs($deg)-abs(int($deg)))*60,
+	   							 $deg>=0 ? "N" : "S");
+}
+
+sub deg2lon(@)		# decimal longitude to degrees:min.xx EW
+{
+	my($deg) = &antsFunUsage(1,'f','decimal longitude',@_);
+	return sprintf("%03d:%06.3f'%s",abs(int($deg)),
+								 (abs($deg)-abs(int($deg)))*60,
+	   							 $deg>=0 ? "E" : "W");
 }
 
 #----------------------------------------------------------------------
