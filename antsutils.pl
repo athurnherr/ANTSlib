@@ -2,9 +2,9 @@
 #======================================================================
 #                    A N T S U T I L S . P L 
 #                    doc: Fri Jun 19 23:25:50 1998
-#                    dlm: Fri Aug 30 13:39:50 2019
+#                    dlm: Fri Apr  5 16:21:54 2019
 #                    (c) 1998 A.M. Thurnherr
-#                    uE-Info: 108 62 NIL 0 0 70 10 2 4 NIL ofnI
+#                    uE-Info: 106 55 NIL 0 0 70 10 2 4 NIL ofnI
 #======================================================================
 
 # Miscellaneous auxillary functions

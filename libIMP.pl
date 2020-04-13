@@ -1,9 +1,9 @@
 #======================================================================
 #                    L I B I M P . P L 
 #                    doc: Tue Nov 26 21:59:40 2013
-#                    dlm: Mon Jul  1 15:47:57 2019
+#                    dlm: Sun Apr 12 10:03:38 2020
 #                    (c) 2017 A.M. Thurnherr
-#                    uE-Info: 689 0 NIL 0 0 70 2 2 4 NIL ofnI
+#                    uE-Info: 181 61 NIL 0 0 72 0 2 4 NIL ofnI
 #======================================================================
 
 # HISTORY:
@@ -59,6 +59,8 @@
 #				  - modified output of pre-/post-cast records to include all LADCP
 #				    but no IMU data
 #				  - BUG: GIMBAL_PITCH had not only been defined for in-water records
+#	Jun  9, 2018: - BUG: some "edge" data (beyond the valid profile) were bogus (does not matter in practice)
+#	Apr 12, 2020: - modified rot_vecs to pass all records with non-numerical elapsed 
 
 #----------------------------------------------------------------------
 # gRef() library
@@ -115,8 +117,8 @@ sub rot_vecs(@) 																	# rotate & output IMU vector data
 	$plot_malapsed = $max_elapsed unless defined($plot_malapsed);
 
 	while (&antsIn()) {
-		next if ($ants_[0][$elapsedF] < $min_elapsed);								# trim data
-		last if ($ants_[0][$elapsedF] > $max_elapsed);
+		next if numberp($ants_[0][$elapsedF]) && ($ants_[0][$elapsedF] < $min_elapsed);	# trim data
+		last if numberp($ants_[0][$elapsedF]) && ($ants_[0][$elapsedF] > $max_elapsed);
 		
 		my($cpiro) = -1;															# current pitch/roll accelerometer
 		my(@R); 																	# rotation matrix
@@ -184,8 +186,9 @@ sub rot_vecs(@) 																	# rotate & output IMU vector data
 
 		pl_mag_calib_plot($valid,$magX,$magY)
 			if defined($P{profile_id}) &&
-				($ants_[0][$elapsedF] >= $plot_milapsed) &&
-				($ants_[0][$elapsedF] <= $plot_malapsed);
+				(!numberp($ants_[0][$elapsedF]) ||
+					($ants_[0][$elapsedF] >= $plot_milapsed) &&
+					($ants_[0][$elapsedF] <= $plot_malapsed));
 	}
 }
 
@@ -451,7 +454,7 @@ sub calc_hdg_offset($)
 	}
 	$IMP_pitch_mean /= $nPR;
 	$IMP_roll_mean /= $nPR;
-	
+
 	for (my($ens)=$LADCP_begin; $ens<=$LADCP_end; $ens++) {
 		my($r) = int(($LADCP{ENSEMBLE}[$ens]->{ELAPSED_TIME} + $IMP{TIME_LAG} - $ants_[0][$elapsedF]) / $IMP{DT});
 		next unless numberp($IMP{TILT_AZIMUTH}[$r]);
