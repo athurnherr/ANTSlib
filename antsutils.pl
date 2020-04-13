@@ -2,9 +2,9 @@
 #======================================================================
 #                    A N T S U T I L S . P L 
 #                    doc: Fri Jun 19 23:25:50 1998
-#                    dlm: Wed May 25 12:16:39 2016
+#                    dlm: Fri Aug 30 13:39:50 2019
 #                    (c) 1998 A.M. Thurnherr
-#                    uE-Info: 104 31 NIL 0 0 70 10 2 4 NIL ofnI
+#                    uE-Info: 108 62 NIL 0 0 70 10 2 4 NIL ofnI
 #======================================================================
 
 # Miscellaneous auxillary functions
@@ -102,6 +102,10 @@
 #	May 18, 2015: - added antsFindParam()
 #	Jun 21, 2015: - added antsParam(), modified antsRequireParam()
 #	May 12, 2016: - added &div2() to prevent division by zero errors
+#	Apr  5, 2019: - disabled weird line of code in antsFunUsage() (see comment)
+#				  - improved error messages in antsFunUsage()
+#				  - BUG: antsFunUsage did not work with -ve argc (variable argument funs)
+#	Aug 30, 2019: - BUG: antsLoadModel() did not respect $ANTS
 
 # fnr notes:
 #	- matches field names starting with the string given, i.e. "sig" is
@@ -446,8 +450,7 @@ sub antsLoadModel(...)
 		require "$pref.$name";
 		return $name;
 	} else {											# load from ANTSlib 
-		my($path) = ($0 =~ m{^(.*)/[^/]*$});
-		require "$path/$pref.$name";
+		require "$ANTS/$pref.$name";
 		return $name;
     }
 }
@@ -467,8 +470,7 @@ sub antsLoadModelWithArgs($$)
 			require "$pref.$name";
 			return ($name,split(',',$args));
 		} else {
-			my($path) = ($0 =~ m{^(.*)/[^/]*$});
-			require "$path/$pref.$name";
+			require "$ANTS/$pref.$name";
 			return ($name,split(',',$args));
 		}
 	}
@@ -538,7 +540,7 @@ sub antsFunUsage($$$@)
 
 	if (ref($params[0]) && @antsLayout>0 && @params<2*$argc+1) {  # default params
 		my(@newparams);									# 2nd test is for abc
-		my($npi) = $argc+1;
+		my($npi) = abs($argc)+1;
 
 		$listAllRecs = 1;								# special flag for list(1)
 
@@ -551,7 +553,7 @@ sub antsFunUsage($$$@)
 			return(@newparams);
 		}
 	    
-		for (my($i)=1; $i<=$argc; $i++) {				# fill cache & do tests
+		for (my($i)=1; $i<=abs($argc); $i++) {				# fill cache & do tests
 			if (defined($params[$i])) {
 				push(@{$params[0]},&fnr($params[$i]));
 				push(@newparams,&antsVal($params[0]->[$#{$params[0]}]));
@@ -564,24 +566,27 @@ sub antsFunUsage($$$@)
 		croak("usage: $msg\n") unless ($npi > $#params);
 		
 		@params = @newparams;
-	} elsif (ref($params[0])) {
-		splice(@params,0,$argc+1);
+	} elsif (ref($params[0])) {								# remove array ref & list of field names
+		splice(@params,0,abs($argc)+1);
 	}
 
 	if ($argc >= 0) {									# argument count
-		croak("usage: $msg\n") unless (@params == $argc);
+		croak("usage: $msg [params = @params]\n") unless (@params == $argc);
 	} else {
-		croak("usage: $msg\n") unless (@params >= -$argc);
+		croak("usage: $msg [params = @params])\n") unless (@params >= -$argc);
 	}
     
 	for (my($i)=0; $i<length($types); $i++) {			# type checking
 		$_ = substr($types,$i,1);
 		SWITCH: {
-			last unless defined($params[$i]);
-			&antsNoCardErr("",$params[$i]),last SWITCH if (/c/);
-			&antsNoIntErr("",$params[$i]),last SWITCH if (/i/);
-			&antsNoFloatErr("",$params[$i]),last SWITCH if (/f/);
-			&antsNoFileErr("",$params[$i]),last SWITCH if (/F/);
+# 4/5/19: The following line of code prevents proper type checking when one of the
+#		  arguments is undefined. I do not know under what circumstances the code
+#	      is required. Therfore I disabled it temporarily.
+#			last unless defined($params[$i]);
+			&antsNoCardErr(sprintf("argument #%d in $msg (params = @params)",$i+1),$params[$i]),last SWITCH if (/c/);
+			&antsNoIntErr(sprintf("argument #%d in $msg",$i+1),$params[$i]),last SWITCH if (/i/);
+			&antsNoFloatErr(sprintf("argument #%d in $msg (params = @params)",$i+1),$params[$i]),last SWITCH if (/f/);
+			&antsNoFileErr(sprintf("argument #%d in $msg",$i+1),$params[$i]),last SWITCH if (/F/);
 			if (/\d/) {
 				croak("$0: $params[$i] is not a string of length $_\n")
 					unless ($_ == length($params[$i]));

@@ -1,0 +1,54 @@
+#======================================================================
+#                    . M A T C H _ M I N I M I Z E . M A D 
+#                    doc: Tue Aug 22 18:31:22 2006
+#                    dlm: Wed Aug 23 23:15:13 2006
+#                    (c) 2006 A.M. Thurnherr
+#                    uE-Info: 39 26 NIL 0 0 72 2 2 4 NIL ofnI
+#======================================================================
+
+# sum of absolute deviations
+
+#======================================================================
+
+sub MM_usage(@)
+{
+	@MM_fname = @_;
+
+	croak("match-minimize usage: -m SAD(<field>[,...])\n")
+		unless (@MM_fname > 0);
+	for (my($fi)=0; $fi<@MM_fname; $fi++) {
+		$MM_fnr[$fi]  =  &fnr($MM_fname[$fi]);
+		$MM_wfnr[$fi] = &wfnr($MM_fname[$fi]);
+		&IS_init($MM_wfnr[$fi],$MM_cwfnr);			# prepare interpolation
+	}
+	for (my($r)=0; $r<@ants_; $r++) {
+		for (my($fi)=0; $fi<@MM_fname; $fi++) {
+			croak("$0: $MM_fname[$fi] must be numeric\n")
+				unless numberp($ants_[$r][$MM_fnr[$fi]]) &&
+					   numberp($ants_[$r][$MM_wfnr[$fi]]);
+		}
+	}
+}
+
+#======================================================================
+
+sub MM_eval(@)
+{
+	&MW_warp(@_);
+	
+	my($sad) = my($nad) = 0;
+	for (my($r)=0; $r<@ants_; $r++) {
+		my($xi) = &bSearch($MW_cwfnr,$ants_[$r][$MW_cfnr]);
+		next unless defined($xi);
+		$nad++;
+		for (my($fi)=0; $fi<@MM_fnr; $fi++) {
+			my($wv) = &IS_interpolate(\@wf_,$MW_cwfnr,$ants_[$r][$MW_cfnr],$xi,$MM_wfnr[$fi]);
+			$sad += abs($ants_[$r][$MM_fnr[$fi]] - $wv);
+		}
+	}
+	return $sad/$nad;
+}
+
+#======================================================================
+
+1;

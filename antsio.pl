@@ -2,9 +2,9 @@
 #======================================================================
 #                    A N T S I O . P L 
 #                    doc: Fri Jun 19 19:22:51 1998
-#                    dlm: Mon Apr 23 14:20:58 2018
+#                    dlm: Wed Apr 10 16:57:59 2019
 #                    (c) 1998 A.M. Thurnherr
-#                    uE-Info: 216 82 NIL 0 0 70 2 2 4 NIL ofnI
+#                    uE-Info: 217 48 NIL 0 0 70 2 2 4 NIL ofnI
 #======================================================================
 
 # HISTORY:
@@ -214,6 +214,7 @@
 #	Mar 10, 2017: - BUG: antsCheckDeps() used ctime instead of mtime!!!
 #	Apr  5, 2017: - BUG: stale file mtime dependency info was not printed correctly
 #	Apr 23, 2018: - BUG: @antsLayout was not kept up-to-date when layout-changes are allowed
+#	Apr 10, 2019: - disabled dependency warnings
 
 # GENERAL NOTES:
 #	- %P was named without an ants-prefix because associative arrays
@@ -292,7 +293,7 @@ sub antsActivateOut()
 #	- by default, tests current <> file
 #----------------------------------------------------------------------
 
-{ my($warned);
+{ my($warned) = 1;									# disable dependency warning
 
   sub antsCheckDeps()
   {

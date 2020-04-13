@@ -1,0 +1,47 @@
+#======================================================================
+#                    . I S O P L E T H . S I G M A 2 
+#                    doc: Tue Dec 13 21:50:18 2005
+#                    dlm: Wed Dec 14 09:11:01 2005
+#                    (c) 2005 A.M. Thurnherr
+#                    uE-Info: 19 26 NIL 0 0 72 2 2 4 NIL ofnI
+#======================================================================
+
+# HISTORY:
+#	Dec 13, 2005: - created
+
+# NOTES:
+#	- assumes T/S fields to be called 'temp' and 'salin'
+
+require "$ANTS/libEOS83.pl";				# load equation of state
+
+unless (defined($P{ITS})) {
+	&antsInfo("using default %ITS=90");
+	&antsAddParams(ITS,90);
+}
+
+sub yfield_isopleth($)						# return y-field based on x-field
+{
+	my($xf) = @_;
+	return $xf eq 'salin' ? 'temp' : 'salin';
+}
+
+sub bracket_isopleth($$$$)					# heuristically bracket y field
+{
+	my($xf,$xv,$iv,$prev_y) = @_;
+
+	if ($xf eq 'salin') {
+		return (-10,30);
+	} else {
+		return (34,37);
+	}
+}
+
+sub eval_isopleth($$$)						# evaluate function for isopleth
+{
+	my($xf,$x,$y) = @_;
+
+	return $xf eq 'salin' ? sigma($x,$y,0,2000)
+						  : sigma($y,$x,0,2000)
+}
+
+1;

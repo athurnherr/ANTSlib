@@ -1,0 +1,90 @@
+#======================================================================
+#                    . I N T E R P . A D C P 
+#                    doc: Fri Apr 16 16:07:48 2010
+#                    dlm: Tue Aug  9 23:07:35 2011
+#                    (c) 2010 A.M. Thurnherr
+#                    uE-Info: 81 0 NIL 0 0 72 2 2 4 NIL ofnI
+#======================================================================
+
+# interpolation scheme mimicking RDI ADCP response as described in
+# Broadband primer, p.17
+
+# HISTORY:
+# 	Apr 16, 2010: - created
+#	Aug  9, 2011: - added -u
+
+# NOTES:
+#	- interface is described in [.interp.linear]
+
+$IS_opts = 'b:u';
+$IS_optsUsage = '[pass -u)nfiltered] -b)in/pulse <length>';
+
+sub IS_usage()
+{
+	&antsUsageError()
+		unless defined($opt_b);
+}
+
+sub IS_init($$$$) {}
+
+#+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+#
+# &IS_interpolate(br,idr,xf,xv,xi,f)	interpolate field f
+#		br							data buffer reference
+#		idr							init-data reference
+#		xf							x field
+#		xv							x value
+#		xi							index of last record with x-value <= x
+#		f							field number to interpolate
+#		<ret val>					interpolated value
+#
+# NB:
+#	- handle f == xf
+#	- return NaN if any of the y values required is NaN
+#
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+sub IS_interpolate($$$$$$)
+{
+	my($bR,$idR,$xf,$xv,$xi,$f) = @_;
+	
+	return $xv if ($xf == $f);							# return target x
+
+	my($tow) = $xi;										# top of triangular sampling window
+	while ($tow>=0 && (!numberp($bR->[$tow][$xf]) || $bR->[$tow][$xf] > $xv-$opt_b)) {
+		$tow--;
+	}
+	if ($tow < 0) {										# incomplete window
+		return nan unless ($opt_u);
+		$tow = 0;
+	} else {
+		$tow++;
+	}
+
+	my($bow) = $xi+1;									# bottom of triangular sampling window
+	while ($bow<=$#{$bR} && (!numberp($bR->[$bow][$xf]) || $bR->[$bow][$xf] < $xv+$opt_b)) {
+		$bow++;
+	}
+
+	if ($bow > $#{$bR}) {								# incomplete window
+		return nan unless ($opt_u);
+		$bow = $#{$bR};
+	} else {
+		$bow--;
+	}
+
+	my($sweight) = 0;									# calculate weighted average
+	my($sum) = 0;
+	for (my($i)=$tow; $i<=$bow; $i++) {
+		next unless (numberp($bR->[$i][$xf]) && numberp($bR->[$i][$f]));
+		my($weight) = 1 - abs($bR->[$i][$xf]-$xv)/$opt_b;
+		$sum += $weight * $bR->[$i][$f];
+		$sweight += $weight;
+	}
+
+	return ($sweight>0) ? $sum/$sweight : nan;
+}
+
+#----------------------------------------------------------------------
+
+1;

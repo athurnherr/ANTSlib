@@ -1,9 +1,9 @@
 #======================================================================
 #                    L I B L A D C P . P L 
 #                    doc: Wed Jun  1 20:38:19 2011
-#                    dlm: Sat Apr  6 19:42:07 2019
+#                    dlm: Mon Apr  1 16:13:46 2019
 #                    (c) 2011 A.M. Thurnherr
-#                    uE-Info: 211 34 NIL 0 0 70 2 2 4 NIL ofnI
+#                    uE-Info: 27 65 NIL 0 0 70 2 2 4 NIL ofnI
 #======================================================================
 
 # HISTORY:
@@ -24,8 +24,7 @@
 #				  - added parameter checks to processing-specific corrections
 #	May 18, 2015: - added pulse length to T_w() and T_w_z()
 #	Apr 25, 2018: - added eps_VKE() parameterization
-#	Apr  5, 2018: - adapted to improved antsFunUsage()
-#				  - BUG eps_VKE() had erroneous string
+#	Apr  1, 2019: - removed plen parameter from T_w() and T_w_z()
 
 require "$ANTS/libvec.pl";
 require "$ANTS/libfuns.pl";
@@ -45,7 +44,7 @@ require "$ANTS/libfuns.pl";
 sub eps_VKE(@)
 {
     my($p0,$c) =
-        &antsFunUsage(-1,'.','eps_VKE(<p0[m^2/s^2/(rad/m)]> [c[0.021 [1/sqrt(s)]]])',@_);
+        &antsFunUsage(-1,'.','<p0[m^2/s^2/(rad/m)]> [c[0.021 [1/sqrt(s)]]]',@_);
 	$c = 0.021 unless defined($c);
     return numberp($p0) ? ($p0 / $c) ** 2 : nan;
 }
@@ -71,7 +70,7 @@ sub eps_VKE(@)
 sub T_ravg(@)
 {
     my($k,$blen,$plen) =
-        &antsFunUsage(-2,'ff','T_ravg(<vertical wavenumber[rad/s]> <bin-length[m]> [pulse-length[m]])',@_);
+        &antsFunUsage(-2,'ff','<vertical wavenumber[rad/s]> <bin-length[m]> [pulse-length[m]]',@_);
 	$plen = $blen unless defined($plen);        
     return 1 / sinc($k*$blen/2/$PI)**2 / sinc($k*$plen/2/$PI)**2;
 }
@@ -84,7 +83,7 @@ sub T_ravg(@)
 sub T_fdiff($$)
 {
     my($k,$dz) =
-        &antsFunUsage(2,'ff','T_fdiff(<vertical wavenumber[rad/s]> <differencing interval[m]>)',@_);
+        &antsFunUsage(2,'ff','<vertical wavenumber[rad/s]> <differencing interval[m]>',@_);
     return 1 / sinc($k*$dz/2/$PI)**2;
 }
 
@@ -97,7 +96,7 @@ sub T_fdiff($$)
 sub T_interp($$$)
 {
     my($k,$blen,$dz) =
-        &antsFunUsage(3,'fff','T_interp(<vertical wavenumber[rad/s]> <bin length[m]> <grid resolution[m]>)',@_);
+        &antsFunUsage(3,'fff','<vertical wavenumber[rad/s]> <bin length[m]> <grid resolution[m]>',@_);
     return 1 / sinc($k*$blen/2/$PI)**4 / sinc($k*$dz/2/$PI)**2;
 }
 
@@ -110,7 +109,7 @@ sub T_interp($$$)
 sub T_binavg($$)
 {
     my($k,$dz) =
-        &antsFunUsage(2,'ff','T_binavg(<vertical wavenumber[rad/s]> <grid resolution[m]>)',@_);
+        &antsFunUsage(2,'ff','<vertical wavenumber[rad/s]> <grid resolution[m]>',@_);
     return 1 / sinc($k*$dz/2/$PI)**2;
 }
 
@@ -127,7 +126,7 @@ sub T_binavg($$)
 sub T_tilt($$)
 {
     my($k,$dprime) =
-        &antsFunUsage(2,'ff','T_tilt(<vertical wavenumber[rad/s]> <d-prime[m]>)',@_);
+        &antsFunUsage(2,'ff','<vertical wavenumber[rad/s]> <d-prime[m]>',@_);
     return $dprime ? 1 / sinc($k*$dprime/2/$PI)**2 : 1;
 }
 
@@ -149,7 +148,7 @@ sub dprime($)
 sub T_UH($$$$)
 {
 	my($k,$blen,$dz,$range_max) =
-        &antsFunUsage(-3,'fff','T_UH(<vertical wavenumber[rad/s]> <ADCP bin size[m]> <shear grid resolution[m]> <range max[m]>)',@_);
+        &antsFunUsage(4,'ffff','<vertical wavenumber[rad/s]> <ADCP bin size[m]> <shear grid resolution[m]> <range max[m]>',@_);
 	croak("T_UH($k,$blen,$dz,$range_max): bad parameters\n")
 		unless ($k>=0 && $blen>0 && $dz>0 && $range_max>=0);				
     return T_ravg($k,$blen) * T_fdiff($k,$blen) * T_interp($k,$blen,$dz) * T_tilt($k,dprime($range_max));
@@ -164,7 +163,7 @@ sub T_UH($$$$)
 sub T_ASM($$$$)
 {
 	my($k,$blen,$dz,$range_max) =
-        &antsFunUsage(-3,'fff','T_ASM(<vertical wavenumber[rad/s]> <ADCP bin size[m]> <shear grid resolution[m]> <range max[m]>)',@_);
+        &antsFunUsage(4,'ffff','<vertical wavenumber[rad/s]> <ADCP bin size[m]> <shear grid resolution[m]> <range max[m]>',@_);
 	croak("T_ASM($k,$blen,$dz,$range_max): bad parameters\n")
 		unless ($k>=0 && $blen>0 && $dz>0 && $range_max>=0);				
     return T_ravg($k,$blen) * T_fdiff($k,$blen) * T_binavg($k,$dz) * T_tilt($k,dprime($range_max));
@@ -182,14 +181,14 @@ sub T_ASM($$$$)
 sub T_VI($$$$$)
 {
 	my($k,$blen,$sel,$dz,$range_max) =
-        &antsFunUsage(-4,'ff.f','T_VI(<vertical wavenumber[rad/s]> <ADCP bin size[m]> <superensemble size[m]|nan> <shear grid resolution[m]> <range max[m]>)',@_);
+        &antsFunUsage(5,'ff.ff','<vertical wavenumber[rad/s]> <ADCP bin size[m]> <superensemble size[m]|nan> <shear grid resolution[m]> <range max[m]>',@_);
 	return T_VI_alt($k,$blen,$sel,$dz,dprime($range_max));        
 }
 
 sub T_VI_alt($$$$$)
 {
 	my($k,$blen,$sel,$dz,$dprime) =
-        &antsFunUsage(-4,'ff.ff','T_VI_alt(<vertical wavenumber[rad/s]> <ADCP bin size[m]> <superensemble size[m]|nan> <shear grid resolution[m]> <tilt d-prime[m]>)',@_);
+        &antsFunUsage(5,'ff.ff','<vertical wavenumber[rad/s]> <ADCP bin size[m]> <superensemble size[m]|nan> <shear grid resolution[m]> <tilt d-prime[m]>',@_);
 	croak("T_VI_alt($k,$blen,$sel,$dz,$range_max): bad parameters\n")
 		unless ($k>=0 && $blen>0 && $sel ne '' && $dz>0 && $range_max>=0);				
 	croak("$0: tilt-dprime outside range [0..$blen]\n")
@@ -199,7 +198,7 @@ sub T_VI_alt($$$$$)
 }
 
 #----------------------------------------------------------------------
-# T_w(k,blen,plen,dz,range_max)
+# T_w(k,blen,dz,range_max)
 #	- vertical-velocity method of Thurnherr (IEEE 2011)
 #	- range_max == 0 disables tilt correction
 #----------------------------------------------------------------------
@@ -207,18 +206,18 @@ sub T_VI_alt($$$$$)
 { my(@fc);
 	sub T_w(@)
 	{
-		my($k,$blen,$plen,$dz,$range_max) =
-			&antsFunUsage(-4,'ffff',
-				'T_w([vertical wavenumber[rad/s]] <ADCP bin length[m]> <pulse length[m]> <output grid resolution[m]> <range max[m]>)',
-				\@fc,'k',undef,undef,undef,@_);
-		croak("T_w($k,$blen,$plen,$dz,$range_max): bad parameters\n")
-			unless ($k>=0 && $blen>0 && $plen>0 && $dz>0 && $range_max>=0);				
-		return T_ravg($k,$blen,$plen) * T_binavg($k,$dz) * T_tilt($k,dprime($range_max));
+		my($k,$blen,$dz,$range_max) =
+			&antsFunUsage(4,'ffff',
+				'[vertical wavenumber[rad/s]] <ADCP bin length[m]> <output grid resolution[m]> <range max[m]>',
+				\@fc,'k',undef,undef,undef,undef,@_);
+		croak("T_w($k,$blen,$dz,$range_max): bad parameters\n")
+			unless ($k>=0 && $blen>0 && $dz>0 && $range_max>=0);				
+		return T_ravg($k,$blen) * T_binavg($k,$dz) * T_tilt($k,dprime($range_max));
 	}
 }
 
 #----------------------------------------------------------------------
-# T_w_z(k,blen,plen,dz,range_max)
+# T_w_z(k,blen,dz,range_max)
 #	- vertical-velocity method of Thurnherr (IEEE 2011)
 #	- first differencing of gridded shear to calculate dw/dz
 #	- NB: grid-scale differentiation assumed
@@ -228,13 +227,13 @@ sub T_VI_alt($$$$$)
 { my(@fc);
 	sub T_w_z(@)
 	{
-		my($k,$blen,$plen,$dz,$range_max) =
-			&antsFunUsage(-4,'ffff',
-				'T_w_z([vertical wavenumber[rad/s]] <ADCP bin size[m]> <pulse length[m]> <output grid resolution[m]> <range max[m]>)',
-				\@fc,'k',undef,undef,undef,@_);
-		croak("T_w_z($k,$blen,$plen,$dz,$range_max): bad parameters\n")
-			unless ($k>=0 && $blen>0 && $plen>0 && $dz>0 && $range_max>=0);				
-		return T_ravg($k,$blen,$plen) * T_binavg($k,$dz) * T_tilt($k,dprime($range_max)) * T_fdiff($k,$dz);
+		my($k,$blen,$dz,$range_max) =
+			&antsFunUsage(4,'ffff',
+				'[vertical wavenumber[rad/s]] <ADCP bin size[m]> <output grid resolution[m]> <range max[m]>',
+				\@fc,'k',undef,undef,undef,undef,@_);
+		croak("T_w_z($k,$blen,$dz,$range_max): bad parameters\n")
+			unless ($k>=0 && $blen>0 && $dz>0 && $range_max>=0);				
+		return T_ravg($k,$blen) * T_binavg($k,$dz) * T_tilt($k,dprime($range_max)) * T_fdiff($k,$dz);
 	}
 }
 

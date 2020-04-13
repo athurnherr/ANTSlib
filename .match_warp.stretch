@@ -1,0 +1,59 @@
+#======================================================================
+#                    . M A T C H _ W A R P . S T R E T C H 
+#                    doc: Tue Aug 22 18:31:22 2006
+#                    dlm: Wed Aug 23 23:51:25 2006
+#                    (c) 2006 A.M. Thurnherr
+#                    uE-Info: 52 0 NIL 0 0 72 2 2 4 NIL ofnI
+#======================================================================
+
+# stretch (and shift!) monotonically increasing coordinate
+
+#======================================================================
+
+sub MW_usage(@)
+{
+	croak("match-warp usage: -w stretch(<field>)\n")
+		unless (@_ == 1);
+	($MW_cfname) = @_;
+	
+	$MW_cfnr  =  fnr($MW_cfname);
+	$MW_cwfnr = wfnr($MW_cfname);
+
+	croak("$0: field $MW_cfname must be numeric\n")
+		unless numberp($ants_[0][$MW_cfnr]);
+	for (my($r)=1; $r<@ants_; $r++) {
+		croak("$0: field $MW_cfname of rec $r must be numeric ($ants_[$r][$MW_cfnr])\n")
+			unless numberp($ants_[$r][$MW_cfnr]);
+		croak("$0: field $MW_cfname must be monotonically increasing (" .
+				  "$ants_[$r][$MW_cfnr]=>$ants_[$r-1][$MW_cfnr]" .
+			  	  ")\n")
+			unless ($ants_[$r][$MW_cfnr] >= $ants_[$r-1][$MW_cfnr]);
+	}
+
+	croak("$0: warp-file field $MW_cfname must be numeric\n")
+		unless numberp($wf_[0][$MW_cwfnr]);
+	for (my($r)=1; $r<@wf_; $r++) {
+		croak("$0: warp-file field $MW_cfname of rec $r must be numeric ($wf_[$r][$MW_cwfnr])\n")
+			unless numberp($wf_[$r][$MW_cwfnr]);
+		croak("$0: warp-file field $MW_cfname must be monotonically increasing (" .
+				  "$wf_[$r][$MW_cwfnr]=>$wf_[$r-1][$MW_cwfnr]" .
+			  	  ")\n")
+			unless ($wf_[$r][$MW_cwfnr]  >= $wf_[$r-1][$MW_cwfnr]);
+		$MW_unwarped[$r] = $wf_[$r][$MW_cwfnr];
+	}
+}
+
+#======================================================================
+
+sub MW_warp(@)
+{
+	my($offset,$scale) = @_;
+
+	for (my($r)=0; $r<@wf_; $r++) {
+		$wf_[$r][$MW_cwfnr] = $MW_unwarped[$r]*$scale + $offset;
+	}
+}
+
+#======================================================================
+
+1;

@@ -1,0 +1,125 @@
+#======================================================================
+#                    . I N T E R P . S P L I N E 
+#                    doc: Wed Nov 22 21:01:09 2000
+#                    dlm: Tue Aug  5 14:20:39 2008
+#                    (c) 2000 A.M. Thurnherr
+#                    uE-Info: 31 0 NIL 0 0 72 10 2 4 NIL ofnI
+#======================================================================
+
+# spline interpolation
+
+# HISTORY:
+# 	May 27, 2003: - adapted from [.interp.linear]
+#	Jul 19, 2004: - BUG: i instead of $i --- 'orrible!
+#	May 15, 2006: - BUG: assertion did not work on -e
+#	Jul 28, 2006: - Version 3.3 [HISTORY]
+#				  - made 100% compatible with [.interp.spline]
+#				  - added xf to ISInit() args
+#	Jul 30, 2006: - continued debugging
+#   Aug 22, 2006: - adapted to work with [match]
+#   Aug  5, 2008: - added idr param to IS_init()
+
+# see [.interp.linear] for documentation of interface
+
+# EXAMPLE:
+#	Matlab: x = 0:10;  y = sin(x); xx = 0:.25:10;
+#		yy = spline(x,y,xx); plot(x,y,'o',xx,yy)
+# 	gnuplot/ANTS:
+#		set style function points;
+#		set style data lines;
+#		plot [0:10] sin(x), \
+#		'<Cat -f x:0,1,10 | list x y=sin($x) | resample -s spline x \#0-10:0.25'
+                        
+$IS_opts = "B:";
+$IS_optsUsage = "[-B)oundary cond <1st/last>]";
+
+#----------------------------------------------------------------------
+
+my($yp1,$ypn);
+
+sub IS_usage()
+{
+	if (defined($opt_B)) {								# NR p.115
+		($yp1,$ypn) = split('/',$opt_B);
+		croak("$0: can't decode -B $opt_B\n")
+			unless (numberp($yp1) && numberp($ypn));
+	}
+}
+
+#----------------------------------------------------------------------
+
+sub IS_init($$$$) {
+	my($bR,$idR,$f,$xf) = @_;
+	my($i,$k,$p,$qn,$sig,$un,@u);
+	my($n) = scalar(@{$bR});
+
+	if (defined($opt_B)) {								# handle boundary cond
+		$idR->[1][$f] = -0.5;
+		$u[1] = (3/($bR->[1][$xf]-$bR->[0][$xf])) *
+				    (($bR->[1][$f]-$bR->[0][$f]) /
+					 ($bR->[1][$xf]-$bR->[0][$xf]) - $yp1);
+	} else {
+		$idR->[1][$f] = $u[1] = 0;
+	}
+
+	for ($i=2; $i<=$n-1; $i++) {
+		$sig = ($bR->[$i-1][$xf]-$bR->[$i-2][$xf]) /
+				($bR->[$i][$xf]-$bR->[$i-2][$xf]);
+		$p = $sig*$idR->[$i-1][$f] + 2;
+		$idR->[$i][$f] = ($sig-1)/$p;
+		$u[$i] = ($bR->[$i][$f]-$bR->[$i-1][$f]) /
+					($bR->[$i][$xf]-$bR->[$i-1][$xf])
+						- ($bR->[$i-1][$f]-$bR->[$i-2][$f]) /
+							($bR->[$i-1][$xf]-$bR->[$i-2][$xf]);
+		$u[$i] = (6*$u[$i]/($bR->[$i][$xf]-$bR->[$i-2][$xf]) -
+					$sig * $u[$i-1]) / $p;
+	}
+	
+	if (defined($opt_B)) {
+		$qn = 0.5;
+		$un = (3/($bR->[$n-1][$xf]-$bR->[$n-2][$xf])) *
+				($ypn-($bR->[$n-1][$f]-$bR->[$n-2][$f]) /
+					($bR->[$n-1][$xf]-$bR->[$n-2][$xf]));
+    } else {
+		$qn = $un = 0;
+	}
+	
+	$idR->[$n][$f] = ($un-$qn*$u[$n-1]) / ($qn*$idR->[$n-1][$f]+1);
+	for ($k=$n-1;$k>=1;$k--) {
+		$idR->[$k][$f] = $idR->[$k][$f] * $idR->[$k+1][$f] + $u[$k];
+	}
+}
+
+#----------------------------------------------------------------------
+
+sub IS_interpolate($$$$$$)
+{
+	my($bR,$idR,$xf,$xv,$xi,$f) = @_;
+
+	return $xv if ($xf == $f);
+
+	return $bR->[$xi][$f]						# edge values are ok
+		if equal($xv,$bR->[$xi][$xf]);
+	return $bR->[$xi+1][$f]
+		if equal($xv,$bR->[$xi+1][$xf]);
+
+	return nan unless (numberp($bR->[$xi][$f]) &&
+					   numberp($bR->[$xi+1][$f]));
+
+	croak("$0: assertion $bR->[$xi+1][$xf] >= $xv >=  $bR->[$xi][$xf] failed")
+		unless (defined($opt_e) || $bR->[$xi+1][$xf] >= $xv && $xv >= $bR->[$xi][$xf]);
+		
+	my($h) = $bR->[$xi+1][$xf] - $bR->[$xi][$xf];
+	croak("$0: assertion #2 failed") unless ($h > 0);
+	my($a) = ($bR->[$xi+1][$xf] - $xv) / $h;
+	my($b) = ($xv - $bR->[$xi][$xf]) / $h;
+
+	return $a*$bR->[$xi][$f] + $b*$bR->[$xi+1][$f] +
+			(($a*$a*$a-$a) * $idR->[$xi+1][$f] +
+			 ($b*$b*$b-$b) * $idR->[$xi+2][$f]) *
+			 	($h*$h)/6;
+}
+
+#----------------------------------------------------------------------
+
+1;

@@ -1,0 +1,153 @@
+#======================================================================
+#                    . N M I N T E R P . S P L I N E 
+#                    doc: Wed Nov 22 21:01:09 2000
+#                    dlm: Fri Sep 23 16:52:31 2011
+#                    (c) 2000 A.M. Thurnherr
+#                    uE-Info: 19 50 NIL 0 0 72 2 2 4 NIL ofnI
+#======================================================================
+
+# spline interpolation for [fillgaps]
+
+# HISTORY:
+#	Apr  3, 2006: - created from [.interp.spline]
+#	Jul 28, 2006: - made to work
+#	Jul 30, 2006: - added max-gap support
+#				  - BUG: extended interpolation into last interval
+#				  - BUG: assertions made it incompatible with decreasing data
+#	Aug  8, 2008: - renamed
+#	Sep 23, 2011: - removed $xv from interpolate() args
+#				  - added error when xf<0 (%RECNO)
+
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+#
+# THE FOLLOWING VARIABLES MUST BE SET GLOBALLY (i.e. during loading)
+#
+#	$ISOpts				string of allowed options
+#	$ISOptsUsage		usage information string for options
+#
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+$ISOpts = '';
+$ISOptsUsage = '';
+
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+#
+# &ISUsage() 	mangle parameters (options, really)
+#
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+sub ISUsage() {}
+
+#+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+#
+# &ISInit(f,xf)				init interpolation of field f
+#       f					field number
+#		xf					x field number
+#       <ret val>           none
+#
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+my(@y2);
+
+sub ISInit($$) {
+	my($f,$xf) = @_;
+	my($k,$i,$p,$qn,$sig,$un,@u);
+
+	croak(".nminterp.spline: cannot use %RECNO as x-field (implementation restriction)\n")
+		unless ($xf >= 0);
+
+	my($pi,$ppi,$li);				# find idx of first 3 & last valid recs
+	for (my($r)=0; $r<=$#ants_; $r++) {
+		if (numberp($ants_[$r][$f])) {
+			unless (defined($ppi)) {
+				$ppi = $pi; $pi = $i; $i = $r;
+			}
+			$li = $r;
+		}
+	}
+	unless (defined($ppi)) {
+		&antsInfo("WARNING: not enough <$antsLayout[$f]> data for spline interpolation");
+		return;
+	}
+		
+
+	my($fpi) = $pi;
+	$y2[$pi][$f] = $u[$pi] = 0;
+
+	for (; $i<=$li; $i++) {
+		next unless numberp($ants_[$i][$f]);
+		
+		$sig = ($ants_[$pi][$xf]-$ants_[$ppi][$xf]) /
+				($ants_[$i][$xf]-$ants_[$ppi][$xf]);
+		$p = $sig*$y2[$pi][$f] + 2;
+		$y2[$i][$f] = ($sig-1)/$p;
+		$u[$i] = ($ants_[$i][$f]-$ants_[$pi][$f]) /
+					($ants_[$i][$xf]-$ants_[$pi][$xf])
+						- ($ants_[$pi][$f]-$ants_[$ppi][$f]) /
+							($ants_[$pi][$xf]-$ants_[$ppi][$xf]);
+		$u[$i] = (6*$u[$i]/($ants_[$i][$xf]-$ants_[$ppi][$xf]) -
+					$sig * $u[$pi]) / $p;
+
+		$ppi = $pi; $pi = $i;
+	}
+
+	$qn = $un = 0;
+
+	$y2[$li][$f] = ($un-$qn*$u[$pi]) / ($qn*$y2[$pi][$f]+1);
+	my($pk) = $li;
+	for ($k=$pi; $k>=$fpi; $k--) {
+		next unless numberp($ants_[$k][$f]);
+		$y2[$k][$f] = $y2[$k][$f] * $y2[$pk][$f] + $u[$k];
+		$pk = $k;
+	}
+}
+
+#+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+#
+# &interpolate(xf,mg,f,lvr,cr)	interpolate field f
+#		xf							x field
+#		mg							max allowed x gap
+#		f							field number to interpolate
+#		lvr							last record with valid y val
+#		cr							current record
+#		<ret val>					interpolated value
+#
+# NB:
+#	- handle f == xf
+#	- return undef if interpolation cannot be carried out
+#	- x VALUES MAY NOT BE MONOTONIC
+#
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+sub interpolate($$$$$$)
+{
+	my($xf,$mg,$f,$lvr,$cr) = @_;
+	
+	return $ants_[$cr][$xf] if ($xf == $f);
+
+	return $ants_[$lvr][$f]							# edge values are ok
+		if equal($ants_[$cr][$xf],$ants_[$lvr][$xf]);
+
+	my($nvr1) = $cr + 1;							# find next
+	while ($nvr1 <= $#y2 && !numberp($y2[$nvr1][$f])) { $nvr1++; }
+	return undef									# none or gap too large
+		if ($nvr1>$#ants_ || abs($ants_[$nvr1][$xf]-$ants_[$lvr][$xf])>$mg);
+	return $ants_[$nvr1][$f]						# edge values are ok
+		if equal($ants_[$cr][$xf],$ants_[$nvr1][$xf]);
+
+	my($nvr2) = $nvr1 + 1;
+	while ($nvr2 <= $#y2 && !numberp($y2[$nvr2][$f])) { $nvr2++; }
+
+	my($h) = $ants_[$nvr1][$xf] - $ants_[$lvr][$xf];
+	my($a) = ($ants_[$nvr1][$xf] - $ants_[$cr][$xf]) / $h;
+	my($b) = ($ants_[$cr][$xf] - $ants_[$lvr][$xf]) / $h;
+
+	return $a*$ants_[$lvr][$f] + $b*$ants_[$nvr1][$f] +
+			(($a*$a*$a-$a) * $y2[$nvr1][$f] +
+			 ($b*$b*$b-$b) * $y2[$nvr2][$f]) *
+			 	($h*$h)/6;
+}
+
+#----------------------------------------------------------------------
+
+1;

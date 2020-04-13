@@ -1,0 +1,71 @@
+#======================================================================
+#                    . N M I N T E R P . N A N 
+#                    doc: Sun Jul  6 20:37:31 2014
+#                    dlm: Sun Jul  6 20:39:26 2014
+#                    (c) 2014 A.M. Thurnherr
+#                    uE-Info: 67 0 NIL 0 0 72 2 2 4 NIL ofnI
+#======================================================================
+
+# filling gaps with nan [fillgaps]
+
+# HISTORY:
+#	Jul  6, 2014: - created from [.nminterp.linear]
+
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+#
+# THE FOLLOWING VARIABLES MUST BE SET GLOBALLY (i.e. during loading)
+#
+#	$ISOpts				string of allowed options
+#	$ISOptsUsage		usage information string for options
+#
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+$ISOpts = "";
+$ISOptsUsage = "";
+
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+#
+# &ISUsage() 	mangle parameters (options, really)
+#
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+sub ISUsage() {}
+
+#+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+#
+# &ISInit(f,xf)				init interpolation of field f
+#       f					field number
+#		xf					x field number or -1 for %RECNO
+#       <ret val>           none
+#
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+sub ISInit($$) {}
+
+#+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+#
+# &interpolate(xf,mg,f,lvr,cr)		interpolate field f
+#		xf							x field or -1 for %RECNO
+#		mg							max allowed x gap
+#		f							field number to interpolate
+#		lvr							last record with valid y val
+#		cr							current record
+#		<ret val>					interpolated value
+#
+# NB:
+#	- handle f == xf
+#	- return undef if interpolation cannot be carried out
+#	- x VALUES MAY NOT BE MONOTONIC
+#
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+sub interpolate($$$$$$)
+{
+	my($xf,$mg,$f,$lvr,$cr) = @_;
+	
+	return ($xf == $f) ? $ants_[$cr][$xf] : nan;
+} # static scope
+
+#----------------------------------------------------------------------
+
+1;

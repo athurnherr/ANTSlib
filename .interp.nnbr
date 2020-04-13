@@ -1,0 +1,37 @@
+#======================================================================
+#                    . I N T E R P . N N B R 
+#                    doc: Wed Nov 22 21:01:09 2000
+#                    dlm: Wed Aug  3 11:48:59 2011
+#                    (c) 2000 A.M. Thurnherr
+#                    uE-Info: 32 0 NIL 0 0 72 8 2 4 NIL ofnI
+#======================================================================
+
+# nearest neighbor resampling
+
+# HISTORY:
+# 	Nov 22, 2000: - adapted from [.interp.linear]
+#	Apr  3, 2004: - added nominal -x
+#	Jan 12, 2006: - renamed from [.interp.subsample]
+#	Jul 28, 2006: - added xf to ISInit() args
+#	Aug 22, 2006: - adapted to work with [match]
+#   Aug  5, 2008: - added idr param to IS_init()
+#	Aug  3, 2011: - removed -x, which is now handled by [resample]
+
+# see [.interp.linear] for documentation of interface
+
+$IS_opts = "";
+$IS_optsUsage = "";
+
+sub IS_usage() {}
+sub IS_init($$$$) {}
+
+sub IS_interpolate($$$$$$)
+{
+	my($bR,$idR,$xf,$xv,$xi,$f) = @_;
+
+	return $bR->[$xi+1][$f]
+		if ($bR->[$xi+1][$xf] - $xv < $xv - $bR->[$xi][$xf]);
+	return $bR->[$xi][$f];
+}
+
+1;

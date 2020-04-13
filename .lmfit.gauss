@@ -1,0 +1,176 @@
+#======================================================================
+#                    . L M F I T . G A U S S 
+#                    doc: Wed Feb 24 09:40:06 1999
+#                    dlm: Fri Jul 28 13:32:35 2006
+#                    (c) 1999 A.M. Thurnherr
+#                    uE-Info: 35 51 NIL 0 0 72 2 2 4 NIL ofnI
+#======================================================================
+
+# What you need to provide if you wanna fit a different
+# model function to your data:
+#	- a number of global variables to be set during loading
+#	- a number of subs to perform admin tasks (usage, init, ...)
+#	- a sub to evaluate the model function which is to be fitted using
+#	  a number of pararams which are all stored in @A (beginning at
+#	  A[1]!!!). You also need to return the partial derivatives of
+#	  the model function wrt all params.
+#	- the interface is documented between +++++++ lines
+
+# Gauss data model (i.e. fit Gaussian curve)
+# NB: - fitting is rather sensitive to the input parameters, thus
+# 	    a heuristic has been added to guess them (by setting them
+# 	    to NaN)
+# 	  - another fickle parameter is the y-offset (zero line); thus
+# 	    a heuristics has been added for this one as well
+#	  - the parameters are peak, mean, standard deviation
+
+# HISTORY:
+#	Feb 24, 1999: - created together with [./cfit]
+#	Feb 25, 1999: - cosmetic changes
+#	Jul 31, 1999: - parameter typecheck
+#	Oct 04, 1999: - changed param names
+#	Oct 05, 1999: - improved heuristics
+#				  - changed e-scale to sigma
+#   Mar 17, 2001: - param->arg
+#	Jul 28, 2006: - Version 3.3 [HISTORY]; &isnan()
+
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+#
+# THE FOLLOWING VARIABLES MUST BE SET GLOBALLY (i.e. during loading)
+#
+#	$modelOpts			string of allowed options
+#	$modelOptsUsage		usage information string for options
+#	$modelMinArgs		min # of arguments of model
+#	$modelArgsUsage		usage information string for arguments
+#
+# The following variables may be set later but not after &modelInit()
+#
+#	$modelNFit			number of params to fit in model
+#	@nameA				symbolic names of model parameters
+#
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+$modelOpts = "y";
+$modelOptsUsage = "[-y)shift]";
+$modelMinArgs = 0;
+$modelArgsUsage = "[peak guess [mean guess [sigma guess]]]";
+$modelNFit = 3;			
+$nameA[1] = "peak";
+$nameA[2] = "mean";		
+$nameA[3] = "sigma";	
+
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+#
+# &modelUsage()		mangle parameters; NB: there may be `infinite' # of
+#					filenames after model arguments; this usually sets
+#					@A (the model parameters) but these can later be
+#					calculated heuristically during &modelInit()
+#
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+sub modelUsage()
+{
+	$A[1] = nan; $A[2] = nan; $A[3] = nan;				# usage
+	$A[1] = &antsFloatArg() if ($#ARGV >= 0 && ! -r $ARGV[0]);
+	$A[2] = &antsFloatArg() if ($#ARGV >= 0 && ! -r $ARGV[0]);
+	$A[3] = &antsFloatArg() if ($#ARGV >= 0 && ! -r $ARGV[0]);
+	&antsUsageError() unless ($#ARGV < 0 || -r $ARGV[0]);
+}
+
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+#
+# &modelInit()		initializes model after reading of data
+#
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+sub modelInit()
+{
+	my($i,$j,$ymin,$ymax,$xatymax);
+
+#	--------------------------------------------------
+#	heuristics for initial model param values
+#	--------------------------------------------------
+
+	$ymin = 1e33, $ymax = -1e33, $xatymax = 0;
+	for ($i=0; $i<=$#ants_; $i++) {
+		next if ($antsFlagged[$i]);
+		$ymin = $ants_[$i][$yfnr]
+			if ($ants_[$i][$yfnr] < $ymin);
+		$ymax = $ants_[$i][$yfnr], $xatymax = $ants_[$i][$xfnr]
+			if ($ants_[$i][$yfnr] > $ymax);
+	}
+	$A[1] = $ymax - $ymin if isnan($A[1]);			# peak guess
+	$A[2] = $xatymax if isnan($A[2]);				# mean guess
+	if (isnan($A[3])) {								# sigma guess
+		for ($i=1;
+			 $i<=$#ants_ && !$antsFlagged[$i]
+						 && $ants_[$i][$yfnr]-$ymin<0.36*$A[1];
+			 $i++) {}				   
+		for ($j=$#ants_;
+			 $j>=1 && !$antsFlagged[$i]
+				   && $ants_[$j][$yfnr]-$ymin < 0.36*$A[1];
+			 $j--) {}
+		$A[3] = abs($ants_[$i][$xfnr]-$ants_[$j][$xfnr]) / 2.0;
+		$A[3] *= 0.71;								# scale by 1/sqrt(2)
+		if ($A[3] == 0) {
+			&antsInfo("$model: sigma heuristic failed (set to 1)!");
+			$A[3] = 1;
+	    }
+	}
+
+#	--------------------------------------------------
+#	y shift (-y option)
+#	--------------------------------------------------
+
+	if ($opt_y) {
+		for ($i=1; $i<=$#ants_; $i++) {
+			$ants_[$i][$yfnr] -= $ymin;
+		}
+	}
+
+}
+
+#+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+#
+# &modelEvaluate(x,A,dyda)	evaluate sum of Gaussians (p.528) at x
+#		x					x value (NOT xfnr)
+#		A					reference to @A
+#		dyda				reference to array for partial derivatives
+#							(wrt individaul params in @A)
+#		<ret val>			y value
+#
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+sub modelEvaluate($$$)
+{
+	my($x,$AR,$dydaR) = @_;
+	my($i,$fac,$ex,$arg,$sqrt2sig);
+	my($y) = 0;
+
+	for ($i=1; $i < $#{$AR}; $i+=3) {
+		$sqrt2sig = (1.4142135623731*$AR->[$i+2]);
+		$arg = ($x - $AR->[$i+1]) / $sqrt2sig;
+		$ex  = exp(-$arg*$arg);
+		$fac = $AR->[$i] * $ex * 2*$arg;
+		$y += $AR->[$i] * $ex;
+		
+		$dydaR->[$i]   = $ex;
+		$dydaR->[$i+1] = $fac / $sqrt2sig;
+		$dydaR->[$i+2] = $fac * $arg / $sqrt2sig;
+	}
+	return $y;
+}
+
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+# &modelCleanup()	cleans up after fitting but before output
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+sub modelCleanup()
+{
+	if ($opt_y) {
+		$A[1] += $ymin;
+		for ($i=1; $i<=$#ants_; $i++) {
+			$ants_[$i][$yfnr] += $ymin;
+		}
+	}
+}

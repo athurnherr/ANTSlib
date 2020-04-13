@@ -1,9 +1,9 @@
 #======================================================================
 #                    . N M I N T E R P . L I N E A R 
 #                    doc: Wed Nov 22 21:01:09 2000
-#                    dlm: Thu Jan 23 13:39:13 2014
+#                    dlm: Fri Aug 30 13:26:58 2019
 #                    (c) 2000 A.M. Thurnherr
-#                    uE-Info: 19 61 NIL 0 0 72 2 2 4 NIL ofnI
+#                    uE-Info: 101 9 NIL 0 0 72 0 2 4 NIL ofnI
 #======================================================================
 
 # linear interpolation for [fillgaps]
@@ -96,6 +96,9 @@ sub ISInit($$) {}
 			if ($xf>=0 && equal($ants_[$cr][$xf],$ants_[$nvr[$f]][$xf])) ||
 			   ($xf<0 && $cr==$nvr[$f]);
 	
+		if ($xf < 0) {
+			die("$nvr[$f] - $lvr") unless ($nvr[$f] - $lvr > 0);
+        }
 		my($sc) = ($xf >= 0)
 				? ($ants_[$cr][$xf] - $ants_[$lvr][$xf]) / ($ants_[$nvr[$f]][$xf] - $ants_[$lvr][$xf])
 				: ($cr - $lvr) / ($nvr[$f] - $lvr);

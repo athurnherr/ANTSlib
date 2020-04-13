@@ -1,0 +1,141 @@
+#======================================================================
+#                    . L S F I T . B I L I N 
+#                    doc: Wed Feb 24 09:40:06 1999
+#                    dlm: Fri Jul 28 13:36:36 2006
+#                    (c) 1999 A.M. Thurnherr
+#                    uE-Info: 32 41 NIL 0 0 72 2 2 4 NIL ofnI
+#======================================================================
+
+# What you need to provide if you wanna fit a different
+# linear model function to your data:
+#	- a number of global variables to be set during loading
+#	- a number of subs to perform admin tasks (usage, init, ...)
+#	- a sub to evaluate the basis funs at a given x value; each
+#	  y value must be stored in @A (beginning with
+#	  A[1]!!!).
+#	- the interface is documented between +++++++ lines
+
+# fit bi-linear function to data, i.e. y = A + B*x1 + C*x2
+
+# HISTORY:
+#	Aug 01, 1999: - adapted from [.lsfit.poly]
+#	Aug 02, 1999: - added &antsDescription()
+#	Sep 26, 1999: - cosmetics
+#				  - added vars & covars
+#	Sep 27, 1999: - changed from covar to sigmas
+#	Oct 01, 1999: - cosmetics
+#	Oct 06, 1999: - added -l
+#   Mar 17, 2001: - param->arg
+#	May  2, 2001: - updated doc
+#	Nov 17, 2005: - commented out antsDescription()
+#				  - updated stats on -p
+#	Jul 28, 2006: - Version 3.3 [HISTORY]
+
+# NOTES:
+#	- could be easily extended to multidimensional linear fit but
+#	  what's the use?
+#	- -p zeroes param C for bilinear spice method (T = A + B*sig + C*neph)
+#	  so that residual field becomes spice anomaly (linearly correlated
+#	  with neph)
+
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+#
+# THE FOLLOWING VARIABLES MUST BE SET GLOBALLY (i.e. during loading)
+#
+#	$modelOpts			string of allowed options
+#	$modelOptsUsage		usage information string for options
+#	$modelMinArgs		min # of arguments of model
+#	$modelArgsUsage		usage information string for arguments
+#
+# The following variables may be set later but not after &modelInit()
+#
+#	$modelNFit			number of params to fit in model
+#	@nameA				symbolic names of model parameters
+#
+# You should call &antsDescription() for the -ct options here
+#
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+$modelOpts = "pl:";
+$modelOptsUsage = "[-p)artial f/r] [-l)imit r_BC <min,max>]";
+$modelMinArgs = 1;
+$modelArgsUsage = "<2nd x-field>";
+$modelNFit = 3;
+$nameA[1] = "A"; $nameA[2] = "B"; $nameA[3] = "C";
+$A[1] = nan; $A[2] = nan; $A[3] = nan;
+#&antsDescription("c","bilin_$nameA[1]",
+#				 "c","bilin_$nameA[2]",
+#				 "c","bilin_$nameA[3]");
+#&antsDescription("t","bilin_sigma_$nameA[1]",
+#				 "t","bilin_sigma_$nameA[2]",
+#				 "t","bilin_sigma_$nameA[3]",
+#				 "t","bilin_ccc_$nameA[1]_$nameA[2]",
+#				 "t","bilin_ccc_$nameA[1]_$nameA[3]",
+#				 "t","bilin_ccc_$nameA[2]_$nameA[3]");
+
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+#
+# &modelUsage()		mangle parameters; NB: there may be `infinite' # of
+#					filenames after model arguments; this usually sets
+#					@A (the model parameters) but these can later be
+#					calculated heuristically during &modelInit()
+#
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+sub modelUsage()
+{
+	if (defined($opt_l)) {
+		($minBC,$maxBC) = split(',',$opt_l);
+		&antsUsageError("\n>>> error with -l")
+			unless (defined($maxBC) && $maxBC > $minBC);
+	}
+	$x2fnr = &antsFieldArg();
+	&antsUsageError() unless ($#ARGV < 0 || -r $ARGV[0]);
+}
+
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+#
+# &modelInit()		initializes model after reading of data
+#
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+sub modelInit() {}
+
+#+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+#
+# &modelEvaluate(idx,xfnr,vals)	evaluate basis funs at x (NB: x1, x2)
+#		idx				       	current index in @ants_
+#		xfnr					field number of x field
+#		vals					reference to return values (1-relative!)
+#
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+sub modelEvaluate($$$)
+{
+	my($idx,$xfnr,$valsR) = @_;
+	my($i);
+
+	$valsR->[1] = 1;
+	$valsR->[2] = $ants_[$idx][$xfnr];
+	$valsR->[3] = $ants_[$idx][$x2fnr];
+}
+
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+# &modelCleanup()	cleans up after fitting but before output
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+sub modelCleanup() 
+{
+	if (defined($opt_l)) {
+		my($ccc) = $covar[2][3]/(sqrt($covar[2][2])*sqrt($covar[3][3]));
+		if ($ccc < $minBC || $ccc > $maxBC) {
+			&antsInfo("CCC B/C = %.3g out of range, fit discarded",$ccc);
+			$suppressFit = 1;
+		}
+	}
+	if ($opt_p) {
+		&antsInfo("parameter $nameA[3] = %.3g discarded",$A[3]);
+		$A[3] = 'discarded';
+		$covar[3][3] = $RMS = $sig = nan;
+	}
+}

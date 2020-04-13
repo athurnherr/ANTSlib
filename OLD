@@ -1,9 +1,9 @@
 #======================================================================
-#                    L I B I M P . P L 
+#                    O L D 
 #                    doc: Tue Nov 26 21:59:40 2013
-#                    dlm: Mon Jul  1 15:47:57 2019
+#                    dlm: Mon Jul  1 15:15:19 2019
 #                    (c) 2017 A.M. Thurnherr
-#                    uE-Info: 689 0 NIL 0 0 70 2 2 4 NIL ofnI
+#                    uE-Info: 698 42 NIL 0 0 70 2 2 4 NIL ofnI
 #======================================================================
 
 # HISTORY:
@@ -49,16 +49,7 @@
 #	Jun  5, 2018: - BUG: on -c main magnetometer and accelerometer vectors were
 #						 modified twice
 #	Jun  7, 2018: - relaxed definition of -e
-#	Jun  9, 2018: - BUG: some "edge" data (beyond the valid profile) were bogus (does
-#						 not matter in practice)
-#	Jun 30, 2019: - renamed -s in IMP+LADCP to -o (option not used in KVH+LADCP)
-#				  - changed semantics so that offset histogram is plotted even on -o
-#				  - made create_merge_plots return errors
-#	Jul  1, 2019: - BUG: pre-deployment output cleared IMU pitch/roll fields (1 record
-#						 affected)
-#				  - modified output of pre-/post-cast records to include all LADCP
-#				    but no IMU data
-#				  - BUG: GIMBAL_PITCH had not only been defined for in-water records
+#	Jun  9, 2018: - BUG: some "edge" data (beyond the valid profile) were bogus (does not matter in practice)
 
 #----------------------------------------------------------------------
 # gRef() library
@@ -358,10 +349,6 @@ sub prep_piro_LADCP($)
 	my($verbose) = @_;
 
 	my($LADCP_pitch_mean,$LADCP_roll_mean) = (0,0);
-	for (my($ens)=0; $ens<=$#{$LADCP{ENSEMBLE}}; $ens++) {
-		$LADCP{ENSEMBLE}[$ens]->{GIMBAL_PITCH} =
-			gimbal_pitch($LADCP{ENSEMBLE}[$ens]->{PITCH},$LADCP{ENSEMBLE}[$ens]->{ROLL});
-	}
 	for (my($ens)=$LADCP_begin; $ens<=$LADCP_end; $ens++) {
 		$LADCP{ENSEMBLE}[$ens]->{GIMBAL_PITCH} =
 			gimbal_pitch($LADCP{ENSEMBLE}[$ens]->{PITCH},$LADCP{ENSEMBLE}[$ens]->{ROLL});
@@ -411,11 +398,7 @@ sub pl_hdg_offset($@)
 	GMT_psbasemap('-Bg45a90f15:"IMU Heading Offset [\260]":/ga100f10:"Frequency":WeSn');
 	GMT_unitcoords();
 	GMT_pstext('-F+f14,Helvetica,CornFlowerBlue+jTR -N');
-	if (defined($opt_o)) {
-		printf(GMT "0.99 1.06 -o %g \260 offset (%d%% agreement)\n",angle($HDG_offset),100*$modefrac);
-	} else {
-		printf(GMT "0.99 1.06 %g \260 offset (%d%% agreement)\n",angle($HDG_offset),100*$modefrac);
-	}
+	printf(GMT "0.99 1.06 %g \260 offset (%d%% agreement)\n",angle($HDG_offset),100*$modefrac);
 	GMT_pstext('-F+f14,Helvetica,blue+jTL -N');
 	printf(GMT "0.01 1.06 $P{profile_id} $opt_a\n");
     GMT_end();
@@ -466,36 +449,35 @@ sub calc_hdg_offset($)
 	printf(STDERR "\n\t\tIMU mean pitch/roll: %.1f/%.1f deg",$IMP_pitch_mean,$IMP_roll_mean)
 			if $verbose;
 	
-	my($dhist_binsize,$dhist_min_pirom,$dhist_min_mfrac) = split(/,/,$opt_e);
-	croak("$0: cannot decode -e $opt_e\n")
-		unless ($dhist_binsize > 0 && $dhist_min_pirom > 0 && $dhist_min_mfrac >= 0);
+	if (defined($opt_s)) {
+		$HDG_offset = $opt_s;
+		printf(STDERR "\n\tHEADING_OFFSET = %.1f (set by -s)\n",$HDG_offset) if $verbose;
+	} else {
+		my($dhist_binsize,$dhist_min_pirom,$dhist_min_mfrac) = split(/,/,$opt_e);
+		croak("$0: cannot decode -e $opt_e\n")
+			unless ($dhist_binsize > 0 && $dhist_min_pirom > 0 && $dhist_min_mfrac >= 0);
 	
-	my(@dhist); my($nhist) = my($modeFreq) = 0;
-	for (my($ens)=$LADCP_begin; $ens<=$LADCP_end; $ens++) {
-		my($r) = int(($LADCP{ENSEMBLE}[$ens]->{ELAPSED_TIME} + $IMP{TIME_LAG} - $ants_[0][$elapsedF]) / $IMP{DT});
-		next unless numberp($IMP{TILT_AZIMUTH}[$r]);
-		next unless (abs($ants_[$r][$pitchF]-$IMP_pitch_mean) >= $dhist_min_pirom &&
-					 abs($ants_[$r][$rollF] -$IMP_roll_mean) >= $dhist_min_pirom);
-		$dhist[int(angle_pos($LADCP{ENSEMBLE}[$ens]->{TILT_AZIMUTH}-$IMP{TILT_AZIMUTH}[$r])/$dhist_binsize+0.5)]++;
-		$nhist++;
-	}
-	croak("$0: empty histogram\n")
-		unless ($nhist);
+		my(@dhist); my($nhist) = my($modeFreq) = 0;
+		for (my($ens)=$LADCP_begin; $ens<=$LADCP_end; $ens++) {
+			my($r) = int(($LADCP{ENSEMBLE}[$ens]->{ELAPSED_TIME} + $IMP{TIME_LAG} - $ants_[0][$elapsedF]) / $IMP{DT});
+			next unless numberp($IMP{TILT_AZIMUTH}[$r]);
+			next unless (abs($ants_[$r][$pitchF]-$IMP_pitch_mean) >= $dhist_min_pirom &&
+						 abs($ants_[$r][$rollF] -$IMP_roll_mean) >= $dhist_min_pirom);
+			$dhist[int(angle_pos($LADCP{ENSEMBLE}[$ens]->{TILT_AZIMUTH}-$IMP{TILT_AZIMUTH}[$r])/$dhist_binsize+0.5)]++;
+			$nhist++;
+		}
+		croak("$0: empty histogram\n")
+			unless ($nhist);
 	
-	if (defined($opt_o)) {												# set heading offset, either with -o
-		$HDG_offset = $opt_o;
-	} else {															# or from the data
 		$HDG_offset = 0;
 		for (my($i)=1; $i<@dhist-1; $i++) { 							# make sure mode is not on edge
 			$HDG_offset = $i if ($dhist[$i] >= $dhist[$HDG_offset]);
 		}
+		my($modefrac) = ($dhist[$HDG_offset]+$dhist[$HDG_offset-1]+$dhist[$HDG_offset+1]) / $nhist;
+	    
 		$HDG_offset *= $dhist_binsize;
-	}
-
-	my($modefrac) = ($dhist[$HDG_offset]+$dhist[$HDG_offset-1]+$dhist[$HDG_offset+1]) / $nhist;
-	pl_hdg_offset($dhist_binsize,$modefrac,@dhist);
-
-	unless (defined($opt_o)) {	    									# make sure data are consistent (unless -o is used)
+		pl_hdg_offset($dhist_binsize,$modefrac,@dhist);
+	    
 		if ($opt_f) {
 			printf(STDERR "\n\nIGNORED WARNING (-f): Cannot determine reliable heading offset; $HDG_offset+/-$dhist_binsize deg accounts for only %f%% of total\n",$modefrac*100)
 				if ($modefrac < $dhist_min_mfrac);
@@ -503,17 +485,10 @@ sub calc_hdg_offset($)
 			croak(sprintf("\n$0: Cannot determine reliable heading offset; $HDG_offset+/-$dhist_binsize deg accounts for only %f%% of total\n",$modefrac*100))
 				if ($modefrac < $dhist_min_mfrac);
 		}
-	}
 	
-	printf(STDERR "\n\t") if $verbose;
-	if ($opt_o) {
-		printf(STDERR "IMU heading offset = -o %g deg (%d%% agreement)\n",angle($HDG_offset),100*$modefrac)
-			if $verbose;
-	} else {
-		printf(STDERR "IMU heading offset = %g deg (%d%% agreement)\n",angle($HDG_offset),100*$modefrac)
-			if $verbose;
+		printf(STDERR "\n\t") if $verbose;
+		printf(STDERR "IMU heading offset = %g deg (%d%% agreement)\n",angle($HDG_offset),100*$modefrac) if $verbose;
 	}
-
 	return ($HDG_offset,$IMP_pitch_mean,$IMP_roll_mean);
 }
 
@@ -557,7 +532,6 @@ sub rot_IMP($)
 #----------------------------------------------------------------------
 # create_merge_plots()
 #   - tilt time series (*_time_lag.ps)
-#	- heading errors (*_hdg_err.ps)
 #----------------------------------------------------------------------
 
 sub create_merge_plots($$$)
@@ -680,13 +654,11 @@ sub create_merge_plots($$$)
     GMT_end();
 	                        
 	print(STDERR "\n") if $verbose;
-	return (sqrt($sumSq/$nSq),$sumErr/$nErr,$sumBe/$nBe);
 }
 
 #----------------------------------------------------------------------
 # output_merged()
 #	- output merged data
-#	- there must be exactly one record for each PD0 ensemble
 #----------------------------------------------------------------------
 
 sub output_merged($)
@@ -718,13 +690,13 @@ sub output_merged($)
 			$out[$dcF]				= ($ens <= $LADCP_bottom);
 			&antsOut(@out);
 		} elsif ($ens < $LADCP_begin || $ens > $LADCP_end) {					# pre deplyment or post recovery
-			my(@out);															# correct IMP record NOT known
-			$out[$L_elapsedF] 		= undef;
-			$out[$L_ensF] 			= $LADCP{ENSEMBLE}[$ens]->{NUMBER};
-			$out[$L_pitchF]			= $LADCP{ENSEMBLE}[$ens]->{GIMBAL_PITCH} - $LADCP_pitch_mean;
-			$out[$L_rollF]			= $LADCP{ENSEMBLE}[$ens]->{ROLL} - $LADCP_roll_mean;
-			$out[$L_hdgF]			= $LADCP{ENSEMBLE}[$ens]->{HEADING};							    
-			&antsOut(@out);
+			$ants_[$r][$L_elapsedF] = undef;
+			$ants_[$r][$L_ensF] 	= $LADCP{ENSEMBLE}[$ens]->{NUMBER};
+			$ants_[$r][$L_pitchF]	= $LADCP{ENSEMBLE}[$ens]->{GIMBAL_PITCH} - $LADCP_pitch_mean;
+			$ants_[$r][$L_rollF]	= $LADCP{ENSEMBLE}[$ens]->{ROLL} - $LADCP_roll_mean;
+			$ants_[$r][$L_hdgF] 	= $LADCP{ENSEMBLE}[$ens]->{HEADING};							    
+			$ants_[$r][$dcF]        = nan;
+			&antsOut(@{$ants_[$r]});
 		} else {
 			$ants_[$r][$tazimF] 	= angle($LADCP{ENSEMBLE}[$ens]->{IMP_TILT_AZIMUTH} + $HDG_offset);
 			$ants_[$r][$tanomF] 	= $LADCP{ENSEMBLE}[$ens]->{IMP_TILT_ANOM};
@@ -736,7 +708,7 @@ sub output_merged($)
 			$ants_[$r][$L_pitchF]	= $LADCP{ENSEMBLE}[$ens]->{GIMBAL_PITCH} - $LADCP_pitch_mean;
 			$ants_[$r][$L_rollF]	= $LADCP{ENSEMBLE}[$ens]->{ROLL} - $LADCP_roll_mean;
 			$ants_[$r][$L_hdgF] 	= $LADCP{ENSEMBLE}[$ens]->{HEADING};							    
-			$ants_[$r][$dcF]        = ($ens <= $LADCP_bottom) ? 1 : 0;
+			$ants_[$r][$dcF]        = ($ens <= $LADCP_bottom);
 			&antsOut(@{$ants_[$r]});
 		}
 	}

@@ -1,0 +1,105 @@
+#======================================================================
+#                    . L M F I T . S Q R T 
+#                    doc: Fri Oct 10 15:50:42 2014
+#                    dlm: Sat Oct 11 09:30:48 2014
+#                    (c) 2014 A.M. Thurnherr
+#                    uE-Info: 27 32 NIL 0 0 72 2 2 4 NIL ofnI
+#======================================================================
+
+# What you need to provide if you wanna fit a different
+# model function to your data:
+#	- a number of global variables to be set during loading
+#	- a number of subs to perform admin tasks (usage, init, ...)
+#	- a sub to evaluate the model function which is to be fitted using
+#	  a number of pararams which are all stored in @A (beginning at
+#	  A[1]!!!). You also need to return the partial derivatives of
+#	  the model function wrt all params.
+#	- the interface is documented between +++++++ lines
+
+# fit square root A[1]*sqrt(x) to data
+#
+# NOTES:
+#	- initial parameter estimates may be important
+#	- there is currently no heuristics
+
+# HISTORY:
+#	Oct 10, 2014: - created from [.lmfit.exp]
+#	Oct 11, 2014: - made it work
+
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+#
+# THE FOLLOWING VARIABLES MUST BE SET GLOBALLY (i.e. during loading)
+#
+#	$modelOpts			string of allowed options
+#	$modelOptsUsage		usage information string for options
+#	$modelMinArgs		min # of arguments of model
+#	$modelArgsUsage		usage information string for arguments
+#
+# The following variables may be set later but not after &modelInit()
+#
+#	$modelNFit			number of params to fit in model
+#	@nameA				symbolic names of model parameters
+#
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+$modelOpts = "";
+$modelOptsUsage = "";
+$modelMinArgs = 0;
+$modelArgsUsage = "[scale guess]";
+$modelNFit = 1;
+$nameA[1] = "scale";
+
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+#
+# &modelUsage()		mangle parameters; NB: there may be `infinite' # of
+#					filenames after model arguments; this usually sets
+#					@A (the model parameters) but these can later be
+#					calculated heuristically during &modelInit()
+#
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+sub modelUsage()
+{
+	$A[1] = nan; 			
+	$A[1] = &antsFloatArg() if ($#ARGV >= 0 && ! -r $ARGV[0]);
+	&antsUsageError() unless ($#ARGV < 0 || -r $ARGV[0]);
+}
+
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+#
+# &modelInit()		initializes model after reading of data
+#
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+sub modelInit()
+{
+	$A[1] = 1 unless (numberp($A[1]));		# scale
+}
+
+#+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+#
+# &modelEvaluate(x,A,dyda)	evaluate polynom and derivatives
+#		x					x value (NOT xfnr)
+#		A					reference to @A
+#		dyda				reference to array for partial derivatives
+#							(wrt individaul params in @A)
+#		<ret val>			y value
+#
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+sub modelEvaluate($$$)					# y  = A[1]*sqrt(*x)
+{										
+	my($x,$AR,$dydaR) = @_;
+	my($v) = sqrt($x);
+
+	$dydaR->[1] = $v;					# dy/dA[1] = sqrt(x)
+	return $AR->[1]*$v;
+}
+
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+# &modelCleanup()	cleans up after fitting but before output
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+sub modelCleanup()
+{
+}

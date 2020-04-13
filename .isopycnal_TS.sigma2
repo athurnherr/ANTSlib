@@ -1,0 +1,29 @@
+#======================================================================
+#                    . I S O P Y C N A L _ T S . S I G M A 2 
+#                    doc: Mon Dec 19 12:28:01 2005
+#                    dlm: Mon Dec 19 13:29:23 2005
+#                    (c) 2005 A.M. Thurnherr
+#                    uE-Info: 26 32 NIL 0 0 72 0 2 4 NIL ofnI
+#======================================================================
+
+# HISTORY:
+#	Dec 19, 2005: - created
+
+require "$ANTS/libEOS83.pl";				# load equation of state
+
+unless (defined($P{ITS})) {
+	&antsInfo("using default %ITS=90");
+	&antsAddParams(ITS,90);
+}
+
+&antsInfo("Warning: ignoring non-zero %press = $P{press}")
+	if ($P{press} != 0);
+$P{press} = 0;
+
+sub density($$)
+{
+	my($S,$T) = @_;
+	return sigma($S,$T,$P{press},2000);
+}
+
+1;

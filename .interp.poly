@@ -1,0 +1,94 @@
+#======================================================================
+#                    . I N T E R P . P O L Y 
+#                    doc: Thu Nov 23 21:30:25 2000
+#                    dlm: Tue Aug  5 14:20:19 2008
+#                    (c) 2000 A.M. Thurnherr
+#                    uE-Info: 58 0 NIL 0 0 72 10 2 4 NIL ofnI
+#======================================================================
+
+# polynomial interpolation
+
+# HISTORY:
+# 	Nov 23, 2000: - created
+#	Nov 24, 2000: - added -c)enter x-val in window
+#	Dec 13, 2002: - replaced -n by -o
+#	Oct 22, 2003: - changed -e to -r (conflicts with -e option of [resample])
+#	Jul 28, 2006: - removed debugging code
+#				  - added xf to ISInit() args
+#				  - BUG: sufficient-input data test was buggy
+#   Aug 22, 2006: - adapted to work with [match]
+#	Sep 11, 2006: - BUG: sufficient-input ermesg was wrong
+#   Aug  5, 2008: - added idr param to IS_init()
+
+# see [.interp.linear] for documentation of interface
+
+# NOTES:
+#	- $opt_o <poly order> is required
+#	- $opt_r is used to return the error estimates instead of the
+#	  interpolated values
+#	- -o 0 is almost like using -s subsample, the only difference
+#	  being that subsample returns the real x values while -o 0
+#	  returns the subsampled x values
+#	- on -c the window for each interpolation estimate is centered
+#	  around the interpolated x value; this implies window-sliding
+#	  between tabulated x values resulting in functional disconti-
+#	  nuities
+
+require	"$ANTS/polint.pl";
+
+$IS_opts = "co:r";
+$IS_optsUsage = "[e-r)ror estimates] [-c)enter x-val] -o <poly order>";
+
+sub IS_usage()
+{
+	die("$0 (.interp.poly): ERROR! -o required\n")
+		unless (defined($opt_o) && $opt_o >= 0);
+	&antsInfo("WARNING: -c generates discontinuous function")
+		if ($opt_c);
+	&antsInfo("WARNING: high-order polynomial interpolation deprecated")
+		if ($opt_o > 5);
+	&antsInfo("order-1 polynomial; -s linear is more efficient")
+		if ($opt_o == 1);
+	&antsInfo("giving error estimates") if ($opt_r);
+}
+
+sub IS_init($$$$)
+{
+	my($bR,$idR,$f,$xf) = @_;
+	die(sprintf("$0 (.interp.poly): ERROR! " .
+				"not enough data points (%d) for order-$opt_o poly\n",
+				 $#{$bR}+1))
+		if ($opt_o > $#{$bR});
+}
+
+sub findWindow($$$$$)							# find window of size n=opt_o+1
+{
+	my($bR,$f,$v,$i,$n) = @_;
+	my($cn);									# current win size
+
+	return ($bR->[$i+1][$f] - $v < $v - $bR->[$i][$f]) ? $i+1 : $i
+		if ($n == 1);							# nearest neighbor
+		
+	if ($opt_c) {								# center window around x value
+		for ($cn=2; $cn<$n; $cn++) {			# grow window
+			$i-- if (($i>0 && $bR->[$i+$cn-1][$f] - $v >= $v - $bR->[$i][$f]) ||
+					 ($i+$cn-1 == $#{$bR}));
+		}
+	} else {
+		$i -= int(($n-1)/2);						# ideally
+		$i  = 0 if ($i < 0);						# off leftmost column
+		$i  = $#{$bR}+1 - $n if ($i+$n > $#{$bR}+1);# off rightmost column
+	}
+
+	return $i;
+}
+
+sub IS_interpolate($$$$$$)
+{
+	my($bR,$idR,$xf,$xv,$xi,$f) = @_;
+	return $xv if ($xf == $f);
+
+	$xi = &findWindow($bR,$xf,$xv,$xi,$opt_o+1);
+	my($y,$dy) = &polint($bR,$xf,$xv,$xi,$opt_o+1,$f);
+	return $opt_r ? $dy : $y;
+}

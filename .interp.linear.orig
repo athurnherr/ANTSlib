@@ -1,0 +1,90 @@
+#======================================================================
+#                    . I N T E R P . L I N E A R 
+#                    doc: Wed Nov 22 21:01:09 2000
+#                    dlm: Fri Sep 23 16:32:20 2011
+#                    (c) 2000 A.M. Thurnherr
+#                    uE-Info: 62 0 NIL 0 0 72 2 2 4 NIL ofnI
+#======================================================================
+
+# linear interpolation
+
+# HISTORY:
+# 	Nov 22, 2000: - created
+#	Jul 28, 2006: - Version 3.3 [HISTORY]
+#				  - added xf to ISInit() args
+#	Aug 22, 2006: - modified to allow use with [match]
+#	Aug  5, 2008: - added idr param to IS_init()
+#	Sep 23, 2011: - added support for xfnr==-1 (%RECNO)
+
+# NOTES:
+#	- the [.interp.*] routines assume that x increases strictly monotonically;
+#	  for utilities dealing with non-monotonic data, use [.nminterp.*] instead
+#	- the [.interp.*] routines are written to work on multiple buffers,
+#	  rather than just @ants_; this implies that data created by IS_init()
+#	  must be stored separately for each buffer
+
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+#
+# THE FOLLOWING VARIABLES MUST BE SET GLOBALLY (i.e. during loading)
+#
+#	$IS_opts			string of allowed options
+#	$IS_optsUsage		usage information string for options
+#
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+$IS_opts = "";
+$IS_optsUsage = "";
+
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+#
+# &IS_usage() 	mangle parameters (options, really)
+#
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+sub IS_usage() {}
+
+#+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+#
+# &IS_init(br,f,xf)			init interpolation of field f
+#		br					data buffer reference
+#		idr					init-data reference
+#       f					field number
+#		xf					x field number or -1 for %RECNO
+#       <ret val>           none
+#
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+sub IS_init($$$$) {}
+
+#+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+#
+# &IS_interpolate(bR,idR,xf,xv,xi,f)	interpolate field f
+#		bR							data buffer reference
+#		idR							init-data reference
+#		xf							x field or -1 for %RECNO
+#		xv							x value
+#		xi							index of last record with x-value <= x
+#		f							field number to interpolate
+#		<ret val>					interpolated value
+#
+# NB:
+#	- handle f == xf
+#	- return NaN if any of the y values required is NaN
+#
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+sub IS_interpolate($$$$$$)
+{
+	my($bR,$idR,$xf,$xv,$xi,$f) = @_;
+	return $xv if ($xf == $f);
+	return nan unless (numberp($bR->[$xi][$f]) && numberp($bR->[$xi+1][$f]));
+
+	my($sc) = ($xf < 0)
+			? ($xv - $bR->[$xi][$xf]) / ($bR->[$xi+1][$xf] - $bR->[$xi][$xf]);
+			: ($xv - $bR->[$xi][$xf]) / ($bR->[$xi+1][$xf] - $bR->[$xi][$xf]);
+	return $bR->[$xi][$f] + $sc * ($bR->[$xi+1][$f] - $bR->[$xi][$f]);
+}
+
+#----------------------------------------------------------------------
+
+1;

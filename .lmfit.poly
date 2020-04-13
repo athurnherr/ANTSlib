@@ -1,0 +1,129 @@
+#======================================================================
+#                    . L M F I T . P O L Y 
+#                    doc: Wed Feb 24 09:40:06 1999
+#                    dlm: Fri Jul 28 13:35:50 2006
+#                    (c) 1999 A.M. Thurnherr
+#                    uE-Info: 28 41 NIL 0 0 72 2 2 4 NIL ofnI
+#======================================================================
+
+# What you need to provide if you wanna fit a different
+# model function to your data:
+#	- a number of global variables to be set during loading
+#	- a number of subs to perform admin tasks (usage, init, ...)
+#	- a sub to evaluate the model function which is to be fitted using
+#	  a number of pararams which are all stored in @A (beginning at
+#	  A[1]!!!). You also need to return the partial derivatives of
+#	  the model function wrt all params.
+#	- the interface is documented between +++++++ lines
+
+# fit polynomial (sum of A_i x^i) to data
+# NB:
+
+# HISTORY:
+#	Feb 25, 1999: - created
+#	Mar 14, 1999: - cosmetic changes
+#	Jul 31, 1999: - argument typechecking
+#   Mar 17, 2001: - param->arg
+#	Jan 12, 2006: - specify order with -o as in [.lsfit.poly]
+#	Jul 28, 2006: - Version 3.3 [HISTORY]
+
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+#
+# THE FOLLOWING VARIABLES MUST BE SET GLOBALLY (i.e. during loading)
+#
+#	$modelOpts			string of allowed options
+#	$modelOptsUsage		usage information string for options
+#	$modelMinArgs		min # of arguments of model
+#	$modelArgsUsage		usage information string for arguments
+#
+# The following variables may be set later but not after &modelInit()
+#
+#	$modelNFit			number of params to fit in model
+#	@nameA				symbolic names of model parameters
+#
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+$modelOpts = "o:";
+$modelOptsUsage = "-o)rder <n>";
+$modelMinArgs = 0;
+$modelArgsUsage = "[c0 [c1 [...]]]";
+
+&antsInfo("non-linear method deprecated; use `lsfit' instead");
+
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+#
+# &modelUsage()		mangle parameters; NB: there may be `infinite' # of
+#					filenames after model arguments; this usually sets
+#					@A (the model parameters) but these can later be
+#					calculated heuristically during &modelInit()
+#
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+sub modelUsage()
+{
+	my($c);
+	
+	die("$0 (.lmfit.poly): ERROR! -o required\n")	# order of polynomial
+		unless (defined($opt_o) && $opt_o >= 0);
+	$modelNFit = &antsCardOpt($opt_o)+1;			
+	
+	for ($c=0; $c<$modelNFit; $c++) {				# init coefficients
+		if ($#ARGV >= 0 && ! -r $ARGV[0]) {
+			$A[$c+1] = &antsFloatArg();
+		} else {
+			$A[$c+1] = nan;
+		}
+		$nameA[$c+1] = "c$c";						# and names
+	}
+	&antsUsageError() unless ($#ARGV < 0 || -r $ARGV[0]);
+}
+
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+#
+# &modelInit()		initializes model after reading of data
+#
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+sub modelInit()
+{
+	my($c);
+
+	for ($c=0; $c<$modelNFit; $c++) {				# init coefficients
+		$A[$c+1] = 10**-$c unless (numberp($A[$c+1]));
+	}
+
+}
+
+#+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+#
+# &modelEvaluate(x,A,dyda)	evaluate polynomial and derivatives
+#		x					x value (NOT xfnr)
+#		A					reference to @A
+#		dyda				reference to array for partial derivatives
+#							(wrt individaul params in @A)
+#		<ret val>			y value
+#
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+sub modelEvaluate($$$)
+{
+	my($x,$AR,$dydaR) = @_;
+	my($i);
+	my($pow) = 1;
+	my($y) = 0;
+
+	for ($i=1; $i<=$modelNFit; $i++) {
+		$y += $AR->[$i]*$pow;
+		$dydaR->[$i] = $pow;
+		$pow *= $x;
+	}
+	return $y;
+}
+
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+# &modelCleanup()	cleans up after fitting but before output
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+sub modelCleanup()
+{
+}

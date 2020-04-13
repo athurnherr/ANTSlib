@@ -1,0 +1,117 @@
+#======================================================================
+#                    . L M F I T . E X P 
+#                    doc: Wed Feb 24 09:40:06 1999
+#                    dlm: Fri Jul 28 13:40:56 2006
+#                    (c) 1999 A.M. Thurnherr
+#                    uE-Info: 30 41 NIL 0 0 72 2 2 4 NIL ofnI
+#======================================================================
+
+# What you need to provide if you wanna fit a different
+# model function to your data:
+#	- a number of global variables to be set during loading
+#	- a number of subs to perform admin tasks (usage, init, ...)
+#	- a sub to evaluate the model function which is to be fitted using
+#	  a number of pararams which are all stored in @A (beginning at
+#	  A[1]!!!). You also need to return the partial derivatives of
+#	  the model function wrt all params.
+#	- the interface is documented between +++++++ lines
+
+# fit exponential A[3]+A[2]*exp(A[1]*x) to data
+#
+# NOTES:
+#	- initial parameter estimates are crucial
+#	- there is currently no heuristics
+
+# HISTORY:
+#	Mar 11, 1999: - created from [./.mfit.poly] & [./.mfit.gauss]
+#	Jul 31, 1999: - typecheck usage
+#   Mar 17, 2001: - param->arg
+#	Jan 16, 2006: - added notes
+#	Jul 28, 2006: - Version 3.3 [HISTORY]
+
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+#
+# THE FOLLOWING VARIABLES MUST BE SET GLOBALLY (i.e. during loading)
+#
+#	$modelOpts			string of allowed options
+#	$modelOptsUsage		usage information string for options
+#	$modelMinArgs		min # of arguments of model
+#	$modelArgsUsage		usage information string for arguments
+#
+# The following variables may be set later but not after &modelInit()
+#
+#	$modelNFit			number of params to fit in model
+#	@nameA				symbolic names of model parameters
+#
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+$modelOpts = "";
+$modelOptsUsage = "";
+$modelMinArgs = 0;
+$modelArgsUsage = "[exp [mul [add guess]]]";
+$modelNFit = 3;
+$nameA[1] = "exp";
+$nameA[2] = "mul";		
+$nameA[3] = "add";	
+
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+#
+# &modelUsage()		mangle parameters; NB: there may be `infinite' # of
+#					filenames after model arguments; this usually sets
+#					@A (the model parameters) but these can later be
+#					calculated heuristically during &modelInit()
+#
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+sub modelUsage()
+{
+	$A[1] = nan; $A[2] = nan; $A[3] = nan;				# usage
+	$A[1] = &antsFloatArg() if ($#ARGV >= 0 && ! -r $ARGV[0]);
+	$A[2] = &antsFloatArg() if ($#ARGV >= 0 && ! -r $ARGV[0]);
+	$A[3] = &antsFloatArg() if ($#ARGV >= 0 && ! -r $ARGV[0]);
+	&antsUsageError() unless ($#ARGV < 0 || -r $ARGV[0]);
+}
+
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+#
+# &modelInit()		initializes model after reading of data
+#
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+sub modelInit()
+{
+	$A[1] = 1 unless (numberp($A[1]));
+	$A[2] = 1 unless (numberp($A[2]));
+	$A[3] = 0 unless (numberp($A[3]));
+}
+
+#+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+#
+# &modelEvaluate(x,A,dyda)	evaluate polynom and derivatives
+#		x					x value (NOT xfnr)
+#		A					reference to @A
+#		dyda				reference to array for partial derivatives
+#							(wrt individaul params in @A)
+#		<ret val>			y value
+#
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+sub modelEvaluate($$$)					# y = A[3]+A[2]*exp(A[1]*x)
+{
+	my($x,$AR,$dydaR) = @_;
+	my($e) = exp($AR->[1]*$x);
+
+	$dydaR->[1] = $AR->[2]*$x*$e;
+	$dydaR->[2] = $e;
+	$dydaR->[3] = 1;					# partial derivatives
+
+	return $AR->[3] + $AR->[2]*$e;
+}
+
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+# &modelCleanup()	cleans up after fitting but before output
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+sub modelCleanup()
+{
+}

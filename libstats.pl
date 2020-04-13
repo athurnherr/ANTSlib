@@ -1,9 +1,9 @@
 #======================================================================
-#                    L I B S T A T S . P L 
+#                    . . / L I B / L I B S T A T S . P L 
 #                    doc: Wed Mar 24 13:59:27 1999
-#                    dlm: Sat Jan 31 15:51:14 2015
+#                    dlm: Thu Mar 12 15:11:24 2020
 #                    (c) 1999 A.M. Thurnherr
-#                    uE-Info: 150 0 NIL 0 0 70 2 2 4 NIL ofnI
+#                    uE-Info: 45 44 NIL 0 0 72 0 2 4 NIL ofnI
 #======================================================================
 
 # HISTORY:
@@ -36,8 +36,35 @@
 #				  - added fdiff()
 #	Jan 30, 2015: - added log_avg()
 #				  - added noise_avg()
+#	Mar 26, 2019: - added regress()
 
 require "$ANTS/libfuns.pl";
+
+#----------------------------------------------------------------------
+# simple linear regression
+#	- returns regression coefficient (slope)
+#----------------------------------------------------------------------
+
+sub regress(@)
+{
+	my($n) = @_/2;
+	return nan unless ($n > 1);
+
+	my(@X) = @_[0..$n-1];
+	my(@Y) = @_[$n..2*$n-1];
+
+	my($sumx) = 0;
+	for (my($i)=0; $i<$n; $i++) { $sumx += $X[$i]; }
+    my($midx) = $sumx / @Y;
+    my($rcoeff) = my($sumxdsq) = 0;
+	for (my($i)=0; $i<$n; $i++) {
+		my($xd) = $X[$i] - $midx;
+		$sumxdsq += $xd**2;
+		$rcoeff += $xd * $Y[$i];
+	}
+    $rcoeff /= $sumxdsq;
+	return $rcoeff;
+}
 
 #----------------------------------------------------------------------
 # estimate stderr given stddev & degrees of freedom

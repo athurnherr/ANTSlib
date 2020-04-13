@@ -1,0 +1,37 @@
+#======================================================================
+#                    . I N T E R P . F I L L N A N 
+#                    doc: Tue Sep 18 16:36:28 2012
+#                    dlm: Tue Sep 18 16:43:36 2012
+#                    (c) 2012 A.M. Thurnherr
+#                    uE-Info: 34 5 NIL 0 0 72 10 2 4 NIL ofnI
+#======================================================================
+
+# fill missing with nans
+
+# HISTORY:
+#	Sep 18, 2012: - adapted from [.interp.nnbr]
+
+# see [.interp.linear] for documentation of interface
+
+$IS_opts = "";
+$IS_optsUsage = "";
+
+sub IS_usage() {}
+sub IS_init($$$$) {}
+
+sub IS_interpolate($$$$$$)
+{
+	my($bR,$idR,$xf,$xv,$xi,$f) = @_;
+
+	if ($f == $xf) {
+		return $xv;
+    } elsif ($bR->[$xi][$xf] == $xv) {
+		return $bR->[$xi][$f];
+    } elsif ($bR->[$xi+1][$xf] == $xv) {
+		return $bR->[$xi+1][$f];
+	} else {
+		return nan;
+	}
+}
+
+1;

@@ -1,9 +1,9 @@
 #======================================================================
 #                    L I B G M 7 6 . P L 
 #                    doc: Sun Feb 20 14:43:47 2011
-#                    dlm: Sat Feb  2 02:33:11 2019
+#                    dlm: Sat Apr  6 19:33:05 2019
 #                    (c) 2011 A.M. Thurnherr
-#                    uE-Info: 144 43 NIL 0 0 70 2 2 4 NIL ofnI
+#                    uE-Info: 34 48 NIL 0 0 70 2 2 4 NIL ofnI
 #======================================================================
 
 # HISTORY:
@@ -27,7 +27,11 @@
 #				  - added GM_strain
 #				  - BUG: Sw usage message had wrong parameter order
 #				  - renamed Sw => GM_VKE; Su_z => GM_shear
-
+#	Mar 31, 2019: - updated doc for shear and strain spectra
+#	Apr  1, 2019: - added GM_vdiv
+#	Apr  5, 2019: - BUG: GM_VKE was erroneous (argument shifting was wrong)
+#				  - adapted to improved antsFunUsage()
+#	Apr  6, 2019: - fiddled during debugging of fs_finestructure issue
 
 require "$ANTS/libEOS83.pl";
 
@@ -100,7 +104,7 @@ sub B($)											# structure function (omega dependence)
 sub GM_VKE(@)
 {
 	my($omega,$m,$lat,$b,$jstar,$N) =
-		&antsFunUsage(-5,'fff','[frequency[1/s]] <vertical wavenumber[rad/m]> <lat[deg]> <b[m]> <j*> <N[rad/s]>',@_);
+		&antsFunUsage(-5,'fffff','GM_VKE([frequency[1/s]] <vertical wavenumber[rad/m]> <lat[deg]> <b[m]> <j*> <N[rad/s]>)',@_);
 
 	if (defined($N)) {									# Sw(omega,m)
 		local($f) = abs(&f($lat));
@@ -110,8 +114,8 @@ sub GM_VKE(@)
 		my($mstar) = &m($jstar,$N,$omega);
 		return $GM_E0 * $b * 2 * $f**2/$omega**2/B($omega) * $jstar / ($m+$mstar)**2;
 	} else {											# Sw(m), i.e. integrated over all omega; as in Thurnherr et al., GRL 2015
-		$N = $lat;										# shift arguments to account for missing omega
-		$lat = $m;
+		$N = $jstar;  $jstar = $b;						# shift arguments to account for missing omega
+		$b = $lat; $lat = $m;
 		local($f) = abs(&f($lat));
 		$m = $omega;
 		undef($omega);
@@ -121,15 +125,38 @@ sub GM_VKE(@)
 }
 
 #----------------------------------------------------------------------
+# Vertical Divergence (normalized by N)
+#	- implemented to investigate shear-to-vertical divergence ratio
+#	- S[w_z/N] = S[w_z] / N^2 = S[w] * m^2 / N^2
+#	- GM shear-to-vd variance ratio = 3N/2f
+#	- GM strain-to-vd variance ratio = N/2f
+#----------------------------------------------------------------------
+
+sub GM_vdiv(@)
+{
+	my($m,$lat,$b,$jstar,$N) =
+		&antsFunUsage(5,'fffff','GM_vdiv(<vertical wavenumber[rad/m]> <lat[deg]> <b[m]> <j*> <N[rad/s]>)',@_);
+	return GM_VKE($m,$lat,$b,$jstar,$N) * $m**2 / $N**2;
+}
+
+#----------------------------------------------------------------------
 # Shear and Strain m-spectra (i.e. integrated over f)
+#	- shear is buoyancy-frequency normalized
 #	- spectral density
-#	- from Thurnherr et al. (GRL 2015)
+#	- from Thurnherr et al. (GRL 2015), which is from email info
+#	  Eric Kunze, 04/22/2015: First, the standard GHP parameterization that I
+#	  implement uses either the N-normalized shear or strain spectra. The GM
+#	  versions of these are
+#		S[V_z/N](m) = (3*PI/2)*E0*b*jstar*m^2/(m+mstar)^2 and
+#		S[Z_z](m) = (PI/2)*E0*b*jstar*m^2/(m+mstar)^2
+#	  though in practice mstar is not particularly important because the
+#	  variance of both these quantities is dominated by high m.
 #----------------------------------------------------------------------
 
 sub GM_shear(@)
 {
 	my($m,$lat,$b,$jstar,$N) =
-		&antsFunUsage(5,'fffff','<vertical wavenumber[rad/m]> <lat[deg]> <b[m]> <j*> <N[rad/s]>',@_);
+		&antsFunUsage(5,'fffff','GM_shear(<vertical wavenumber[rad/m]> <lat[deg]> <b[m]> <j*> <N[rad/s]>)',@_);
 	local($f) = abs(&f($lat));
 	my($mstar) = &m($jstar,$N);
 	return 3 * $pi/2 * $GM_E0 * $b * $jstar * $m**2 / ($m+$mstar)**2;
@@ -138,7 +165,7 @@ sub GM_shear(@)
 sub GM_strain(@)
 {
 	my($m,$lat,$b,$jstar,$N) =
-		&antsFunUsage(5,'fffff','<vertical wavenumber[rad/m]> <lat[deg]> <b[m]> <j*> <N[rad/s]>',@_);
+		&antsFunUsage(5,'fffff','GM_strain(<vertical wavenumber[rad/m]> <lat[deg]> <b[m]> <j*> <N[rad/s]>)',@_);
 	local($f) = abs(&f($lat));
 	my($mstar) = &m($jstar,$N);
 	return $pi/2 * $GM_E0 * $b * $jstar * $m**2 / ($m+$mstar)**2;

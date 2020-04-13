@@ -1,0 +1,36 @@
+#======================================================================
+#                    . I S O P Y C N A L _ T S . G A M M A _ N 
+#                    doc: Tue Dec 13 21:50:18 2005
+#                    dlm: Mon Dec 19 13:04:15 2005
+#                    (c) 2005 A.M. Thurnherr
+#                    uE-Info: 27 30 NIL 0 0 72 0 2 4 NIL ofnI
+#======================================================================
+
+# HISTORY:
+#	Dec 14, 2005: - created
+#	Dec 19, 2005: - finalized
+
+# NOTES:
+#	- requires %lat/%lon PARAMs
+
+require "$ANTS/libgamma.pl";				# load equation of state
+
+unless (defined($P{ITS})) {
+	&antsInfo("using default %ITS=90");
+	&antsAddParams(ITS,90);
+}
+$gamma::temp_scale = $P{ITS};
+
+croak("$0: need %lat/%lon\n")
+	unless defined($P{lat}) && defined($P{lon});
+croak("$0: need %press\n")
+	unless defined($P{press});
+
+sub density($$)
+{
+	my($S,$T) = @_;
+	my($gamma) = gamma::gamma_n($S,$T,$P{press},$P{lat},$P{lon});
+	return $gamma > 0 ? $gamma : undef;
+}
+
+1;
