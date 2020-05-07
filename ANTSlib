@@ -2,9 +2,9 @@
 #======================================================================
 #                    A N T S L I B 
 #                    doc: Wed May 16 06:19:16 2012
-#                    dlm: Sun Apr  5 16:41:52 2015
+#                    dlm: Mon Apr 13 11:18:17 2020
 #                    (c) 2012 A.M. Thurnherr
-#                    uE-Info: 39 42 NIL 0 0 72 0 2 4 NIL ofnI
+#                    uE-Info: 19 103 NIL 0 0 72 0 2 4 NIL ofnI
 #======================================================================
 
 # HISTORY:
@@ -16,7 +16,7 @@
 #				  - BUG: version consistency check works only on woosher
 
 ($ANTSLIB) = ($0 =~ m{^(.*)/[^/]*$});
-$antsMinLibVersion = 6.0;
+$antsMinLibVersion = 6.0;						# don't change this; change antsLibVersion in [ants.pl]
 
 require "$ANTSLIB/ants.pl";
 #require "$ANTSLIB/libCPT.pl";

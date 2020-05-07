@@ -1,9 +1,9 @@
 #======================================================================
 #                    L I B I M P . P L 
 #                    doc: Tue Nov 26 21:59:40 2013
-#                    dlm: Sun Apr 12 10:03:38 2020
+#                    dlm: Tue Apr 14 17:23:47 2020
 #                    (c) 2017 A.M. Thurnherr
-#                    uE-Info: 181 61 NIL 0 0 72 0 2 4 NIL ofnI
+#                    uE-Info: 736 58 NIL 0 0 72 0 2 4 NIL ofnI
 #======================================================================
 
 # HISTORY:
@@ -61,6 +61,10 @@
 #				  - BUG: GIMBAL_PITCH had not only been defined for in-water records
 #	Jun  9, 2018: - BUG: some "edge" data (beyond the valid profile) were bogus (does not matter in practice)
 #	Apr 12, 2020: - modified rot_vecs to pass all records with non-numerical elapsed 
+#	Apr 13, 2020: - added prep_piro_ADCP
+#				  - BUG: dhist_binsize != 1 did not work
+#				  - BUG: dhist agreement % was not rounded
+#	Apr 14, 2020: - cosmetics
 
 #----------------------------------------------------------------------
 # gRef() library
@@ -313,6 +317,8 @@ sub trim_out_of_water($)
 #--------------------------------------------------------------------------------
 # prep_piro_IMP()
 # 	- calculate pitch/roll offsets & tilt azimuth for IMP
+#	- if first_rec and last_rec are provided, the mean calculation will 
+#	  be restricted to this range (TILT_AZIM, _ANOM calculated for all recs)
 #	- during an attempt to improve time lagging for the 2015 IOPAS data set,
 #	  it was noticed that one particular instrument, WHM300#12973 maxes out
 #	  pitch at 27.36 degrees, whereas the roll may not be maxed out at 28.76 deg,
@@ -324,13 +330,16 @@ sub trim_out_of_water($)
 #	  using only the correct time range
 #---------------------------------------------------------------------------------
 
-sub prep_piro_IMP($)
+sub prep_piro_IMP($@)
 {
-	my($verbose) = @_;
+	my($verbose,$first_rec,$last_rec) = @_;
 	my($RDI_max_tilt) = 29; 
 	my($IMP_pitch_mean,$IMP_roll_mean,$nPR) = (0,0,0);
+
+	$first_rec = 0 			unless defined($first_rec);
+	$last_rec  = $#ants_	unless defined($last_rec);
 	
-	for (my($r)=0; $r<@ants_; $r++) {
+	for (my($r)=$first_rec; $r<=$last_rec; $r++) {
 		next unless numbersp($ants_[$r][$pitchF],$ants_[$r][$rollF]);
 		$nPR++;
 		$IMP_pitch_mean += min($ants_[$r][$pitchF],$RDI_max_tilt);
@@ -359,6 +368,9 @@ sub prep_piro_IMP($)
 sub prep_piro_LADCP($)
 {
 	my($verbose) = @_;
+
+	$first_ens = 0 			unless defined($first_ens);
+	$last_ens  = $#ants_	unless defined($last_ens);
 
 	my($LADCP_pitch_mean,$LADCP_roll_mean) = (0,0);
 	for (my($ens)=0; $ens<=$#{$LADCP{ENSEMBLE}}; $ens++) {
@@ -389,6 +401,49 @@ sub prep_piro_LADCP($)
 	return ($LADCP_pitch_mean,$LADCP_roll_mean);
 }
 
+#----------------------------------------------------------------------
+# prep_piro_ADCP()
+#	- calculate pitch/roll offsets & tilt azimuth of moored ADCP
+#	- very similar to prep_piro_LADCP() but using windowing as in
+#	  prep_piro_IMP()
+#	- window ens are indices, not ensemble numbers
+#----------------------------------------------------------------------
+
+sub prep_piro_ADCP($@)
+{
+	my($verbose,$window_first_ens,$window_last_ens) = @_;
+
+	$window_first_ens = 0 					unless defined($window_first_ens);
+	$window_last_ens  = $#{$ADCP{ENSEMBLE}}	unless defined($window_last_ens);
+
+	for (my($ens)=0; $ens<=$#{$ADCP{ENSEMBLE}}; $ens++) {
+		$ADCP{ENSEMBLE}[$ens]->{GIMBAL_PITCH} =
+			gimbal_pitch($ADCP{ENSEMBLE}[$ens]->{PITCH},$ADCP{ENSEMBLE}[$ens]->{ROLL});
+	}
+
+	my($ADCP_pitch_mean,$ADCP_roll_mean) = (0,0);
+	for (my($ens)=$window_first_ens; $ens<=$window_last_ens; $ens++) {
+		$ADCP_pitch_mean += $ADCP{ENSEMBLE}[$ens]->{GIMBAL_PITCH};
+		$ADCP_roll_mean  += $ADCP{ENSEMBLE}[$ens]->{ROLL};
+	}
+	$ADCP_pitch_mean /= ($window_last_ens-$window_first_ens+1);
+	$ADCP_roll_mean  /= ($window_last_ens-$window_first_ens+1);
+	printf(STDERR "\n\t\tADCP mean pitch/roll       : %.1f/%.1f deg",$ADCP_pitch_mean,$ADCP_roll_mean)
+			if $verbose;
+	
+	for (my($ens)=0; $ens<=$#{$ADCP{ENSEMBLE}}; $ens++) {
+		$ADCP{ENSEMBLE}[$ens]->{TILT_AZIMUTH} =
+			tilt_azimuth($ADCP{ENSEMBLE}[$ens]->{GIMBAL_PITCH}-$ADCP_pitch_mean,
+						 $ADCP{ENSEMBLE}[$ens]->{ROLL}-$ADCP_roll_mean);
+		$ADCP{ENSEMBLE}[$ens]->{TILT_ANOM} =
+			angle_from_vertical($ADCP{ENSEMBLE}[$ens]->{GIMBAL_PITCH}-$ADCP_pitch_mean,
+								$ADCP{ENSEMBLE}[$ens]->{ROLL}-$ADCP_roll_mean);
+	}
+	
+	print(STDERR "\n") if $verbose;
+	return ($ADCP_pitch_mean,$ADCP_roll_mean);
+}
+
 #------------------------------------------------------------------
 # sub calc_hdg_offset()
 #	- estimate heading offset from tilt time series
@@ -403,7 +458,7 @@ sub pl_hdg_offset($@)
 	my($plotsize) = '13c';
 	my($xmin,$xmax) = (-180.5,180.5);
 	my($ymin) = 0;
-	my($ymax) = 1.05 * $dhist[$HDG_offset];
+	my($ymax) = 1.05 * $dhist[$HDG_offset/$dhist_binsize];
 	    
 	GMT_begin("$P{profile_id}${opt_a}_hdg_offset.ps","-JX${plotsize}","-R$xmin/$xmax/$ymin/$ymax",'-X6 -Y4 -P');
 	GMT_psxy("-Sb${dhist_binsize}u -GCornFlowerBlue");
@@ -415,9 +470,9 @@ sub pl_hdg_offset($@)
 	GMT_unitcoords();
 	GMT_pstext('-F+f14,Helvetica,CornFlowerBlue+jTR -N');
 	if (defined($opt_o)) {
-		printf(GMT "0.99 1.06 -o %g \260 offset (%d%% agreement)\n",angle($HDG_offset),100*$modefrac);
+		printf(GMT "0.99 1.06 -o %g\260 offset (%d%% agreement)\n",angle($HDG_offset),round(100*$modefrac));
 	} else {
-		printf(GMT "0.99 1.06 %g \260 offset (%d%% agreement)\n",angle($HDG_offset),100*$modefrac);
+		printf(GMT "0.99 1.06 %g\260 offset (%d%% agreement)\n",angle($HDG_offset),round(100*$modefrac));
 	}
 	GMT_pstext('-F+f14,Helvetica,blue+jTL -N');
 	printf(GMT "0.01 1.06 $P{profile_id} $opt_a\n");
@@ -487,6 +542,7 @@ sub calc_hdg_offset($)
 	
 	if (defined($opt_o)) {												# set heading offset, either with -o
 		$HDG_offset = $opt_o;
+		$dhist_binsize = 1;
 	} else {															# or from the data
 		$HDG_offset = 0;
 		for (my($i)=1; $i<@dhist-1; $i++) { 							# make sure mode is not on edge
@@ -495,7 +551,7 @@ sub calc_hdg_offset($)
 		$HDG_offset *= $dhist_binsize;
 	}
 
-	my($modefrac) = ($dhist[$HDG_offset]+$dhist[$HDG_offset-1]+$dhist[$HDG_offset+1]) / $nhist;
+	my($modefrac) = ($dhist[$HDG_offset/$dhist_binsize]+$dhist[$HDG_offset/$dhist_binsize-1]+$dhist[$HDG_offset/$dhist_binsize+1]) / $nhist;
 	pl_hdg_offset($dhist_binsize,$modefrac,@dhist);
 
 	unless (defined($opt_o)) {	    									# make sure data are consistent (unless -o is used)
@@ -510,10 +566,10 @@ sub calc_hdg_offset($)
 	
 	printf(STDERR "\n\t") if $verbose;
 	if ($opt_o) {
-		printf(STDERR "IMU heading offset = -o %g deg (%d%% agreement)\n",angle($HDG_offset),100*$modefrac)
+		printf(STDERR "IMU heading offset = -o %g deg (%d%% agreement)\n",angle($HDG_offset),round(100*$modefrac))
 			if $verbose;
 	} else {
-		printf(STDERR "IMU heading offset = %g deg (%d%% agreement)\n",angle($HDG_offset),100*$modefrac)
+		printf(STDERR "IMU heading offset = %g deg (%d%% agreement)\n",angle($HDG_offset),round(100*$modefrac))
 			if $verbose;
 	}
 
@@ -675,9 +731,9 @@ sub create_merge_plots($$$)
     GMT_psbasemap('-Bg90a45f5:"ADCP Heading [\260]":/g15a15f5:"ADCP Compass Error [\260]":WeSn');
 	GMT_unitcoords();
     GMT_pstext('-F+f12,Helvetica,CornFlowerBlue+jTR -Gwhite -C25%');
-    printf(GMT "0.98 0.98 rms error = %7.1f \260\n",sqrt($sumSq/$nSq));
-    printf(GMT "0.98 0.94 time-averaged error = %7.1f \260\n",$sumErr/$nErr);
-    printf(GMT "0.98 0.90 heading-averaged error = %7.1f \260\n",$sumBe/$nBe);
+    printf(GMT "0.98 0.98 rms error = %7.1f\260\n",sqrt($sumSq/$nSq));
+    printf(GMT "0.98 0.94 time-averaged error = %7.1f\260\n",$sumErr/$nErr);
+    printf(GMT "0.98 0.90 heading-averaged error = %7.1f\260\n",$sumBe/$nBe);
     GMT_pstext('-F+f14,Helvetica,blue+jTL -N');
     printf(GMT "0.01 1.06 $P{profile_id} $opt_a\n");
     GMT_end();
