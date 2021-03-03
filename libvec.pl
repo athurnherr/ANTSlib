@@ -1,9 +1,9 @@
 #======================================================================
 #                    L I B V E C . P L 
 #                    doc: Sat Mar 20 12:50:32 1999
-#                    dlm: Thu May 24 21:51:20 2018
+#                    dlm: Mon Mar  1 08:46:35 2021
 #                    (c) 1999 A.M. Thurnherr
-#                    uE-Info: 170 0 NIL 0 0 70 2 2 4 NIL ofnI
+#                    uE-Info: 45 70 NIL 0 0 70 2 2 4 NIL ofnI
 #======================================================================
 
 # HISTORY:
@@ -42,6 +42,7 @@
 #						 system)
 #	Aug  7, 2016: - made vel_u and vel_v deal with nans
 #	Nov 15, 2017: - re-enabled usage-message (of sorts) for vel_u only
+#	Mar  1, 2021: - adapted rotation_ts and angle_ts to deal with nans
 
 require "$ANTS/libPOSIX.pl";	# acos()
 
@@ -210,7 +211,8 @@ sub angle_diff(@)
 
   sub rotation_ts(@)
   {
-	my($a) = &antsFunUsage(1,"f","<angle>",@_);
+	my($a) = &antsFunUsage(1,".","<angle>",@_);
+	return nan unless numberp($a);
 
 	my($rot) = defined($last_in) ? angle_diff($a,$last_in) : nan;
 	$last_in = $a;
@@ -222,7 +224,8 @@ sub angle_diff(@)
 
   sub angle_ts(@)
   {
-	my($a) = &antsFunUsage(1,"f","<angle>",@_);
+	my($a) = &antsFunUsage(1,".","<angle>",@_);
+	return nan unless numberp($a);
 
 	$last_out = $last_in = $a
 		unless (defined($last_in));

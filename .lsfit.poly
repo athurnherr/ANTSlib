@@ -1,9 +1,9 @@
 #======================================================================
 #                    . L S F I T . P O L Y 
 #                    doc: Wed Feb 24 09:40:06 1999
-#                    dlm: Sun May 13 08:25:37 2018
+#                    dlm: Mon May 11 11:54:03 2020
 #                    (c) 1999 A.M. Thurnherr
-#                    uE-Info: 114 36 NIL 0 0 72 2 2 4 NIL ofnI
+#                    uE-Info: 31 55 NIL 0 0 72 2 2 4 NIL ofnI
 #======================================================================
 
 # What you need to provide if you wanna fit a different
@@ -28,6 +28,7 @@
 #	Sep 19, 2011: - moved part of the usage code into init() to allow use in [pgram]
 #	Jan 10, 2013: - added extremum output when fitting parabola (-o 2)
 #	May 13, 2018: - BUG: replaced opt_o with modelNFit in &modelCleanup()
+#	May 11, 2020: - increased extremum output precision
 
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 #
@@ -115,11 +116,11 @@ sub modelCleanup()
 
 	my($extX) = -$A[2] / (2 * $A[3]);
 	if ($A[3] > 0) {
-		&antsInfo(".lsfit.poly: minimum at %.1f",$extX);
+		&antsInfo(".lsfit.poly: minimum at %g",$extX);
 	} elsif ($A[3] < 0) {
-		&antsInfo(".lsfit.poly: maximum at %.1f",$extX);
+		&antsInfo(".lsfit.poly: maximum at %g",$extX);
 	} else {
-		&antsInfo(".lsfit.poly: saddle point at %.1f",$extX);
+		&antsInfo(".lsfit.poly: saddle point at %g",$extX);
 	}
 }
 

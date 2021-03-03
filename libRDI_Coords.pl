@@ -1,9 +1,9 @@
 #======================================================================
 #                    R D I _ C O O R D S . P L 
 #                    doc: Sun Jan 19 17:57:53 2003
-#                    dlm: Wed Mar 28 12:30:12 2018
+#                    dlm: Mon Jun 29 10:59:01 2020
 #                    (c) 2003 A.M. Thurnherr
-#                    uE-Info: 109 22 NIL 0 0 72 10 2 4 NIL ofnI
+#                    uE-Info: 61 83 NIL 0 0 72 10 2 4 NIL ofnI
 #======================================================================
 
 # RDI Workhorse Coordinate Transformations
@@ -57,6 +57,8 @@
 #	Nov 26, 2017: - BUG: velBeamtoBPEarth() did not respect missing values
 #	Nov 27, 2017: - BUG: numbersp() from [antslib.pl] was used
 #	Mar 28, 2018: - added &loadInstrumentTransformation()
+#	Jun  5, 2020: - added sscorr_w & sscorr_w_mooring
+#   Jun 29, 2020: - added comments for sscorr_w, which conflicts with LADCP_w_ocean
 
 use strict;
 use POSIX;
@@ -673,5 +675,61 @@ sub BPEarthVels($$$)
 }
 
 #----------------------------------------------------------------------
+# Sound Speed Correction for Vertical Velocity
+#	- Usage: sscorr_w(<observed w>,<beam_angle>,<ADCP sVel setup>,salin,temp,press,<vertical temp. gradient>
+#----------------------------------------------------------------------
+
+sub sscorr_w($$$$$$$$)
+{
+	my($w,$beamAngle,$ssADCP,$salin,$temp,$press,$dz,$dtdz) = @_;
+	
+	return 'nan' unless numberp($w);
+	my($tanSqBeamAngle) = tan(rad($beamAngle))**2;
+	    
+	my($ssXD) 	= sVel($salin,$temp,$press);
+	my($ssBin) 	= sVel($salin,$temp+$dz*$dtdz,$press-$dz);
+	my($Kn) = sqrt(1 + (1 - $ssBin/$ssXD)**2 * $tanSqBeamAngle);
+	return $w * $ssBin/$ssADCP / $Kn;
+}
+
+#----------------------------------------------------------------------
+# Sound Speed Correction for Vertical Velocity
+#	- Usage: sscorr_w_mooring(\$ADCP,<ens-idx>,<bin-idx>,<press>,<salin>,<vertical temp. gradient>)
+#	- Notes:
+#		- RDI Coord. Trans. manual sec. 4.1
+#			- manual error: the ^2 applies to the []
+#		- difference between pressure and depth over instrument range ignored
+#	- Assumptions:
+#		- libEOS83.pl loaded
+#		- $ADCP{ENSEMBLE}[$ens-idx]->VELOCITY}[2] contains measured w
+#		- sound speed variation dominated by temperature
+#		- vertical temperature gradient is constant in time (violated
+#		  at least on superinertial time scales)
+#----------------------------------------------------------------------
+
+sub sscorr_w_mooring($$$$$)
+{												
+	my($ADCP,$ei,$bi,$press,$salin,$dtdz) = @_;
+
+	my($w) = $ADCP->{ENSEMBLE}[$ei]->{VELOCITY}[2];
+	return 'nan' unless numberp($w);
+
+	my($tanSqBeamAngle) = tan(rad($ADCP->{BEAM_ANGLE}))**2;
+	    
+	$Global::P{ITS} = 90;
+	my($ssXD) 	= sVel($salin,$ADCP->{ENSEMBLE}[$ei]->{TEMPERATURE},$press);
+	my($ssADCP)	= $ADCP->{ENSEMBLE}[$ei]->{SPEED_OF_SOUND};
+
+	my($dz)		= $ADCP->{ENSEMBLE}[$ei]->{BLANKING_DISTANCE} + $bi * $ADCP->{ENSEMBLE}[$ei]->{BIN_LENGTH};
+	$dz *= -1 if ($ADCP->{ENSEMBLE}[$ei]->{XDUCER_FACING_DOWN});			# z increases upward
+
+	my($ssBin) 	= sVel($salin,
+					   $ADCP->{ENSEMBLE}[$ei]->{TEMPERATURE} + $dz*$dtdz,
+					   $press-$dz);											# ignore press/depth difference across range
+
+	my($Kn) = sqrt(1 + (1 - $ssBin/$ssXD)**2 * $tanSqBeamAngle);		 	# RDI manual
+	return $w * $ssBin/$ssADCP / $Kn;
+}
+
 
 1;
