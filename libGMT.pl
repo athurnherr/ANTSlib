@@ -1,9 +1,9 @@
 #======================================================================
 #                    L I B G M T . P L 
 #                    doc: Sun Jun 14 13:45:47 2015
-#                    dlm: Thu Mar 17 12:19:42 2016
+#                    dlm: Sat Apr 10 07:36:13 2021
 #                    (c) 2015 A.M. Thurnherr
-#                    uE-Info: 45 48 NIL 0 0 72 2 2 4 NIL ofnI
+#                    uE-Info: 206 33 NIL 0 0 72 2 2 4 NIL ofnI
 #======================================================================
 
 # perl implementation of /Data/Makefiles/Makefile.GMT
@@ -43,19 +43,24 @@
 #	Jul 28, 2015: - added GMT_setAnnotFontSize(), GMT_psscale()
 #	Mar 16, 2016: - adapted to GMT5
 #	Mar 17, 2016: - added check for gmt5 on load
+#	Apr 10, 2021: - adapted to GMT6 (suppress warnings)
 
 $DEBUG = 0;
 
 #----------------------------------------------------------------------
-# Make sure gmt5 is installed
+# Make sure gmt6 is installed
 #----------------------------------------------------------------------
 
 if (`which gmt` eq '') {
 	if (`which psxy` eq '') {
-		croak("$0: [libGMT.pl] gmt5 required, please install\n");
+		croak("$0: [libGMT.pl] GMT version 6 required\n");
 	} else {
-		croak("$0: [libGMT.pl] gmt5 required (gmt4 installed on the system), please upgrade\n");
+		croak("$0: [libGMT.pl] GMT version 6 required (gmt4 installed)\n");
 	}
+} else {
+	my($GMTversion) = `gmt --version`; chomp($GMTversion);
+	croak("$0: [libGMT.pl] GMT version 6 required (version $GMTversion installed)\n")
+		unless ($GMTversion =~ '^6');
 }
 
 #----------------------------------------------------------------------
@@ -111,7 +116,7 @@ sub GMT_begin(@)
 		croak("gmt set failed\n");
 	$GMT_plotfile = "$ENV{PWD}/$pfn";
 	GMT_setJ($J); GMT_setR($R);
-	GMT_spawn("| gmt psxy -K $J $R $extra > $GMT_plotfile");
+	GMT_spawn("| gmt psxy -Ve -K $J $R $extra > $GMT_plotfile");
 	close(GMT);
 }
 
@@ -132,9 +137,9 @@ sub GMT_end(@)
 {
 	my($opt) = @_;
 	if (defined($opt)) {
-		GMT_spawn("| gmt psbasemap -O $GMT_J $GMT_R $opt >> $GMT_plotfile");
+		GMT_spawn("| gmt psbasemap -Ve -O $GMT_J $GMT_R $opt >> $GMT_plotfile");
 	} else {
-		GMT_spawn("| gmt psxy -O $GMT_J $GMT_R -Sc0.1 >> $GMT_plotfile");
+		GMT_spawn("| gmt psxy -Ve -O $GMT_J $GMT_R -Sc0.1 >> $GMT_plotfile");
 	}
 	close(GMT);
 	chdir("$ENV{PWD}") || croak("ENV{PWD}: $!\n");
@@ -180,25 +185,25 @@ sub GMT_unitcoords_logscale()
 sub GMT_psxy(@)
 {
 	my($opts) = @_;
-	GMT_spawn("| gmt psxy -O -K $GMT_J $GMT_R $opts >> $GMT_plotfile");
+	GMT_spawn("| gmt psxy -Ve -O -K $GMT_J $GMT_R $opts >> $GMT_plotfile");
 }
 
 sub GMT_psbasemap(@)
 {
 	my($opts) = @_;
-	GMT_spawn("| gmt psbasemap -O -K $GMT_J $GMT_R $opts >> $GMT_plotfile");
+	GMT_spawn("| gmt psbasemap -Ve -O -K $GMT_J $GMT_R $opts >> $GMT_plotfile");
 }
 
 sub GMT_pstext(@)
 {
 	my($opts) = @_;
-	GMT_spawn("| gmt pstext -O -K $GMT_J $GMT_R $opts >> $GMT_plotfile");
+	GMT_spawn("| gmt pstext -Ve -O -K $GMT_J $GMT_R $opts >> $GMT_plotfile");
 }
 
 sub GMT_psscale(@)
 {
 	my($opts) = @_;
-	GMT_spawn("| gmt psscale -O -K $GMT_J $GMT_R $opts >> $GMT_plotfile");
+	GMT_spawn("| gmt psscale -Ve -O -K $GMT_J $GMT_R $opts >> $GMT_plotfile");
 }
 
 1;
