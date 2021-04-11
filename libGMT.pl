@@ -1,9 +1,9 @@
 #======================================================================
 #                    L I B G M T . P L 
 #                    doc: Sun Jun 14 13:45:47 2015
-#                    dlm: Sat Apr 10 07:36:13 2021
+#                    dlm: Sun Apr 11 09:55:22 2021
 #                    (c) 2015 A.M. Thurnherr
-#                    uE-Info: 206 33 NIL 0 0 72 2 2 4 NIL ofnI
+#                    uE-Info: 47 34 NIL 0 0 72 2 2 4 NIL ofnI
 #======================================================================
 
 # perl implementation of /Data/Makefiles/Makefile.GMT
@@ -44,6 +44,7 @@
 #	Mar 16, 2016: - adapted to GMT5
 #	Mar 17, 2016: - added check for gmt5 on load
 #	Apr 10, 2021: - adapted to GMT6 (suppress warnings)
+#	Apr 11, 2021: - added gmt set GMT_AUTO_DOWNLOAD off
 
 $DEBUG = 0;
 
@@ -112,6 +113,7 @@ sub GMT_begin(@)
 			gmt set PROJ_LENGTH_UNIT cm PS_MEDIA letter \\
 			        FONT_LABEL ${LABEL_FONT_SIZE} \\
 	                FONT_ANNOT_PRIMARY ${ANNOT_FONT_SIZE} \\
+					GMT_AUTO_DOWNLOAD off \\
 	                FORMAT_GEO_MAP ddd:mm:ssF") &&
 		croak("gmt set failed\n");
 	$GMT_plotfile = "$ENV{PWD}/$pfn";
