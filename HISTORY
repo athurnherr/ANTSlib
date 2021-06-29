@@ -1,9 +1,9 @@
 #======================================================================
 #                    H I S T O R Y 
 #                    doc: Thu May  7 13:12:05 2015
-#                    dlm: Tue Nov 27 13:14:17 2018
+#                    dlm: Tue Jun 29 12:10:04 2021
 #                    (c) 2015 A.M. Thurnherr
-#                    uE-Info: 188 70 NIL 0 0 72 0 2 4 NIL ofnI
+#                    uE-Info: 193 22 NIL 0 0 72 0 2 4 NIL ofnI
 #======================================================================
 
 May  7, 2015:
@@ -186,3 +186,67 @@ Nov 27, 2018:
 	- published V7.1
 
 ----------------------------------------------------------------------
+V7.2
+	- various bug fixes and minor additions
+	- new features
+		- TEOS10 support
+		- GMT6 support
+	- significant changes
+		- dependency warnings disablecd by default
+----------------------------------------------------------------------
+
+[antsio.pl]:
+	Apr 10, 2019: - disabled dependency warnings 
+
+[antsutils.pl]
+#   Apr  5, 2019: - disabled weird line of code in antsFunUsage() (see comment)
+#                 - improved error messages in antsFunUsage()
+#                 - BUG: antsFunUsage did not work with -ve argc (variable argument funs)
+#   Aug 30, 2019: - BUG: antsLoadModel() did not respect $ANTS
+
+[libGM76.pl]
+#   Feb  2, 2019: - renamed from libGM.pl to libGM76.pl
+#                 - replaced beta with m
+#                 - replaced old code based on Gregg + Kunze formalism with
+#                   expressions from Thurnherr et al. (GRL 2015)
+#                 - added GM_strain
+#                 - BUG: Sw usage message had wrong parameter order
+#                 - renamed Sw => GM_VKE; Su_z => GM_shear
+#   Mar 31, 2019: - updated doc for shear and strain spectra
+#   Apr  1, 2019: - added GM_vdiv
+#   Apr  5, 2019: - BUG: GM_VKE was erroneous (argument shifting was wrong)  
+#                 - adapted to improved antsFunUsage()
+#   Apr  6, 2019: - fiddled during debugging of fs_finestructure issue
+
+[libGMT.pl]
+#   Apr 10, 2021: - adapted to GMT6 (suppress warnings)
+#   Apr 11, 2021: - added gmt set GMT_AUTO_DOWNLOAD off
+
+[libIMP.pl]
+#   Apr 12, 2020: - modified rot_vecs to pass all records with non-numerical elapsed
+#   Apr 13, 2020: - added prep_piro_ADCP   
+#                 - BUG: dhist_binsize != 1 did not work
+#                 - BUG: dhist agreement % was not rounded
+#   Apr 14, 2020: - cosmetics
+
+[libRDI_Coords.pl]
+#   Jun  5, 2020: - added sscorr_w & sscorr_w_mooring
+#   Jun 29, 2020: - added comments for sscorr_w, which conflicts with LADCP_w_ocean
+
+[libSBE.pl]
+#   Jan  3, 2019: - BUG: SBE_parseHeader() did not correctly detect missing lat/lon
+
+[libTEOS10.pl]
+#   Jan 18, 2019: - created
+
+[libconv.pl]
+#   Jan 17, 2019: - added ISO_Datetime()
+#   Feb 15, 3019: - added deg2lat, deg2lon
+
+[libstats.pl]
+#   Mar 26, 2019: - added regress()
+
+[libvec.pl]
+#   Mar  1, 2021: - adapted rotation_ts and angle_ts to deal with nans
+
+
