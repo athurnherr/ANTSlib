@@ -1,17 +1,18 @@
 #======================================================================
 #                    L I B G H P . P L 
 #                    doc: Fri Sep  7 09:56:08 2012
-#                    dlm: Mon Oct 22 13:10:47 2012
+#                    dlm: Wed Jul 14 07:41:20 2021
 #                    (c) 2012 A.M. Thurnherr
-#                    uE-Info: 11 0 NIL 0 0 72 2 2 4 NIL ofnI
+#                    uE-Info: 12 50 NIL 0 0 72 2 2 4 NIL ofnI
 #======================================================================
 
 # HISTORY:
 #	Sep  7, 2012: - created
 #	Oct 22, 2012: - cosmetics
+#	Jul 14, 2021: - BUG: adapted to new libGM name
 
 require "$ANTS/libfuns.pl";		# arccosh
-require "$ANTS/libGM.pl";		# GM_N0
+require "$ANTS/libGM76.pl";		# GM_N0
 
 #----------------------------------------------------------------------------
 # h(R_omega)	correction factor for different shear/strain (R_omega) ratios
