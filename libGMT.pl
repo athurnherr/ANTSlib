@@ -1,9 +1,9 @@
 #======================================================================
 #                    L I B G M T . P L 
 #                    doc: Sun Jun 14 13:45:47 2015
-#                    dlm: Sun Apr 11 09:55:22 2021
+#                    dlm: Thu Jul  1 18:45:15 2021
 #                    (c) 2015 A.M. Thurnherr
-#                    uE-Info: 47 34 NIL 0 0 72 2 2 4 NIL ofnI
+#                    uE-Info: 48 66 NIL 0 0 72 2 2 4 NIL ofnI
 #======================================================================
 
 # perl implementation of /Data/Makefiles/Makefile.GMT
@@ -45,6 +45,7 @@
 #	Mar 17, 2016: - added check for gmt5 on load
 #	Apr 10, 2021: - adapted to GMT6 (suppress warnings)
 #	Apr 11, 2021: - added gmt set GMT_AUTO_DOWNLOAD off
+#	Jul  1, 2021: - BUG: gmt check was based on psxy, not gmt psxy
 
 $DEBUG = 0;
 
@@ -53,7 +54,7 @@ $DEBUG = 0;
 #----------------------------------------------------------------------
 
 if (`which gmt` eq '') {
-	if (`which psxy` eq '') {
+	if (`which gmt` eq '') {
 		croak("$0: [libGMT.pl] GMT version 6 required\n");
 	} else {
 		croak("$0: [libGMT.pl] GMT version 6 required (gmt4 installed)\n");

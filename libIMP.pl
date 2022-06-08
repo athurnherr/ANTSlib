@@ -1,9 +1,9 @@
 #======================================================================
 #                    L I B I M P . P L 
 #                    doc: Tue Nov 26 21:59:40 2013
-#                    dlm: Tue Apr 14 17:23:47 2020
+#                    dlm: Sat Jul 24 09:37:27 2021
 #                    (c) 2017 A.M. Thurnherr
-#                    uE-Info: 736 58 NIL 0 0 72 0 2 4 NIL ofnI
+#                    uE-Info: 70 13 NIL 0 0 72 0 2 4 NIL ofnI
 #======================================================================
 
 # HISTORY:
@@ -65,6 +65,9 @@
 #				  - BUG: dhist_binsize != 1 did not work
 #				  - BUG: dhist agreement % was not rounded
 #	Apr 14, 2020: - cosmetics
+#	Jul 12, 2021: - improvements to histogram plot
+#	Jul 24, 2021: - updated docu
+# HISTORY END
 
 #----------------------------------------------------------------------
 # gRef() library
@@ -458,9 +461,18 @@ sub pl_hdg_offset($@)
 	my($plotsize) = '13c';
 	my($xmin,$xmax) = (-180.5,180.5);
 	my($ymin) = 0;
-	my($ymax) = 1.05 * $dhist[$HDG_offset/$dhist_binsize];
+	my($ymax) = 0;
+
+	for (my($i)=0; $i<@dhist; $i++) {
+		$ymax = $dhist[$i] if ($dhist[$i] > $ymax);
+    }
+	$ymax = 1.05 * $ymax;
 	    
 	GMT_begin("$P{profile_id}${opt_a}_hdg_offset.ps","-JX${plotsize}","-R$xmin/$xmax/$ymin/$ymax",'-X6 -Y4 -P');
+	if (defined($opt_o)) {
+		GMT_psxy("-W2,red");
+		printf(GMT "%f %f\n%f %f\n",$opt_o,0,$opt_o,$ymax);
+    }
 	GMT_psxy("-Sb${dhist_binsize}u -GCornFlowerBlue");
 	for (my($i)=0; $i<@dhist; $i++) {
 		next unless $dhist[$i];

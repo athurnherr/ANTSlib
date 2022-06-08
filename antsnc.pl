@@ -23,13 +23,18 @@
 #	Mar 20, 2008: - added progress output to NC_stringify
 #	Jul 21, 2009: - allowed for suppression of %PARAMs
 #	Jan 15, 2016: - BUG: %DEPS pseudo-%PARAM was encoded
+#	Apr  5, 2022: - added NC_writeMDataMulti()
+#				  - implemented disappeared NetCDF::DOUBLE etc.
+#				  - enabled fill value handling (library bug has gone away)
+#	Apr 22, 2022: - added "_coordinate" to abscissa dimension to
+#					allow reading with python xr
+# HISTORY END
 
 # NOTES:
 #	- multi-valued attribs are not loaded by getInfo()
 #	- spaces in NC strings are replaced by underscores
-#	- data filling is disabled, because of a bug in the NetCDF library
 
-# NetCDF Library Bug:
+# NetCDF Library Bug: NO LONGER ACTIVE AS OF APR 2022
 #	The library appears to have incorrect default _FillValue types for
 #	integer data types. The error appears if the "setfill" line is commented
 #	out and the following command is run:
@@ -39,6 +44,48 @@
 #		are ommitted, the error disappears.
 
 use NetCDF;
+
+#----------------------------------------------------------------------
+# NetCDF Constants
+#	- as of April, 2022 these are no longer part of NetCDF???
+#	- manually encoded from .h file
+#----------------------------------------------------------------------
+
+sub NetCDF::NAT 		 { return 0; }
+sub NetCDF::BYTE		 { return 1; }
+sub NetCDF::CHAR		 { return 2; }
+sub NetCDF::SHORT		 { return 3; }
+sub NetCDF::INT 		 { return 4; }
+sub NetCDF::LONG		 { return 4; }
+sub NetCDF::FLOAT		 { return 5; }
+sub NetCDF::DOUBLE		 { return 6; }
+sub NetCDF::UBYTE		 { return 7; }
+sub NetCDF::USHORT		 { return 8; }
+sub NetCDF::UINT		 { return 9; }
+sub NetCDF::INT64		 { return 10; }
+sub NetCDF::UINT64		 { return 11; }
+sub NetCDF::STRING		 { return 12; }
+
+sub NetCDF::FILL_BYTE		 { return -127; }
+sub NetCDF::FILL_CHAR		 { return "\0"; }
+sub NetCDF::FILL_SHORT		 { return -32767; }
+sub NetCDF::FILL_INT 		 { return -2147483647; }
+sub NetCDF::FILL_LONG		 { return -2147483647; }
+sub NetCDF::FILL_FLOAT		 { return 9.9692099683868690e+36; }
+sub NetCDF::FILL_DOUBLE		 { return 9.9692099683868690e+36; }
+sub NetCDF::FILL_UBYTE		 { return 255; }
+sub NetCDF::FILL_USHORT		 { return 65535; }
+sub NetCDF::FILL_UINT		 { return 4294967295; }
+sub NetCDF::FILL_INT64		 { return -9223372036854775806; }
+sub NetCDF::FILL_UINT64		 { return 18446744073709551614; }
+sub NetCDF::FILL_STRING		 { return ''; }
+
+sub NetCDF::NOWRITE		 { return 0x0000; }
+sub NetCDF::CLOBBER		 { return 0x0000; }
+sub NetCDF::NOFILL		 { return 0x100; }
+sub NetCDF::GLOBAL		 { return -1; }
+sub NetCDF::UNLIMITED	 { return 0; }
+
 
 #----------------------------------
 # string representation of NC types
@@ -265,7 +312,7 @@ sub NC_writeMData($$$)
 		}
 		croak("$0: varid != fnr (implementation restriction)")
 			unless ($vid == $f);
-		foreach my $anm (keys(%P)) {					# variable attributes
+		foreach my $anm (keys(%P)) {					# VARIABLE ATTRIBUTES
 			next unless defined($P{$anm});
 			my($var,$attr) = ($anm =~ m{([^:]+):(.*)});
 			next unless ($var eq $antsLayout[$f]);

@@ -1,9 +1,9 @@
 #======================================================================
 #                    L I B C O N V . P L 
 #                    doc: Sat Dec  4 13:03:49 1999
-#                    dlm: Fri Feb 15 13:21:08 2019
+#                    dlm: Wed Apr  6 18:41:02 2022
 #                    (c) 1999 A.M. Thurnherr
-#                    uE-Info: 529 24 NIL 0 0 70 2 2 4 NIL ofnI
+#                    uE-Info: 73 59 NIL 0 0 70 2 2 4 NIL ofnI
 #======================================================================
 
 # HISTORY:
@@ -67,7 +67,11 @@
 #	Dec 18, 2017: - removed ambiguous-date warning
 #	May 22, 2018: - added NMEA2dec_time()
 #	Jan 17, 2019: - added ISO_Datetime()
-#	Feb 15, 3019: - added deg2lat, deg2lon
+#	Feb 15, 2019: - added deg2lat, deg2lon
+#	Aug 27, 2021: - improved Date to take dn from %PARAMs
+#	Nov 15, 2021: - modified O2 coversion routines to return nan on missing press, temp, salin
+#	Apr  6, 2022: - made =Date work with %dn params as well
+# HISTORY END
 
 require "$ANTS/libEOS83.pl";                        # &sigma()
 require "$ANTS/libPOSIX.pl";                        # &floor()
@@ -329,6 +333,24 @@ sub yymmdd2dec_time(@)
 	        }
 	    }
 	    
+	    unless (defined($dnf)) {
+	    	foreach my $p (keys(%P)) {
+	    		next unless ($p =~ /^dn(\d\d)$/);
+	    		$year = ($1 > 70) ? 1900 + $1 : 2000 + $1;
+	    		$day = int($P{$p});
+				while ($day > 365+&leapYearP($year)) {			# adjust year
+					$day -= 365 + &leapYearP($year);
+					$year++;
+		        }
+				my($month) = 1;
+				while ($day > &monthLength($year,$month)) {
+					$day -= &monthLength($year,$month);
+					$month++;
+		        }
+				return sprintf('%04d/%02d/%02d',$year,$month,$day);
+	    	}
+	    }
+	    
 		my($year,$day) = &antsFunUsage(2,"cf","epoch, dayNo",\@fc,undef,$dnf,@_);
 	
 		$year += ($year < 50) ? 2000 : 1900 			# Y2K
@@ -361,6 +383,26 @@ sub yymmdd2dec_time(@)
 			last;
 		}
 	    
+	    unless (defined($dnf)) {
+	    	foreach my $p (keys(%P)) {
+	    		next unless ($p =~ /^dn(\d\d)$/);
+	    		my($fday) = $P{$p};
+				my($day) = int($fday);
+				$fday -= $day;
+		    
+				my($hour) = int(24*$fday);
+				$fday -= $hour/24;
+				my($min) = int(24*60*$fday);
+				$fday -= $min/24/60;
+				my($sec) = round(24*3600*$fday);
+				$min++,$sec=0 if ($sec == 60);
+				$hour++,$min=0 if ($min == 60);
+				$day++,$hour=0 if ($hour == 24);
+		    
+		        return sprintf('%02d:%02d:%02d',$hour,$min,$sec);
+		    }
+	    }
+
 		my($fday) = &antsFunUsage(1,"f","dayNo",\@fc,$dnf,@_);
 		my($day) = int($fday);
 		$fday -= $day;
@@ -594,7 +636,9 @@ sub ITS_90(@)		  # T90|T68 -> T90
 { my(@fc);
 	sub O2mlpl2umpkg(@)
 	{
-		return nan if isnan($_[3]);
+#		return nan if isnan($_[3]);
+		return nan
+			if (@_ == 4 && !numberp($_[0]+$_[1]+$_[2]+$_[3]));
 		my($S,$T,$P,$mlpl) =
 			&antsFunUsage(4,'ffff','[S, T, P [dbar], O2 [ml/l]]',
 						  \@fc,'salin','temp','press','O2',@_);
@@ -605,7 +649,9 @@ sub ITS_90(@)		  # T90|T68 -> T90
 { my(@fc);
 	sub O2umpkg2mlpl(@)
 	{
-		return nan if isnan($_[3]);
+#		return nan if isnan($_[3]);
+		return nan
+			if (@_ == 4 && !numberp($_[0]+$_[1]+$_[2]+$_[3]));
 		my($S,$T,$P,$umpkg) =
 			&antsFunUsage(4,'ffff','[S, T, P [dbar], O2 [ml/l]]',
 						  \@fc,'salin','temp','press','O2',@_);
