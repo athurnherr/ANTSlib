@@ -1,15 +1,16 @@
 #======================================================================
 #                    L I B G H P . P L 
 #                    doc: Fri Sep  7 09:56:08 2012
-#                    dlm: Wed Jul 14 07:41:20 2021
+#                    dlm: Wed Aug 11 13:12:52 2021
 #                    (c) 2012 A.M. Thurnherr
-#                    uE-Info: 12 50 NIL 0 0 72 2 2 4 NIL ofnI
+#                    uE-Info: 38 0 NIL 0 0 70 2 2 4 NIL ofnI
 #======================================================================
 
 # HISTORY:
 #	Sep  7, 2012: - created
 #	Oct 22, 2012: - cosmetics
 #	Jul 14, 2021: - BUG: adapted to new libGM name
+#	Aug 11, 2021: - modified j() to handle N<f
 
 require "$ANTS/libfuns.pl";		# arccosh
 require "$ANTS/libGM76.pl";		# GM_N0
@@ -30,17 +31,30 @@ sub h1($)
 	return 3*($R_omega+1) / (2*sqrt(2)*$R_omega*sqrt($R_omega-1));
 }
 
+sub h2($)
+{
+	my($R_omega) = @_;
+	return 1/(6*sqrt(2)) * $R_omega*($R_omega+1) / sqrt($R_omega-1);
+}
+
 #----------------------------------------------------------------------------
 # j(f,N)	correction factor for latitude
 #	- this version from Kunze et al. (2006)
+#	- if N<f, N/f = 1 assumed
 #----------------------------------------------------------------------------
 
 sub j(@)
 {
 	my($f,$N) = @_;
-	return 0 if ($f == 0);
-	$N = $GM_N0 unless defined($N);
+
+	$f = abs($f);
+	return 0 if ($f < 1e-6);
+
 	my($f30) = &f(30);
+
+	$N = $GM_N0 unless defined($N);
+	$N = $f unless ($N > $f);
+
 	return $f*acosh($N/$f) / ($f30*acosh($GM_N0/$f30));
 }
 

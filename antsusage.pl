@@ -2,9 +2,9 @@
 #======================================================================
 #                    A N T S U S A G E . P L 
 #                    doc: Fri Jun 19 13:43:05 1998
-#                    dlm: Wed Dec 13 09:09:58 2017
+#                    dlm: Tue May 17 15:35:36 2022
 #                    (c) 1998 A.M. Thurnherr
-#                    uE-Info: 167 49 NIL 0 0 70 2 2 4 NIL ofnI
+#                    uE-Info: 168 89 NIL 0 0 70 2 2 4 NIL ofnI
 #======================================================================
 
 # HISTORY:
@@ -165,6 +165,8 @@
 #	Dec  9, 2017: - added -E, $antsSuppressCommonOptions
 #				  - common options cosmetics
 #	Dec 13, 2017: - BUG: common options cosmetics
+#	May 17, 2022: - BUG: antsFileError() did not report permission errors in a useful way
+# HISTORY END
 
 # NOTES:
 #	- ksh expands {}-arguments with commas in them!!! Use + instead
@@ -542,6 +544,8 @@ sub antsNewFieldOpt(@)									# allocate if does not exist
 sub antsNoFileErr($$)
 {
 	croak("$0: $_[0] $_[1] is not a valid file\n")
+		unless (-f $_[1]);
+	croak("$0: $_[0] $_[1] is not readable\n")
 		unless (-r $_[1]);
 	&antsAddDeps($_[1]);
 }

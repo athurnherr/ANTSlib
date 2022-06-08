@@ -1,9 +1,9 @@
 #======================================================================
-#                    . . / L I B / L I B S T A T S . P L 
+#                    L I B S T A T S . P L 
 #                    doc: Wed Mar 24 13:59:27 1999
-#                    dlm: Tue Mar 26 12:59:32 2019
+#                    dlm: Sat Aug 14 13:08:30 2021
 #                    (c) 1999 A.M. Thurnherr
-#                    uE-Info: 50 31 NIL 0 0 72 0 2 4 NIL ofnI
+#                    uE-Info: 86 1 NIL 0 0 72 0 2 4 NIL ofnI
 #======================================================================
 
 # HISTORY:
@@ -77,6 +77,12 @@ sub std(@)
 		&antsFunUsage(2,".c","stddev, deg_of_freedom",@_);
 	return nan unless ($dof > 0);
 	return $sig / sqrt($dof);
+}
+
+sub dof($) 
+{
+	my($nsamp) = &antsFunUsage(1,"c","nsamp",@_);
+	return ($nsamp > 1) ? $nsamp-1 : 1;
 }
 
 #----------------------------------------------------------------------

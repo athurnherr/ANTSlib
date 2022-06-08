@@ -2,9 +2,9 @@
 #======================================================================
 #                    A N T S I O . P L 
 #                    doc: Fri Jun 19 19:22:51 1998
-#                    dlm: Wed Apr 10 16:57:59 2019
+#                    dlm: Tue Nov 30 12:28:03 2021
 #                    (c) 1998 A.M. Thurnherr
-#                    uE-Info: 217 48 NIL 0 0 70 2 2 4 NIL ofnI
+#                    uE-Info: 220 50 NIL 0 0 70 10 2 4 NIL ofnI
 #======================================================================
 
 # HISTORY:
@@ -215,6 +215,10 @@
 #	Apr  5, 2017: - BUG: stale file mtime dependency info was not printed correctly
 #	Apr 23, 2018: - BUG: @antsLayout was not kept up-to-date when layout-changes are allowed
 #	Apr 10, 2019: - disabled dependency warnings
+#	Oct 14, 2021: - changed nan to NaN, to make gnuplot work nicely again
+#	Nov 30, 2021: - finally made -F not croak on division-by-zero, etc.
+#				  - BUG: some NaNs were still nans
+# HISTORY END
 
 # GENERAL NOTES:
 #	- %P was named without an ants-prefix because associative arrays
@@ -491,8 +495,14 @@ sub antsIn()
 		# Handle Layout changes:
 		#	- only allow when $antsAllowEmbeddedLayoutChange is set
 		#	- ensure that antsLayout always contains up-to-date Layout
-		croak("$0: embedded layout change when reading file $ARGV <@antsLayout> -> <@Layout>")
-			if (!$antsAllowEmbeddedLayoutChange && @Layout && @antsLayout && ("@Layout" ne "@antsLayout"));
+		if (!$antsAllowEmbeddedLayoutChange && @Layout && @antsLayout && ("@Layout" ne "@antsLayout")) {
+			my(@OL) = @antsLayout;
+			my(@NL) = @Layout;
+			while ($OL[0] eq $NL[0]) {
+				shift(@OL); shift(@NL);
+			}
+			croak("$0: embedded layout change when reading file $ARGV <@OL[0..3] ...> -> <@NL[0..3] ...>")
+		}
 		@antsLayout = @Layout if (@Layout);
 
 		$P{RECNO} = -1 unless defined($P{RECNO});	# set pseudo %PARAMs
@@ -525,17 +535,17 @@ sub antsIn()
 	    $P{RECNO}++;								# update pseudo %PARAMs
 	    $P{LINENO} = ($ARGV eq $lastFile) ? $P{LINENO}+1 : 0;
 
-		s/[Nn][Aa][Nn]/nan/g;						# make all nans lower case
+		s/[Nn][Aa][Nn]/NaN/g;						# turn all nan into NaN 
 
         local(@in) = split($opt_I);                 # needs to be local for -S 
 		if (@in > $antsBufNFields) {				# increase # of fields to expect
 			$antsBufNFields = @in;
 			for ($i=0; $i<$#ants_; $i++) {			# update recs already in buffer
-				push(@{$ants_[$i]},nan)
+				push(@{$ants_[$i]},NaN)
 					while ($#{$ants_[$i]}+1 < $antsBufNFields);
             }
 		}
-		push(@in,nan)								# pad current record
+		push(@in,NaN)								# pad current record
             while (@in<$antsBufNFields);
 
         if (defined($opt_S)) {                      # -S)elect
@@ -570,12 +580,12 @@ sub antsIn()
 ###			$antsBufNFields = $#{$ants_[$#ants_]} + 1;
 ####			print("antsBufNFields := $antsBufNFields --- $_");
 ###				for ($i=0; $i<$#ants_; $i++) {
-###					push(@{$ants_[$i]},nan)
+###					push(@{$ants_[$i]},NaN)
 ###						while ($#{$ants_[$i]}+1 < $antsBufNFields);
 ###	            }
 ###	        }
 ###		}
-###		push(@{$ants_[$#ants_]},nan)			# pad this
+###		push(@{$ants_[$#ants_]},NaN)			# pad this
 ###	        while ($#{$ants_[$#ants_]}+1 < $antsBufNFields);
 	}
 
@@ -670,7 +680,8 @@ sub antsIn()
 			} elsif (defined($OEfield[$f])) {
 				$out[$f] = $out_buf[$OEfield[$f]];
 			} else {
-				$out[$f] = &{$OEexpr[$f]};
+				eval(\'$out[$f] = &{$OEexpr[$f]};\');	# print errors and continue
+				print(STDERR $@) unless ($@ eq "");
 			}
 		}
 	}
@@ -692,14 +703,14 @@ sub antsIn()
 	# STEP 5: PRINT DATA
 
 	$antsPadOut = @ofn if ($antsPadOut >= 0 && @ofn);
-	push(@out,nan) while (@out < $antsPadOut);
+	push(@out,NaN) while (@out < $antsPadOut);
 
 	my($outStr);
 	for (my($fnr)=0; $fnr<=$#out; $fnr++) {
 		$out[$fnr] =
 			fmtNum($out[$fnr],
 				   @antsNewLayout ? $antsNewLayout[$fnr] : $antsLayout[$fnr]);
-		$outStr .= (defined($out[$fnr]) && $out[$fnr] ne "" ? $out[$fnr] : nan)
+		$outStr .= (defined($out[$fnr]) && $out[$fnr] ne "" ? $out[$fnr] : NaN)
 				 . ($fnr == $#out ? $opt_R : $opt_O);
 	}
 	print($outStr);
@@ -755,7 +766,7 @@ sub antsSetR_($$$)								# set field in any rec
 	$antsBufNFields = $f+1						# auto extension
 		if ($antsBufNFields-1 < $f);
 	while ($#{$ants_[$r]} < $f-1) {	
-		push(@{$ants_[$r]},nan);
+		push(@{$ants_[$r]},NaN);
 	}
 	$ants_[$r][$f] = $v;
 }

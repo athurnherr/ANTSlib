@@ -1,9 +1,9 @@
 #======================================================================
-#                    L I B L A D C P . P L 
+#                    . . / L I B / L I B L A D C P . P L 
 #                    doc: Wed Jun  1 20:38:19 2011
-#                    dlm: Sat Apr  6 19:42:07 2019
+#                    dlm: Tue Sep 14 08:17:30 2021
 #                    (c) 2011 A.M. Thurnherr
-#                    uE-Info: 211 34 NIL 0 0 70 2 2 4 NIL ofnI
+#                    uE-Info: 201 0 NIL 0 0 70 2 2 4 NIL ofnI
 #======================================================================
 
 # HISTORY:
@@ -20,12 +20,15 @@
 #				  - added T_w()
 #	Sep 24, 2012: - made "k" argument default in T_w()
 #	Oct 25, 2012: - renamed T_SM() to T_ASM()
-#	Jun 26. 2013: - added T_w_z()
+#	Jun 26, 2013: - added T_w_z()
 #				  - added parameter checks to processing-specific corrections
 #	May 18, 2015: - added pulse length to T_w() and T_w_z()
 #	Apr 25, 2018: - added eps_VKE() parameterization
 #	Apr  5, 2018: - adapted to improved antsFunUsage()
 #				  - BUG eps_VKE() had erroneous string
+#	Sep  9, 2021: - removed T_w_z(); consistent with Thurnherr (JAOT 2012),
+#				    vertical divergence spectra should be corrected with
+#					T_w()
 
 require "$ANTS/libvec.pl";
 require "$ANTS/libfuns.pl";
@@ -202,6 +205,14 @@ sub T_VI_alt($$$$$)
 # T_w(k,blen,plen,dz,range_max)
 #	- vertical-velocity method of Thurnherr (IEEE 2011)
 #	- range_max == 0 disables tilt correction
+#	- this is the expression that should be used to correct spectra
+#	  of VKE and vertical divergence (w_z)
+#   - I am not sure why the finite differencing of the processed
+#	  velocities does not have to be corrected for, but this is
+#	  consistent with:
+#		- Thurnherr (JAOT 2012) where the shear is corrected with T_VI
+#		- the strain correction of Kunze et al. (2006), which corrects
+#	      for bin averaging, but not for finite differencing(?)
 #----------------------------------------------------------------------
 
 { my(@fc);
@@ -217,25 +228,25 @@ sub T_VI_alt($$$$$)
 	}
 }
 
-#----------------------------------------------------------------------
-# T_w_z(k,blen,plen,dz,range_max)
-#	- vertical-velocity method of Thurnherr (IEEE 2011)
-#	- first differencing of gridded shear to calculate dw/dz
-#	- NB: grid-scale differentiation assumed
-#	- range_max == 0 disables tilt correction
-#----------------------------------------------------------------------
-
-{ my(@fc);
-	sub T_w_z(@)
-	{
-		my($k,$blen,$plen,$dz,$range_max) =
-			&antsFunUsage(-4,'ffff',
-				'T_w_z([vertical wavenumber[rad/s]] <ADCP bin size[m]> <pulse length[m]> <output grid resolution[m]> <range max[m]>)',
-				\@fc,'k',undef,undef,undef,@_);
-		croak("T_w_z($k,$blen,$plen,$dz,$range_max): bad parameters\n")
-			unless ($k>=0 && $blen>0 && $plen>0 && $dz>0 && $range_max>=0);				
-		return T_ravg($k,$blen,$plen) * T_binavg($k,$dz) * T_tilt($k,dprime($range_max)) * T_fdiff($k,$dz);
-	}
-}
+##----------------------------------------------------------------------
+## T_w_z(k,blen,plen,dz,range_max)
+##	- vertical-velocity method of Thurnherr (IEEE 2011)
+##	- first differencing of gridded shear to calculate dw/dz
+##	- NB: grid-scale differentiation assumed
+##	- range_max == 0 disables tilt correction
+##----------------------------------------------------------------------
+#
+#{ my(@fc);
+#	sub T_w_z(@)
+#	{
+#		my($k,$blen,$plen,$dz,$range_max) =
+#			&antsFunUsage(-4,'ffff',
+#				'T_w_z([vertical wavenumber[rad/s]] <ADCP bin size[m]> <pulse length[m]> <output grid resolution[m]> <range max[m]>)',
+#				\@fc,'k',undef,undef,undef,@_);
+#		croak("T_w_z($k,$blen,$plen,$dz,$range_max): bad parameters\n")
+#			unless ($k>=0 && $blen>0 && $plen>0 && $dz>0 && $range_max>=0);				
+#		return T_ravg($k,$blen,$plen) * T_binavg($k,$dz) * T_tilt($k,dprime($range_max)) * T_fdiff($k,$dz);
+#	}
+#}
 
 1;

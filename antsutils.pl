@@ -2,9 +2,9 @@
 #======================================================================
 #                    A N T S U T I L S . P L 
 #                    doc: Fri Jun 19 23:25:50 1998
-#                    dlm: Fri Apr  5 16:21:54 2019
+#                    dlm: Tue Apr  5 21:20:29 2022
 #                    (c) 1998 A.M. Thurnherr
-#                    uE-Info: 106 55 NIL 0 0 70 10 2 4 NIL ofnI
+#                    uE-Info: 157 0 NIL 0 0 70 10 2 4 NIL ofnI
 #======================================================================
 
 # Miscellaneous auxillary functions
@@ -106,6 +106,8 @@
 #				  - improved error messages in antsFunUsage()
 #				  - BUG: antsFunUsage did not work with -ve argc (variable argument funs)
 #	Aug 30, 2019: - BUG: antsLoadModel() did not respect $ANTS
+#	Nov 29, 2021: - made fmtNum() return NaN on undefined input	
+# HISTORY END
 
 # fnr notes:
 #	- matches field names starting with the string given, i.e. "sig" is
@@ -240,6 +242,7 @@ sub fmtNum($$)							# format number for output
 {
 	my($num,$fname) = @_;
 	
+	$num = NaN unless defined($num);
 	$num = 0 if ($num eq '-0');			# perl 5.8.8: 0*-0.1 = -0, which is 
 										# not handled correctly by all progs
 	$num = str2num($num) if ($opt_C);
