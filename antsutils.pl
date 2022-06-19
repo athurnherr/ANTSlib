@@ -2,9 +2,9 @@
 #======================================================================
 #                    A N T S U T I L S . P L 
 #                    doc: Fri Jun 19 23:25:50 1998
-#                    dlm: Tue Apr  5 21:20:29 2022
+#                    dlm: Mon Jun 13 15:28:58 2022
 #                    (c) 1998 A.M. Thurnherr
-#                    uE-Info: 157 0 NIL 0 0 70 10 2 4 NIL ofnI
+#                    uE-Info: 110 31 NIL 0 0 70 10 2 4 NIL ofnI
 #======================================================================
 
 # Miscellaneous auxillary functions
@@ -106,7 +106,8 @@
 #				  - improved error messages in antsFunUsage()
 #				  - BUG: antsFunUsage did not work with -ve argc (variable argument funs)
 #	Aug 30, 2019: - BUG: antsLoadModel() did not respect $ANTS
-#	Nov 29, 2021: - made fmtNum() return NaN on undefined input	
+#	Nov 29, 2021: - made fmtNum() return NaN on undefined input
+#	Jun 13, 2022: - improved -G
 # HISTORY END
 
 # fnr notes:
@@ -238,6 +239,24 @@ sub str2num($)
 	return ($num eq "") ? 0 : $num;
 }
 
+sub deg2lat(@)		# decimal latitude to degrees:min.xx NS
+{
+	my($deg) = &antsFunUsage(1,'f','decimal latitude',@_);
+	$deg -= 360 if ($deg > 180);
+	return sprintf("%02d:%06.3f %s",abs(int($deg)),
+								 (abs($deg)-abs(int($deg)))*60,
+	   							 $deg>=0 ? "N" : "S");
+}
+
+sub deg2lon(@)		# decimal longitude to degrees:min.xx EW
+{
+	my($deg) = &antsFunUsage(1,'f','decimal longitude',@_);
+	$deg -= 360 if ($deg > 180);
+	return sprintf("%03d:%06.3f %s",abs(int($deg)),
+								 (abs($deg)-abs(int($deg)))*60,
+	   							 $deg>=0 ? "E" : "W");
+}
+
 sub fmtNum($$)							# format number for output
 {
 	my($num,$fname) = @_;
@@ -247,16 +266,8 @@ sub fmtNum($$)							# format number for output
 										# not handled correctly by all progs
 	$num = str2num($num) if ($opt_C);
 	if ($opt_G && numberp($num)) {
-		$num = sprintf("%d:%04.1f%s",
-						abs(int($num)),
-						(abs($num)-abs(int($num)))*60,
-						$num>=0 ? "N" : "S")
-			if (lc($fname) =~ /lat/);
-		$num = sprintf("%d:%04.1f%s",
-						abs(int($num)),
-						(abs($num)-abs(int($num)))*60,
-						$num>=0 ? "E" : "W")
-			if (lc($fname) =~ /lon/);
+		$num = deg2lat($num) if (lc($fname) =~ /lat/);
+		$num = deg2lon($num) if (lc($fname) =~ /lon/);
 	}
 	if ($opt_T && numberp($num)) {
 		$num = sprintf("\\lat%s{%d}{%04.1f}",

@@ -1,9 +1,9 @@
 #======================================================================
-#                    L I B C O N V . P L 
+#                    . . / L I B / L I B C O N V . P L 
 #                    doc: Sat Dec  4 13:03:49 1999
-#                    dlm: Wed Apr  6 18:41:02 2022
+#                    dlm: Mon Jun 13 15:27:55 2022
 #                    (c) 1999 A.M. Thurnherr
-#                    uE-Info: 73 59 NIL 0 0 70 2 2 4 NIL ofnI
+#                    uE-Info: 74 60 NIL 0 0 70 2 2 4 NIL ofnI
 #======================================================================
 
 # HISTORY:
@@ -71,6 +71,7 @@
 #	Aug 27, 2021: - improved Date to take dn from %PARAMs
 #	Nov 15, 2021: - modified O2 coversion routines to return nan on missing press, temp, salin
 #	Apr  6, 2022: - made =Date work with %dn params as well
+#	Jun  6, 2022: - moved deg2lat, deg2lon to [antsutils.pl]
 # HISTORY END
 
 require "$ANTS/libEOS83.pl";                        # &sigma()
@@ -557,21 +558,25 @@ sub GMT2deg(@)	    # GMT degree format to decimal
 	return $GMT;
 }
 
-sub deg2lat(@)		# decimal latitude to degrees:min.xx NS
-{
-	my($deg) = &antsFunUsage(1,'f','decimal latitude',@_);
-	return sprintf("%02d:%06.3f'%s",abs(int($deg)),
-								 (abs($deg)-abs(int($deg)))*60,
-	   							 $deg>=0 ? "N" : "S");
-}
-
-sub deg2lon(@)		# decimal longitude to degrees:min.xx EW
-{
-	my($deg) = &antsFunUsage(1,'f','decimal longitude',@_);
-	return sprintf("%03d:%06.3f'%s",abs(int($deg)),
-								 (abs($deg)-abs(int($deg)))*60,
-	   							 $deg>=0 ? "E" : "W");
-}
+# 06/13/2022: moved code to [antsutils.pl]
+# 
+#sub deg2lat(@)		# decimal latitude to degrees:min.xx NS
+#{
+#	my($deg) = &antsFunUsage(1,'f','decimal latitude',@_);
+#	$deg -= 360 if ($deg > 180);
+#	return sprintf("%02d:%06.3f %s",abs(int($deg)),
+#								 (abs($deg)-abs(int($deg)))*60,
+#	   							 $deg>=0 ? "N" : "S");
+#}
+#
+#sub deg2lon(@)		# decimal longitude to degrees:min.xx EW
+#{
+#	my($deg) = &antsFunUsage(1,'f','decimal longitude',@_);
+#	$deg -= 360 if ($deg > 180);
+#	return sprintf("%03d:%06.3f %s",abs(int($deg)),
+#								 (abs($deg)-abs(int($deg)))*60,
+#	   							 $deg>=0 ? "E" : "W");
+#}
 
 #----------------------------------------------------------------------
 # Temp-Scale Conversion
