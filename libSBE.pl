@@ -1,9 +1,9 @@
 #======================================================================
 #                    L I B S B E . P L 
 #                    doc: Mon Nov  3 12:42:14 2014
-#                    dlm: Thu Jan  3 14:06:25 2019
+#                    dlm: Mon Jun 27 18:37:05 2022
 #                    (c) 2014 A.M. Thurnherr
-#                    uE-Info: 17 30 NIL 0 0 72 2 2 4 NIL ofnI
+#                    uE-Info: 29 33 NIL 0 0 72 2 2 4 NIL ofnI
 #======================================================================
 
 # HISTORY:
@@ -25,6 +25,8 @@
 #	Apr 23, 2018: - BUG: header lat/lon was incorrectly parsed when there was no space
 #						 before hemisphere
 #	Jan  3, 2019: - BUG: SBE_parseHeader() did not correctly detect missing lat/lon
+#	Jun 27, 2022: - BUG: ASCII data files can have format anomalies (missing space) on
+#						 bad data
 
 #----------------------------------------------------------------------
 # fname_SBE2std($)
@@ -353,8 +355,16 @@ sub SBEin($$$$$)
 	if ($ftype eq 'ascii') {
 		until ($#ants_>=0 && &antsBufFull()) {
 			return undef unless (@add = &antsFileIn($FP));
-			for (my($f)=0; $f<=$nf; $f++) {
-				$add[$f] = nan if ($add[$f] == $bad);
+			if (@add == $nf) {
+				for (my($f)=0; $f<=$nf; $f++) {
+					$add[$f] = nan if ($add[$f] == $bad);
+	            }
+			} else {
+				&antsInfo(sprintf("CNV scan#%d: bad format",$nextR+1))
+					unless defined($libSBE_quiet);
+				for (my($f)=0; $f<=$nf; $f++) {
+					$add[$f] = nan;
+	            }
 			}
 			foreach my $sf (@ignore_input_fields) {
 				splice(@add,$sf,1);
@@ -387,12 +397,12 @@ sub SBEin($$$$$)
 				splice(@add,$sf,1);
 			}
 			push(@ants_,[@add]);
-			$nextR++;
         }
     } else {
 		croak("$0: unknown file type $ftype\n");
     }
 
+	$nextR++;
 	return $#ants_+1;											# ok
 }
 

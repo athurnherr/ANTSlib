@@ -1,9 +1,9 @@
 #======================================================================
 #                    L I B F U N S . P L 
 #                    doc: Wed Mar 24 11:49:13 1999
-#                    dlm: Fri May 11 11:40:05 2018
+#                    dlm: Sat Jun 25 21:11:48 2022
 #                    (c) 1999 A.M. Thurnherr
-#                    uE-Info: 31 77 NIL 0 0 70 2 2 4 NIL ofnI
+#                    uE-Info: 20 34 NIL 0 0 70 2 2 4 NIL ofnI
 #======================================================================
 
 # HISTORY:
@@ -17,8 +17,19 @@
 #	Jun  4, 2015: - added gaussRand()
 #			 	  - made normal() more efficient
 #	May 11, 2018: - added Nsq()
+#	Jun 25, 2022: - added interp()
 
 require	"$ANTS/libvec.pl";								# rad()
+
+#----------------------------------------------------------------------
+# Linear Interpolation
+#----------------------------------------------------------------------
+
+sub interp($$$)
+{
+	my($x1,$x2,$frac) = @_;
+	return $x1 + $frac * ($x2-$x1);
+}
 
 #----------------------------------------------------------------------
 # Buoyancy-Freuquency Squared
