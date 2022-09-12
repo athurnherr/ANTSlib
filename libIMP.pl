@@ -1,9 +1,9 @@
 #======================================================================
 #                    L I B I M P . P L 
 #                    doc: Tue Nov 26 21:59:40 2013
-#                    dlm: Thu Jul 14 19:19:47 2022
+#                    dlm: Mon Sep 12 12:42:42 2022
 #                    (c) 2017 A.M. Thurnherr
-#                    uE-Info: 72 79 NIL 0 0 72 0 2 4 NIL ofnI
+#                    uE-Info: 74 0 NIL 0 0 72 0 2 4 NIL ofnI
 #======================================================================
 
 # HISTORY:
@@ -70,6 +70,7 @@
 #	Jul  6, 2022: - added support for $suppress_rot_acc_output, @copyFields
 #	Jul 14, 2022: - BUG: unshift used instead of push
 #				  - BUG: acc was rotated regardless of $suppress_rot_acc_output
+#	Sep 12, 2022: - improved error message formatting on verbose
 # HISTORY END
 
 #----------------------------------------------------------------------
@@ -597,8 +598,10 @@ sub calc_hdg_offset($)
 			printf(STDERR "\n\nIGNORED WARNING (-f): Cannot determine reliable heading offset; $HDG_offset+/-$dhist_binsize deg accounts for only %f%% of total\n",$modefrac*100)
 				if ($modefrac < $dhist_min_mfrac);
 		} else {
-			croak(sprintf("\n$0: Cannot determine reliable heading offset; $HDG_offset+/-$dhist_binsize deg accounts for only %f%% of total\n",$modefrac*100))
-				if ($modefrac < $dhist_min_mfrac);
+			if ($modefrac < $dhist_min_mfrac) {
+				print(STDERR "\n") if $verbose;
+				croak(sprintf("$0: Cannot determine reliable heading offset; $HDG_offset+/-$dhist_binsize deg accounts for only %.1f%% of total\n",$modefrac*100))
+            }
 		}
 	}
 	
