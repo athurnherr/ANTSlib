@@ -1,9 +1,9 @@
 #======================================================================
 #                    L I B I M P . P L 
 #                    doc: Tue Nov 26 21:59:40 2013
-#                    dlm: Sat Jul 24 09:37:27 2021
+#                    dlm: Thu Jul 14 19:19:47 2022
 #                    (c) 2017 A.M. Thurnherr
-#                    uE-Info: 70 13 NIL 0 0 72 0 2 4 NIL ofnI
+#                    uE-Info: 72 79 NIL 0 0 72 0 2 4 NIL ofnI
 #======================================================================
 
 # HISTORY:
@@ -67,6 +67,9 @@
 #	Apr 14, 2020: - cosmetics
 #	Jul 12, 2021: - improvements to histogram plot
 #	Jul 24, 2021: - updated docu
+#	Jul  6, 2022: - added support for $suppress_rot_acc_output, @copyFields
+#	Jul 14, 2022: - BUG: unshift used instead of push
+#				  - BUG: acc was rotated regardless of $suppress_rot_acc_output
 # HISTORY END
 
 #----------------------------------------------------------------------
@@ -115,12 +118,21 @@ sub pl_mag_calib_end($$)															# finish mag_calib plot
 	GMT_end();
 }
 
+#-------------------------------------------------------------------------------------------
+# global variables used:
+#	@vecs						field number triplets of vector data
+#	@piro						[chip id, pitch field, roll field] 
+#	@bias						bias triples for vector data
+#	$suppress_rot_acc_output	set to true to suppress output of rotated accelerometer data
+#	@copyFields					field numbers to copy from input to output
+#-------------------------------------------------------------------------------------------
+
 sub rot_vecs(@) 																	# rotate & output IMU vector data 
 {
 	my($coord_trans,$min_elapsed,$max_elapsed,$plot_milapsed,$plot_malapsed) = @_;		# negate KVH pitch/roll data if first arg set to 1
 	$min_elapsed = 0 unless defined($min_elapsed);
 	$max_elapsed = 9e99 unless defined($max_elapsed);
-	$plot_milapsed = $min_elapsed unless defined($plot_milapsed);
+	$plot_minlapsed = $min_elapsed unless defined($plot_milapsed);
 	$plot_malapsed = $max_elapsed unless defined($plot_malapsed);
 
 	while (&antsIn()) {
@@ -163,6 +175,8 @@ sub rot_vecs(@) 																	# rotate & output IMU vector data
 			if ($coord_trans == 2) {												# S/N 8 inside UL WH300
 				$yval *= -1; $zval *= -1;
 			}
+
+			next if ($suppress_rot_acc_output && $i==$cpiro);
 			
 			$ants_[0][$vecs[$i][0]] = ($xval-$bias[$i][0]) * $R[0][0] +
 									  ($yval-$bias[$i][1]) * $R[0][1] +
@@ -186,10 +200,22 @@ sub rot_vecs(@) 																	# rotate & output IMU vector data
 		my($valid)= ($HF >= $minfac*$HF_mag) && ($HF <= $maxfac*$HF_mag);
 		my($hdg)  = $valid ? mag_heading($magX,$magY) : nan;
 
-		&antsOut($ants_[0][$elapsedF]-$min_elapsed,$ants_[0][$tempF],
-				 RDI_pitch($ants_[0][$pitchF],$ants_[0][$rollF]),$ants_[0][$rollF],
-				 $hdg,$accX,$accY,$accZ,$magX,$magY,$magZ,
-				 vel_u($HF,$hdg),vel_v($HF,$hdg),$valid);
+		@cpFields = ();
+		foreach my $fnr (@copyFields) {
+			push(@cpFields,$ants_[0][$fnr]);
+        }
+
+		if ($suppress_rot_acc_output) {
+			&antsOut($ants_[0][$elapsedF]-$min_elapsed,$ants_[0][$tempF],
+					 RDI_pitch($ants_[0][$pitchF],$ants_[0][$rollF]),$ants_[0][$rollF],
+					 $hdg,$magX,$magY,$magZ,
+	                 vel_u($HF,$hdg),vel_v($HF,$hdg),$valid,@cpFields);
+        } else {
+			&antsOut($ants_[0][$elapsedF]-$min_elapsed,$ants_[0][$tempF],
+					 RDI_pitch($ants_[0][$pitchF],$ants_[0][$rollF]),$ants_[0][$rollF],
+					 $hdg,$accX,$accY,$accZ,$magX,$magY,$magZ,
+	                 vel_u($HF,$hdg),vel_v($HF,$hdg),$valid,@cpFields);
+        }
 
 		pl_mag_calib_plot($valid,$magX,$magY)
 			if defined($P{profile_id}) &&

@@ -2,9 +2,9 @@
 #======================================================================
 #                    A N T S U T I L S . P L 
 #                    doc: Fri Jun 19 23:25:50 1998
-#                    dlm: Mon Jun 13 15:28:58 2022
+#                    dlm: Thu Jun 30 15:25:45 2022
 #                    (c) 1998 A.M. Thurnherr
-#                    uE-Info: 110 31 NIL 0 0 70 10 2 4 NIL ofnI
+#                    uE-Info: 257 54 NIL 0 0 70 10 2 4 NIL ofnI
 #======================================================================
 
 # Miscellaneous auxillary functions
@@ -248,6 +248,16 @@ sub deg2lat(@)		# decimal latitude to degrees:min.xx NS
 	   							 $deg>=0 ? "N" : "S");
 }
 
+sub deg2lat_alt(@)		# decimal latitude to degrees:min:sec NS
+{
+	my($deg) = &antsFunUsage(1,'f','decimal latitude',@_);
+	$deg -= 360 if ($deg > 180);
+	my($d) = abs(int($deg));
+	my($m) = int((abs($deg) - $d) * 60);
+	my($s) = round(((abs($deg) - $d - $m/60) * 3600),1);
+	return sprintf("%03d:%02d:%02d %s",$d,$m,$s,$deg>=0 ? "N" : "S");
+}
+
 sub deg2lon(@)		# decimal longitude to degrees:min.xx EW
 {
 	my($deg) = &antsFunUsage(1,'f','decimal longitude',@_);
@@ -255,6 +265,16 @@ sub deg2lon(@)		# decimal longitude to degrees:min.xx EW
 	return sprintf("%03d:%06.3f %s",abs(int($deg)),
 								 (abs($deg)-abs(int($deg)))*60,
 	   							 $deg>=0 ? "E" : "W");
+}
+
+sub deg2lon_alt(@)		# decimal longitude to degrees:min:sec EW
+{
+	my($deg) = &antsFunUsage(1,'f','decimal longitude',@_);
+	$deg -= 360 if ($deg > 180);
+	my($d) = abs(int($deg));
+	my($m) = int((abs($deg) - $d) * 60);
+	my($s) = round(((abs($deg) - $d - $m/60) * 3600),1);
+	return sprintf("%03d:%02d:%02d %s",$d,$m,$s,$deg>=0 ? "E" : "W");
 }
 
 sub fmtNum($$)							# format number for output
