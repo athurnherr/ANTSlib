@@ -1,9 +1,9 @@
 #======================================================================
 #                    L I B I M P . P L 
 #                    doc: Tue Nov 26 21:59:40 2013
-#                    dlm: Mon Sep 12 12:42:42 2022
+#                    dlm: Tue Sep 13 12:56:28 2022
 #                    (c) 2017 A.M. Thurnherr
-#                    uE-Info: 74 0 NIL 0 0 72 0 2 4 NIL ofnI
+#                    uE-Info: 76 60 NIL 0 0 70 0 2 4 NIL ofnI
 #======================================================================
 
 # HISTORY:
@@ -71,6 +71,9 @@
 #	Jul 14, 2022: - BUG: unshift used instead of push
 #				  - BUG: acc was rotated regardless of $suppress_rot_acc_output
 #	Sep 12, 2022: - improved error message formatting on verbose
+#				  - stopped merge_plots to bomb with division by zero errors
+#	Sep 13, 2022: - BUG: histogram plot was wrong when -o was used
+#				  - added offset red line to histogram plots
 # HISTORY END
 
 #----------------------------------------------------------------------
@@ -496,16 +499,18 @@ sub pl_hdg_offset($@)
 	$ymax = 1.05 * $ymax;
 	    
 	GMT_begin("$P{profile_id}${opt_a}_hdg_offset.ps","-JX${plotsize}","-R$xmin/$xmax/$ymin/$ymax",'-X6 -Y4 -P');
-	if (defined($opt_o)) {
-		GMT_psxy("-W2,red");
-		printf(GMT "%f %f\n%f %f\n",$opt_o,0,$opt_o,$ymax);
-    }
 	GMT_psxy("-Sb${dhist_binsize}u -GCornFlowerBlue");
 	for (my($i)=0; $i<@dhist; $i++) {
 		next unless $dhist[$i];
 		printf(GMT "%f $dhist[$i]\n",$i*$dhist_binsize>180 ? $i*$dhist_binsize-360 : $i*$dhist_binsize);
 	}
-	GMT_psbasemap('-Bg45a90f15:"IMU Heading Offset [\260]":/ga100f10:"Frequency":WeSn');
+	GMT_psxy("-W1,red");
+	printf(GMT "%f %f\n%f %f\n",angle($HDG_offset),0,angle($HDG_offset),$ymax);
+	if ($ymax > 200) {
+		GMT_psbasemap('-Bg45a90f15:"IMU Heading Offset [\260]":/ga100f10:"Frequency":WeSn');
+    } else {
+		GMT_psbasemap('-Bg45a90f15:"IMU Heading Offset [\260]":/ga20f10:"Frequency":WeSn');
+    }
 	GMT_unitcoords();
 	GMT_pstext('-F+f14,Helvetica,CornFlowerBlue+jTR -N');
 	if (defined($opt_o)) {
@@ -576,12 +581,13 @@ sub calc_hdg_offset($)
 		$dhist[int(angle_pos($LADCP{ENSEMBLE}[$ens]->{TILT_AZIMUTH}-$IMP{TILT_AZIMUTH}[$r])/$dhist_binsize+0.5)]++;
 		$nhist++;
 	}
-	croak("$0: empty histogram\n")
-		unless ($nhist);
+	unless ($nhist) {
+		print(STDERR "$0: empty histogram\n");
+		return (0,$IMP_pitch_mean,$IMP_roll_mean);
+    }
 	
 	if (defined($opt_o)) {												# set heading offset, either with -o
-		$HDG_offset = $opt_o;
-		$dhist_binsize = 1;
+		$HDG_offset = angle_pos($opt_o);
 	} else {															# or from the data
 		$HDG_offset = 0;
 		for (my($i)=1; $i<@dhist-1; $i++) { 							# make sure mode is not on edge
@@ -591,7 +597,6 @@ sub calc_hdg_offset($)
 	}
 
 	my($modefrac) = ($dhist[$HDG_offset/$dhist_binsize]+$dhist[$HDG_offset/$dhist_binsize-1]+$dhist[$HDG_offset/$dhist_binsize+1]) / $nhist;
-	pl_hdg_offset($dhist_binsize,$modefrac,@dhist);
 
 	unless (defined($opt_o)) {	    									# make sure data are consistent (unless -o is used)
 		if ($opt_f) {
@@ -613,6 +618,8 @@ sub calc_hdg_offset($)
 		printf(STDERR "IMU heading offset = %g deg (%d%% agreement)\n",angle($HDG_offset),round(100*$modefrac))
 			if $verbose;
 	}
+
+	pl_hdg_offset($dhist_binsize,$modefrac,@dhist);
 
 	return ($HDG_offset,$IMP_pitch_mean,$IMP_roll_mean);
 }
@@ -772,15 +779,17 @@ sub create_merge_plots($$$)
     GMT_psbasemap('-Bg90a45f5:"ADCP Heading [\260]":/g15a15f5:"ADCP Compass Error [\260]":WeSn');
 	GMT_unitcoords();
     GMT_pstext('-F+f12,Helvetica,CornFlowerBlue+jTR -Gwhite -C25%');
-    printf(GMT "0.98 0.98 rms error = %7.1f\260\n",sqrt($sumSq/$nSq));
+	my($rms) = ($nSq > 0) ? sqrt($sumSq/$nSq) : NaN;
+    printf(GMT "0.98 0.98 rms error = %7.1f\260\n",$rms);
     printf(GMT "0.98 0.94 time-averaged error = %7.1f\260\n",$sumErr/$nErr);
-    printf(GMT "0.98 0.90 heading-averaged error = %7.1f\260\n",$sumBe/$nBe);
+	my($havgerr) = ($nBe > 0) ? $sumBe/$nBe : NaN;
+    printf(GMT "0.98 0.90 heading-averaged error = %7.1f\260\n",$havgerr);
     GMT_pstext('-F+f14,Helvetica,blue+jTL -N');
     printf(GMT "0.01 1.06 $P{profile_id} $opt_a\n");
     GMT_end();
 	                        
 	print(STDERR "\n") if $verbose;
-	return (sqrt($sumSq/$nSq),$sumErr/$nErr,$sumBe/$nBe);
+	return ($rms,$sumErr/$nErr,$havgerr);
 }
 
 #----------------------------------------------------------------------

@@ -1,9 +1,9 @@
 #======================================================================
 #                    A N T S N C . P L 
 #                    doc: Mon Jul 17 11:59:37 2006
-#                    dlm: Sat Jun 18 20:28:20 2022
+#                    dlm: Thu Oct 13 14:27:02 2022
 #                    (c) 2006 A.M. Thurnherr
-#                    uE-Info: 32 29 NIL 0 0 70 0 2 4 NIL ofnI
+#                    uE-Info: 492 55 NIL 0 0 70 0 2 4 NIL ofnI
 #======================================================================
 
 # ANTS netcdf library
@@ -30,6 +30,7 @@
 #					allow reading with python xr
 #	Jun 18, 2022: - found better earlier solution for NetCDF::DOUBLE etc. 
 #					on laptop
+#	Oct 13, 2022: - added global attributes to NC_writeMDataMulti
 # HISTORY END
 
 # NOTES:
@@ -386,7 +387,7 @@ sub NC_writeMData($$$)
 }
 
 #----------------------------------------------------------------------
-# create new nc "multi" file and write metadata
+# create new NC "multi" file and write metadata
 #
 #	INPUT:
 #		<filename>
@@ -394,6 +395,7 @@ sub NC_writeMData($$$)
 #		<suppress-params>	flag to suppress params
 #		<file-id>			name of dimension enumerating input files (e.g. profile_number, cruise_id, etc.)
 #		<n-files>			number of 1-D files to encode in multi file
+#		[global-attribs]	optional reference to hash with global attributes
 #
 #	OUTPUT:
 #		<netcdf id>
@@ -410,9 +412,9 @@ sub NC_writeMData($$$)
 #		- %<var>:NC_type are not added to ATTRIBs
 #----------------------------------------------------------------------
 
-sub NC_writeMDataMulti($$$$)
+sub NC_writeMDataMulti($$$$$@)
 {
-	my($fn,$abscissa,$suppress_params,$file_id,$n_files) = @_;
+	my($fn,$abscissa,$suppress_params,$file_id,$n_files,$global_attribs) = @_;
 	my(@slDim,@NCtype);
 
 	my($ncId) = NetCDF::nccreate($fn,NetCDF::CLOBBER);
@@ -481,6 +483,14 @@ sub NC_writeMDataMulti($$$$)
 			} else {															# other type
 				$nc_vid{$anm} = NetCDF::ncvardef($ncId,$anm,$NCtype{$anm},[$mid]);
 			}
+	    }
+	}
+
+	if (defined($global_attribs)) {												# global attributes
+		foreach my $anm (keys(%$global_attribs)) {
+			croak("global attributes must be numeric (implementation restriction)")
+				unless numberp($$global_attribs{$anm});
+			NetCDF::ncattput($ncId,NetCDF::GLOBAL,$anm,NetCDF::DOUBLE,$$global_attribs{$anm});
 	    }
 	}
 
