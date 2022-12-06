@@ -2,9 +2,9 @@
 #======================================================================
 #                    A N T S . P L 
 #                    doc: Fri Jun 19 14:01:06 1998
-#                    dlm: Wed Jul  6 22:08:44 2022
+#                    dlm: Tue Dec  6 12:39:57 2022
 #                    (c) 1998 A.M. Thurnherr
-#                    uE-Info: 35 21 NIL 0 0 72 2 2 4 NIL ofnI
+#                    uE-Info: 36 21 NIL 0 0 72 2 2 4 NIL ofnI
 #======================================================================
 
 # HISTORY:
@@ -28,11 +28,12 @@
 #  Apr 13, 2020: - updated to V7.2 (for MIMP_tools)
 #  Jul  1, 2021: - updated to V7.3 because of a bug
 #  Jul  6, 2022: - updated to V7.4 because of libIMP improvements
+#  Dec  6, 2022: - updated to V7.5 for release of LADCP_w V2.2
 
 exec($ENV{ANTS_PERL},$0,@ARGV),die("$ENV{ANTS_PERL}: $!")
     if (defined($ENV{ANTS_PERL}) && $^X ne $ENV{ANTS_PERL});
 
-$antsLibVersion = 7.4;
+$antsLibVersion = 7.5;
 
 die(sprintf("$0: obsolete library V%.1f; V%.1f required\n",
 	$antsLibVersion,$antsMinLibVersion))

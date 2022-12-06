@@ -1,9 +1,9 @@
 #======================================================================
 #                    H I S T O R Y 
 #                    doc: Thu May  7 13:12:05 2015
-#                    dlm: Wed Jul  6 22:07:53 2022
+#                    dlm: Tue Dec  6 12:42:29 2022
 #                    (c) 2015 A.M. Thurnherr
-#                    uE-Info: 257 70 NIL 0 0 72 0 2 4 NIL ofnI
+#                    uE-Info: 269 43 NIL 0 0 72 0 2 4 NIL ofnI
 #======================================================================
 
 May  7, 2015:
@@ -255,3 +255,18 @@ V7.3 (published Jul 24, 2021)
 	- bug fixes [libGHP.pl] [libGMT.pl]
 	- minor improvement to [libIMP.pl]
 ---------------------------------------------------------------------- 
+
+----------------------------------------------------------------------
+V7.4 
+	- adaptation to Nortek PD0 files
+	- minor improvements and bug fixes
+---------------------------------------------------------------------- 
+
+----------------------------------------------------------------------
+V7.5 (published Dec  6, 2022)
+	- implemented support for netCDF "multi" files
+	- minor improvements and bug fixes
+	- published for release of LADCP_w V2.2
+---------------------------------------------------------------------- 
+
+
