@@ -1,9 +1,9 @@
 #======================================================================
-#                    . . / L I B / L I B L A D C P . P L 
+#                    L I B L A D C P . P L 
 #                    doc: Wed Jun  1 20:38:19 2011
-#                    dlm: Tue Sep 14 08:17:30 2021
+#                    dlm: Thu Jan 12 11:26:24 2023
 #                    (c) 2011 A.M. Thurnherr
-#                    uE-Info: 201 0 NIL 0 0 70 2 2 4 NIL ofnI
+#                    uE-Info: 276 34 NIL 0 0 70 2 2 4 NIL ofnI
 #======================================================================
 
 # HISTORY:
@@ -29,6 +29,11 @@
 #	Sep  9, 2021: - removed T_w_z(); consistent with Thurnherr (JAOT 2012),
 #				    vertical divergence spectra should be corrected with
 #					T_w()
+#	Jan 10, 2023: - renamed T_interp() to T_interpgrid() to avoid confusion
+#				  - added T_regrid()
+#				  - uncommented T_w_z()
+#				  - renamed T_{UH,ASM} to T_{UH,ASM}_shear to make things clear
+#	Jan 12, 2023: - 
 
 require "$ANTS/libvec.pl";
 require "$ANTS/libfuns.pl";
@@ -58,9 +63,11 @@ sub eps_VKE(@)
 #
 # NOTES:
 #	- see Polzin et al. (JAOT 2002), Thurnherr (JAOT 2012)
-#	- to correct, multiply power densities (or power, I think) with corrections
-#	- apply to down-/up-cast data only
+#	- T HERE ARE RECIPROCALS OF T IN POLZIN AND THURNHERR!!!!
+#	- to correct, multiply power densities (or power) with transfer functions defined below
+#	- T_VI from Thurnherr applies to velocity, not shear! (error in paper)
 #------------------------------------------------------------------------------
+
 #----------------------------------------------------------------------
 # 1. Corrections for individual data acquisition and processing steps
 #----------------------------------------------------------------------
@@ -80,27 +87,45 @@ sub T_ravg(@)
 }
 
 #-------------------------------------------------------------
-# T_fdiff(k,dz)
-#	- correct for first differencing on a grid with dz spacing
+# T_fdiff_UH(k,dz)
+#	- supposedly corrects for first differencing (Polzin et al. 2002)
+#	- however, as applied by Polzin, this corrects for a low-
+#	  pass filter, whereas first differencing is clearly a
+#	  high-pass filter
+#	- the overall shear-method transfer functions of Polzin et al.
+#	  and of Thurnherr are correct, but this particular correction
+#	  does not what it is advertised to be doing?!
 #-------------------------------------------------------------
+
+sub T_fdiff_UH($$)
+{
+    my($k,$dz) =
+        &antsFunUsage(2,'ff','T_fdiff_UH(<vertical wavenumber[rad/s]> <differencing interval[m]>)',@_);
+    return 1 / sinc($k*$dz/2/$PI)**2;
+}
+
+#----------------------------------------------------------------------
+# T_fdiff()
+#	- correct for first differencing
+#----------------------------------------------------------------------
 
 sub T_fdiff($$)
 {
     my($k,$dz) =
         &antsFunUsage(2,'ff','T_fdiff(<vertical wavenumber[rad/s]> <differencing interval[m]>)',@_);
-    return 1 / sinc($k*$dz/2/$PI)**2;
+    return sinc($k*$dz/2/$PI)**2;
 }
 
 #------------------------------------------------------------
-# T_interp(k,blen,dz)
+# T_interpgrid(k,blen,dz)
 #	- correct for CODAS gridding-with-interpolation algorithm
 #	- ONLY USED IN UH SOFTWARE
 #------------------------------------------------------------
 
-sub T_interp($$$)
+sub T_interpgrid($$$)
 {
     my($k,$blen,$dz) =
-        &antsFunUsage(3,'fff','T_interp(<vertical wavenumber[rad/s]> <bin length[m]> <grid resolution[m]>)',@_);
+        &antsFunUsage(3,'fff','T_interpgrid(<vertical wavenumber[rad/s]> <bin length[m]> <grid resolution[m]>)',@_);
     return 1 / sinc($k*$blen/2/$PI)**4 / sinc($k*$dz/2/$PI)**2;
 }
 
@@ -115,6 +140,26 @@ sub T_binavg($$)
     my($k,$dz) =
         &antsFunUsage(2,'ff','T_binavg(<vertical wavenumber[rad/s]> <grid resolution[m]>)',@_);
     return 1 / sinc($k*$dz/2/$PI)**2;
+}
+
+#------------------------------------------------------------
+# T_regrid(k,dz)
+#	- correct for linear interpolation onto different grid
+#	- verified with 1997 KN9710:
+#		- oversampling:
+#			- for oversampling factor of 4x and greater, this routine
+#			  applies exactly
+#			- for oversampling factor 2, blen should be reduced by 10%
+#			- at factor 1, blen should be reduced by 100%
+#		- undersampling:
+#			- no correction should be applied
+#------------------------------------------------------------
+
+sub T_regrid($$)
+{
+    my($k,$blen) =
+        &antsFunUsage(2,'ff','T_interpolate(<vertical wavenumber[rad/s]> <ADCP bin length [m]>',@_);
+    return 1 / sinc($k*$blen/2/$PI)**2;
 }
 
 #--------------------------------------------------------------------------------
@@ -149,33 +194,34 @@ sub dprime($)
 #	- range_max == 0 disables tilt correction
 #----------------------------------------------------------------------
 
-sub T_UH($$$$)
+sub T_UH_shear($$$$)
 {
 	my($k,$blen,$dz,$range_max) =
         &antsFunUsage(-3,'fff','T_UH(<vertical wavenumber[rad/s]> <ADCP bin size[m]> <shear grid resolution[m]> <range max[m]>)',@_);
 	croak("T_UH($k,$blen,$dz,$range_max): bad parameters\n")
 		unless ($k>=0 && $blen>0 && $dz>0 && $range_max>=0);				
-    return T_ravg($k,$blen) * T_fdiff($k,$blen) * T_interp($k,$blen,$dz) * T_tilt($k,dprime($range_max));
+    return T_ravg($k,$blen) * T_fdiff_UH($k,$blen) * T_interpgrid($k,$blen,$dz) * T_tilt($k,dprime($range_max));
 }
 
 #----------------------------------------------------------------------
-# T_ASM(k,blen,dz,range_max)
+# T_ASM_shear(k,blen,dz,range_max)
 #	- re-implemented shear method with simple depth binning
 #	- range_max == 0 disables tilt correction
 #----------------------------------------------------------------------
 
-sub T_ASM($$$$)
+sub T_ASM_shear($$$$)
 {
 	my($k,$blen,$dz,$range_max) =
         &antsFunUsage(-3,'fff','T_ASM(<vertical wavenumber[rad/s]> <ADCP bin size[m]> <shear grid resolution[m]> <range max[m]>)',@_);
 	croak("T_ASM($k,$blen,$dz,$range_max): bad parameters\n")
 		unless ($k>=0 && $blen>0 && $dz>0 && $range_max>=0);				
-    return T_ravg($k,$blen) * T_fdiff($k,$blen) * T_binavg($k,$dz) * T_tilt($k,dprime($range_max));
+    return T_ravg($k,$blen) * T_fdiff_UH($k,$blen) * T_binavg($k,$dz) * T_tilt($k,dprime($range_max));
 }
 
 #------------------------------------------------------------
 # T_VI(k,blen,preavg_dz,grid_dz,range_max)
 # T_VI_alt(k,blen,preavg_dz,grid_dz,dprime)
+#	- correction for velocity 
 #	- velocity inversion method of Visbeck (J. Tech., 2002)
 #	- only valid if pre-averaging into superensembles is used
 #	- range_max == 0 disables tilt correction
@@ -206,13 +252,7 @@ sub T_VI_alt($$$$$)
 #	- vertical-velocity method of Thurnherr (IEEE 2011)
 #	- range_max == 0 disables tilt correction
 #	- this is the expression that should be used to correct spectra
-#	  of VKE and vertical divergence (w_z)
-#   - I am not sure why the finite differencing of the processed
-#	  velocities does not have to be corrected for, but this is
-#	  consistent with:
-#		- Thurnherr (JAOT 2012) where the shear is corrected with T_VI
-#		- the strain correction of Kunze et al. (2006), which corrects
-#	      for bin averaging, but not for finite differencing(?)
+#	  of VKE (and is used by [LADCP_VKE])
 #----------------------------------------------------------------------
 
 { my(@fc);
@@ -228,25 +268,27 @@ sub T_VI_alt($$$$$)
 	}
 }
 
-##----------------------------------------------------------------------
-## T_w_z(k,blen,plen,dz,range_max)
-##	- vertical-velocity method of Thurnherr (IEEE 2011)
-##	- first differencing of gridded shear to calculate dw/dz
-##	- NB: grid-scale differentiation assumed
-##	- range_max == 0 disables tilt correction
-##----------------------------------------------------------------------
-#
-#{ my(@fc);
-#	sub T_w_z(@)
-#	{
-#		my($k,$blen,$plen,$dz,$range_max) =
-#			&antsFunUsage(-4,'ffff',
-#				'T_w_z([vertical wavenumber[rad/s]] <ADCP bin size[m]> <pulse length[m]> <output grid resolution[m]> <range max[m]>)',
-#				\@fc,'k',undef,undef,undef,@_);
-#		croak("T_w_z($k,$blen,$plen,$dz,$range_max): bad parameters\n")
-#			unless ($k>=0 && $blen>0 && $plen>0 && $dz>0 && $range_max>=0);				
-#		return T_ravg($k,$blen,$plen) * T_binavg($k,$dz) * T_tilt($k,dprime($range_max)) * T_fdiff($k,$dz);
-#	}
-#}
+#----------------------------------------------------------------------
+# T_w_z(k,blen,plen,dz,range_max)
+#	- vertical-velocity method of Thurnherr (IEEE 2011)
+#	- first differencing of gridded shear to calculate dw/dz
+#	- NB: grid-scale differentiation assumed
+#	- output is independent of dz!
+#	- range_max == 0 disables tilt correction
+#----------------------------------------------------------------------
+
+{ my(@fc);
+	sub T_w_z(@)
+	{
+		my($k,$blen,$plen,$dz,$range_max) =
+			&antsFunUsage(-4,'ffff',
+				'T_w_z([vertical wavenumber[rad/s]] <ADCP bin size[m]> <pulse length[m]> <output grid resolution[m]> <range max[m]>)',
+				\@fc,'k',undef,undef,undef,@_);
+		croak("T_w_z($k,$blen,$plen,$dz,$range_max): bad parameters\n")
+			unless ($k>=0 && $blen>0 && $plen>0 && $dz>0 && $range_max>=0);				
+		return T_w($k,$blen,$plen,$dz,$range_max) * T_fdiff($k,$dz);
+#		return T_ravg($k,$blen,$plen) * T_tilt($k,dprime($range_max));		# same without requiring $dz!
+	}
+}
 
 1;

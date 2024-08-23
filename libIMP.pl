@@ -1,9 +1,9 @@
 #======================================================================
 #                    L I B I M P . P L 
 #                    doc: Tue Nov 26 21:59:40 2013
-#                    dlm: Tue Sep 13 12:56:28 2022
+#                    dlm: Thu Jan  4 10:26:42 2024
 #                    (c) 2017 A.M. Thurnherr
-#                    uE-Info: 76 60 NIL 0 0 70 0 2 4 NIL ofnI
+#                    uE-Info: 151 0 NIL 0 0 70 0 2 4 NIL ofnI
 #======================================================================
 
 # HISTORY:
@@ -74,6 +74,7 @@
 #				  - stopped merge_plots to bomb with division by zero errors
 #	Sep 13, 2022: - BUG: histogram plot was wrong when -o was used
 #				  - added offset red line to histogram plots
+#	Jan  4, 2023: - added $reset_elapsed_time
 # HISTORY END
 
 #----------------------------------------------------------------------
@@ -127,8 +128,9 @@ sub pl_mag_calib_end($$)															# finish mag_calib plot
 #	@vecs						field number triplets of vector data
 #	@piro						[chip id, pitch field, roll field] 
 #	@bias						bias triples for vector data
-#	$suppress_rot_acc_output	set to true to suppress output of rotated accelerometer data
 #	@copyFields					field numbers to copy from input to output
+#	$suppress_rot_acc_output	set to true to suppress output of rotated accelerometer data
+#	$reset_elapsed_time			set to true to set min_elapsed to the first valid burst
 #-------------------------------------------------------------------------------------------
 
 sub rot_vecs(@) 																	# rotate & output IMU vector data 
@@ -139,9 +141,16 @@ sub rot_vecs(@) 																	# rotate & output IMU vector data
 	$plot_minlapsed = $min_elapsed unless defined($plot_milapsed);
 	$plot_malapsed = $max_elapsed unless defined($plot_malapsed);
 
+	my($firstValidElapsed);
 	while (&antsIn()) {
-		next if numberp($ants_[0][$elapsedF]) && ($ants_[0][$elapsedF] < $min_elapsed);	# trim data
-		last if numberp($ants_[0][$elapsedF]) && ($ants_[0][$elapsedF] > $max_elapsed);
+		if (numberp($ants_[0][$elapsedF])) {
+			next if ($ants_[0][$elapsedF] < $min_elapsed);							# trim data
+			last if ($ants_[0][$elapsedF] > $max_elapsed);
+			$firstValidElapsed = $ants_[0][$elapsedF] 
+				unless defined($firstValidElapsed);
+			$ants_[0][$elapsedF] -= $firstValidElapsed
+				if ($reset_elapsed_time);
+        }
 		
 		my($cpiro) = -1;															# current pitch/roll accelerometer
 		my(@R); 																	# rotation matrix

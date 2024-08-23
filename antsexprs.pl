@@ -2,8 +2,8 @@
 #                    A N T S E X P R S . P L 
 #					 (c) 2005 Andreas Thurnherr
 #                    doc: Sat Dec 31 18:35:33 2005
-#                    dlm: Thu Mar  9 10:12:48 2017
-#                    uE-Info: 46 74 NIL 0 0 72 0 2 4 NIL ofnI
+#                    dlm: Tue Sep 19 15:16:26 2023
+#                    uE-Info: 47 63 NIL 0 0 72 0 2 4 NIL ofnI
 #======================================================================
 
 # HISTORY:
@@ -44,6 +44,7 @@
 #	Mar 10, 2012: - added ${field..field} syntax to edit exprs
 #	May 15, 2015: - BUG: -S did not work with :: %PARAMs
 #	Mar  9, 2017: - removed perl 5.22 warning about re (non-quoted braces)
+#	Sep 19, 2023: - BUG: %params did not allow :: in their name
 
 $DEBUG = 0;
 
@@ -119,7 +120,7 @@ sub antsCompileAddrExpr($)								# subst fields/%PARAMs
 	$expr =~ s/QquOte/::/g;
 
 	my($relop) 	  = '<|<=|>|>=|!=|~=|<>|==';		# relational ops
-	my($comparee) = '-?%?\$?[\w\.\+\-]+';			# nums, fields, PARAMs
+	my($comparee) = '-?%?\$?[\w:\.\+\-]+';			# nums, fields, PARAMs
 	my($numvar)	  = '^[\w\.]+$';					# fields
 
 	if ($expr =~ /^($comparee)\s*($relop)\s*($comparee)$/) {
@@ -196,6 +197,7 @@ sub antsCompileAddrExpr($)								# subst fields/%PARAMs
 	#--------------------
 QUOTED_ADDR_EXPR:
 	print(STDERR "OUT AddrExpr = $expr\n") if ($DEBUG);
+#    my($subR) = eval("sub { print(STDERR \"$P{'LADCPproc::max_depth'}/$in[1]\n\"); return $expr };");
     my($subR) = eval("sub { return $expr };");
 	print(STDERR "sub { return $expr };\n") if ($DEBUG);
     croak("sub { return $expr }; => $@\n") if ($@);
