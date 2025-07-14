@@ -1,9 +1,9 @@
 #======================================================================
 #                    L I B I M P . P L 
 #                    doc: Tue Nov 26 21:59:40 2013
-#                    dlm: Thu Jan  4 10:26:42 2024
+#                    dlm: Wed Mar 26 13:06:48 2025
 #                    (c) 2017 A.M. Thurnherr
-#                    uE-Info: 151 0 NIL 0 0 70 0 2 4 NIL ofnI
+#                    uE-Info: 186 0 NIL 0 0 72 0 2 4 NIL ofnI
 #======================================================================
 
 # HISTORY:
@@ -75,6 +75,7 @@
 #	Sep 13, 2022: - BUG: histogram plot was wrong when -o was used
 #				  - added offset red line to histogram plots
 #	Jan  4, 2023: - added $reset_elapsed_time
+#	Jan  7, 2025: - added bias info to plot
 # HISTORY END
 
 #----------------------------------------------------------------------
@@ -99,7 +100,7 @@ sub pl_mag_calib_plot($$$)															# plot data point
 
 sub pl_mag_calib_end($$)															# finish mag_calib plot
 {
-	my($axlim,$HF_mag,$sensor_info) = @_;
+	my($axlim,$HF_mag,$sensor_info,$bias_x,$bias_y) = @_;
 	
 	GMT_psxy('-Sc0.1 -Gblue');														# calibration circle
 	for (my($a)=0; $a<2*$pi; $a+=0.075) {
@@ -113,11 +114,13 @@ sub pl_mag_calib_end($$)															# finish mag_calib plot
 	}
     GMT_unitcoords();																# horizontal field strength
     GMT_pstext('-F+f12,Helvetica,blue+jTR -N');
-   	printf(GMT "0.98 0.98 HF = %.2f Gauss\n",$HF_mag);
-   	
-   	printf(GMT "0.98 0.94 $sensor_info\n")											# sensor info
-		if ($sensor_info ne '');
 
+   	printf(GMT "0.98 0.98 $sensor_info\n")											# sensor info
+		if ($sensor_info ne '');
+   	printf(GMT "0.98 0.94 horizontal field = %.2f Gauss\n",$HF_mag);
+   	printf(GMT "0.98 0.90 x/y bias = %.2f/%.2f Gauss\n",$bias_x,$bias_y)
+		if numbersp($bias_x,$bias_y);
+   	
     GMT_pstext('-F+f14,Helvetica,blue+jTL -N');										# profile id
     printf(GMT "0.01 1.06 $P{profile_id}\n");
 	GMT_end();
@@ -167,7 +170,7 @@ sub rot_vecs(@) 																	# rotate & output IMU vector data
 				}
 				
 				my($roll)  = atan2($accY,$accZ); 									# eqn 25 from Freescale AN3461
-				my($pitch) = atan2($accX,sqrt($accY**2+$accZ**2));     				# eqn 26 from <Freescale AN3461
+				my($pitch) = atan2($accX,sqrt($accY**2+$accZ**2));     				# eqn 26 from Freescale AN3461
 				if ($coord_trans == 1) {											# KVH
 					$pitch *= -1;
 					$roll  *= -1;
@@ -180,6 +183,7 @@ sub rot_vecs(@) 																	# rotate & output IMU vector data
 				@R = ([ $cp,	 0,   -$sp	  ],
 					  [-$sp*$sr, $cr, -$cp*$sr],
 					  [ $sp*$cr, $sr,  $cp*$cr]);
+
 			}
 			my($xval) = $ants_[0][$vecs[$i][0]];
 			my($yval) = $ants_[0][$vecs[$i][1]];

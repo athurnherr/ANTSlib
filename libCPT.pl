@@ -1,9 +1,9 @@
 #======================================================================
 #                    L I B C P T . P L 
 #                    doc: Wed Nov 15 12:28:49 2000
-#                    dlm: Mon May 14 21:29:00 2018
+#                    dlm: Fri Sep 27 14:09:53 2024
 #                    (c) 2000 A.M. Thurnherr
-#                    uE-Info: 75 58 NIL 0 0 72 2 2 4 NIL ofnI
+#                    uE-Info: 29 70 NIL 0 0 72 2 2 4 NIL ofnI
 #======================================================================
 
 # HISTORY:
@@ -26,6 +26,7 @@
 #	Mar 26, 2018: - BUG: fg colors could not be set?!?!?!?! (both F and B set bg color)
 #				  - implemented color scaling for input files with rgb vals 0-1
 #	May 14, 2016: - added input file check
+#	Sep 27, 2024: - BUG: roundoff errors were not all handled properly
 
 #----------------------------------------------------------------------
 # CPT File Parsing
@@ -121,11 +122,12 @@ sub CPTlvl($%)
 	return nan if isnan($z);
 
 	for ($l=0; $l<$CPT{levels}; $l++) {
-		return $l if ($CPT{from_z}[$l] <= $z && $z < $CPT{to_z}[$l]);
+		return $l if ($CPT{from_z}[$l]-$PRACTICALLY_ZERO <= $z && $z < $CPT{to_z}[$l]);
 	}
 	return $CPT{levels}-1
 		if (abs($z-$CPT{to_z}[$CPT{levels}-1]) < $PRACTICALLY_ZERO);
-	return -1 if ($z < $CPT{from_z}[0]);
+
+	return -1 if ($CPT{from_z}[0]-$z > $PRACTICALLY_ZERO);
 	return $CPT{levels};
 }
 

@@ -1,18 +1,20 @@
 #======================================================================
 #                    L I B L O O P F I T . P L 
 #                    doc: Thu Mar 12 08:05:26 2015
-#                    dlm: Sun Mar 15 19:46:49 2015
+#                    dlm: Tue Jan  7 12:48:20 2025
 #                    (c) 2015 A.M. Thurnherr
-#                    uE-Info: 47 22 NIL 0 0 72 2 2 4 NIL ofnI
+#                    uE-Info: 117 0 NIL 0 0 72 2 2 4 NIL ofnI
 #======================================================================
 
 # HISTORY:
 #	Mar 12, 2015: - created
 #	Mar 15, 2015: - added [libQZ.pl]
+#	Jan  7, 2025: - BUG: wrong output produced
+#			      - removed libQZ.pl
 
 require "$ANTS/nrutil.pl";
 require "$ANTS/libSVD.pl";										# for circular fit
-require "$ANTS/libQZ.pl";										# for ellipse fit
+#require "$ANTS/libQZ.pl";										# for ellipse fit
 
 #----------------------------------------------------------------------
 # fitCircle(\@x,\@y) => ($r,$cx,$cy)
@@ -44,7 +46,6 @@ sub fitCircle($$)
 	svdcmp(\@A,\@W,\@V);										# solve Ax = b, with x == coeff
 	svbksb(\@A,\@W,\@V,\@b,\@coeff);
 	
-	return ($coeff[1],$coeff[2],$coeff[3]);
 	my($r)	= sqrt(($coeff[1]**2+$coeff[2]**2)/4-$coeff[3]);
 	my($cx) = -0.5*$coeff[1];
 	my($cy) = -0.5*$coeff[2];
@@ -59,6 +60,8 @@ sub fitCircle($$)
 #	Andrew Fitzgibbon, Maurizio Pilu, and Robert B. Fisher, MAY 1999
 # 	IEEE transactions on pattern analysis and machine intelligence 21(5): 476-480
 #----------------------------------------------------------------------
+
+if (0) {
 
 sub fitEllipse($$)
 {
@@ -109,6 +112,7 @@ sub fitEllipse($$)
 	# get fitted parameters
 	return @{$geVec[$i]};
 
+}
 }
 
 1;
