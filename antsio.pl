@@ -2,9 +2,9 @@
 #======================================================================
 #                    A N T S I O . P L 
 #                    doc: Fri Jun 19 19:22:51 1998
-#                    dlm: Tue Nov 30 12:28:03 2021
+#                    dlm: Fri Sep  5 15:23:56 2025
 #                    (c) 1998 A.M. Thurnherr
-#                    uE-Info: 220 50 NIL 0 0 70 10 2 4 NIL ofnI
+#                    uE-Info: 435 31 NIL 0 0 70 10 2 4 NIL ofnI
 #======================================================================
 
 # HISTORY:
@@ -218,6 +218,7 @@
 #	Oct 14, 2021: - changed nan to NaN, to make gnuplot work nicely again
 #	Nov 30, 2021: - finally made -F not croak on division-by-zero, etc.
 #				  - BUG: some NaNs were still nans
+#	Sep  5, 2025: - finally adapted to /usr/bin/env
 # HISTORY END
 
 # GENERAL NOTES:
@@ -288,7 +289,7 @@ sub antsInstallBufOut($)
 
 sub antsActivateOut()
 {
-	$antsActiveHeader = "#!/usr/bin/perl -S list\n" unless ($opt_Q);
+	$antsActiveHeader = "#!/usr/bin/env list\n" unless ($opt_Q);
 }
 
 #----------------------------------------------------------------------
@@ -430,7 +431,9 @@ sub antsIn()
 		next IN if (length == 1 && ord == 26);		# handle MS-DOG EOF
 
 		&antsActivateOut(),next IN					# copy activation status
-			if (m{^#![^\s]*/perl\s.*list$});
+			if (m{^#![^\s]*/perl\s.*list$} ||
+				m{^#![^\s]*/env\s.*list$});
+			   
 
 		exit(1) if (/^#ANTS#ERROR#/);				# error in pipeline
 

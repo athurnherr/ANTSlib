@@ -1,16 +1,12 @@
 #======================================================================
 #                    M A K E F I L E 
 #                    doc: Tue May 15 18:12:31 2012
-#                    dlm: Thu May  7 13:18:58 2015
+#                    dlm: Fri Oct 31 18:41:36 2025
 #                    (c) 2012 A.M. Thurnherr
-#                    uE-Info: 16 0 NIL 0 0 72 0 2 4 NIL ofnI
+#                    uE-Info: 13 0 NIL 0 0 72 0 2 4 NIL ofnI
 #======================================================================
 
 .PHONY: version
 version:
-	@sed -n '/^description =/s/description = //p' .hg/hgrc
+	@grep '^$$antsLibVersion = ' ants.pl
 
-.PHONY: publish
-publish:
-	cd ..; \
-	scp -Cr ANTSlib miles:public_hg/

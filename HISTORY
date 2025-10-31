@@ -1,9 +1,9 @@
 #======================================================================
 #                    H I S T O R Y 
 #                    doc: Thu May  7 13:12:05 2015
-#                    dlm: Fri Aug 23 12:38:52 2024
+#                    dlm: Fri Oct 31 18:53:44 2025
 #                    (c) 2015 A.M. Thurnherr
-#                    uE-Info: 275 34 NIL 0 0 72 0 2 4 NIL ofnI
+#                    uE-Info: 283 71 NIL 0 0 70 0 2 4 NIL ofnI
 #======================================================================
 
 May  7, 2015:
@@ -275,4 +275,11 @@ V7.6 (published Aug 23, 2024)
 	- published for GitHUB release
 ---------------------------------------------------------------------- 
 
-
+----------------------------------------------------------------------
+V7.7 (published Oct 31, 2025)
+	- fixed Makefile to show version
+	- fixed active ANTS headers to use /usr/bin/env
+	- updated antsnc.pl to improve warning
+	- added separate antsnc.pl for FreeBSD and MacOS (different NetCDF routine names)
+	- improved usage message in antsutils.pl
+----------------------------------------------------------------------

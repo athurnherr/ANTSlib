@@ -2,9 +2,9 @@
 #======================================================================
 #                    A N T S U T I L S . P L 
 #                    doc: Fri Jun 19 23:25:50 1998
-#                    dlm: Thu Jun 30 15:25:45 2022
+#                    dlm: Tue Sep 30 14:48:00 2025
 #                    (c) 1998 A.M. Thurnherr
-#                    uE-Info: 257 54 NIL 0 0 70 10 2 4 NIL ofnI
+#                    uE-Info: 111 51 NIL 0 0 70 10 2 4 NIL ofnI
 #======================================================================
 
 # Miscellaneous auxillary functions
@@ -108,6 +108,7 @@
 #	Aug 30, 2019: - BUG: antsLoadModel() did not respect $ANTS
 #	Nov 29, 2021: - made fmtNum() return NaN on undefined input
 #	Jun 13, 2022: - improved -G
+#	Sep 30, 2025: - improved usage message for funs
 # HISTORY END
 
 # fnr notes:
@@ -605,9 +606,9 @@ sub antsFunUsage($$$@)
 	}
 
 	if ($argc >= 0) {									# argument count
-		croak("usage: $msg [params = @params]\n") unless (@params == $argc);
+		croak("usage: $msg [params = @params (incorrect number)]\n") unless (@params == $argc);
 	} else {
-		croak("usage: $msg [params = @params])\n") unless (@params >= -$argc);
+		croak("usage: $msg [params = @params (too few)]\n") unless (@params >= -$argc);
 	}
     
 	for (my($i)=0; $i<length($types); $i++) {			# type checking
