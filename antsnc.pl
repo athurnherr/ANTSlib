@@ -1,9 +1,9 @@
 #======================================================================
-#                    . . / L I B / A N T S N C . P L 
+#                    A N T S N C . P L 
 #                    doc: Mon Jul 17 11:59:37 2006
-#                    dlm: Wed Jun 25 11:12:29 2025
+#                    dlm: Thu Oct 13 14:27:02 2022
 #                    (c) 2006 A.M. Thurnherr
-#                    uE-Info: 35 0 NIL 0 0 70 0 2 4 NIL ofnI
+#                    uE-Info: 492 55 NIL 0 0 70 0 2 4 NIL ofnI
 #======================================================================
 
 # ANTS netcdf library
@@ -31,7 +31,6 @@
 #	Jun 18, 2022: - found better earlier solution for NetCDF::DOUBLE etc. 
 #					on laptop
 #	Oct 13, 2022: - added global attributes to NC_writeMDataMulti
-#	Jun 25, 2025: - replaced all NetCDF::nc with NetCDF::
 # HISTORY END
 
 # NOTES:
@@ -242,15 +241,15 @@ sub NC_readMData($)
 	my($fn) = @_;
 	my(%NC);
 
-	$NC{id} = NetCDF::open($ARGV[0],NetCDF::NOWRITE);	# open
+	$NC{id} = NetCDF::ncopen($ARGV[0],NetCDF::NOWRITE);	# open
 
 	my($nd,$nv,$nga,$udi);								# get nelts
-	NetCDF::inquire($NC{id},$nd,$nv,$nga,$udi);
+	NetCDF::ncinquire($NC{id},$nd,$nv,$nga,$udi);
 	$NC{unlim_dimId} = $udi;
 
 	for (my($d)=0; $d<$nd; $d++) {						# dimensions
 		my($dnm,$ln);
-		NetCDF::diminq($NC{id},$d,$dnm,$ln);
+		NetCDF::ncdiminq($NC{id},$d,$dnm,$ln);
 		$NC{dimName}[$d] = $dnm;
 		$NC{dimId}{$dnm} = $d;
 		$NC{dimLen}{$dnm} = $ln;
@@ -259,7 +258,7 @@ sub NC_readMData($)
 	for (my($v)=0; $v<$nv; $v++) {						# vars & var-attribs
 		my($vnm,$vtp,$nvd,$nva);
 		my(@dids) = ();
-		NetCDF::varinq($NC{id},$v,$vnm,$vtp,$nvd,\@dids,$nva);
+		NetCDF::ncvarinq($NC{id},$v,$vnm,$vtp,$nvd,\@dids,$nva);
 		$NC{varName}[$v] = $vnm;
 		$NC{varId}{$vnm} = $v;
 		$NC{varType}{$vnm} = $vtp;
@@ -267,14 +266,14 @@ sub NC_readMData($)
 		
 		for (my($a)=0; $a<$nva; $a++) {					# var-attribs
 			my($anm,$atp,$aln);
-			NetCDF::attname($NC{id},$v,$a,$anm);
+			NetCDF::ncattname($NC{id},$v,$a,$anm);
 			$NC{varAttrName}{$vnm}[$a] = $anm;
-			NetCDF::attinq($NC{id},$v,$anm,$atp,$aln);
+			NetCDF::ncattinq($NC{id},$v,$anm,$atp,$aln);
 			$NC{varAttrType}{$vnm}{$anm} = $atp;
 			$NC{varAttrLen}{$vnm}{$anm} = $aln;
 			if ($atp == NetCDF::BYTE || $atp == NetCDF::CHAR || $aln == 1) {
 				my($val) = "";
-				NetCDF::attget($NC{id},$v,$anm,\$val);
+				NetCDF::ncattget($NC{id},$v,$anm,\$val);
 				$val =~ s{\0+$}{} if ($atp == NetCDF::CHAR);	# trailing \0
 				$NC{varAttr}{$vnm}{$anm} = $val;
 			}		
@@ -283,14 +282,14 @@ sub NC_readMData($)
 
 	for (my($a)=0; $a<$nga; $a++) {						#  global attribs
 		my($anm,$atp,$aln);
-		NetCDF::attname($NC{id},NetCDF::GLOBAL,$a,$anm);
+		NetCDF::ncattname($NC{id},NetCDF::GLOBAL,$a,$anm);
 		$NC{attrName}[$a] = $anm;
-		NetCDF::attinq($NC{id},NetCDF::GLOBAL,$anm,$atp,$aln);
+		NetCDF::ncattinq($NC{id},NetCDF::GLOBAL,$anm,$atp,$aln);
 		$NC{attrType}{$anm} = $atp;
 		$NC{attrLen}{$anm} = $aln;
 		if ($atp == NetCDF::BYTE || $atp == NetCDF::CHAR || $aln == 1) {
 			my($val) = "";
-			NetCDF::attget($NC{id},NetCDF::GLOBAL,$anm,\$val);
+			NetCDF::ncattget($NC{id},NetCDF::GLOBAL,$anm,\$val);
 			$val =~ s{\0+$}{} if ($atp == NetCDF::CHAR);
 			$NC{attr}{$anm} = $val;
 		}	    
@@ -323,17 +322,17 @@ sub NC_writeMData($$$)
 	my($fn,$abscissa,$suppress_params) = @_;
 	my(%attrDone,@slDim,@NCtype);
 
-	my($ncId) = NetCDF::create($fn,NetCDF::CLOBBER);
-#	NetCDF::setfill($ncId,NetCDF::NOFILL);			# NetCDF library bug
+	my($ncId) = NetCDF::nccreate($fn,NetCDF::CLOBBER);
+#	NetCDF::ncsetfill($ncId,NetCDF::NOFILL);			# NetCDF library bug
 
 														# DIMENSIONS
-	my($aid) = NetCDF::dimdef($ncId,$abscissa . '_coordinate',NetCDF::UNLIMITED);
+	my($aid) = NetCDF::ncdimdef($ncId,$abscissa . '_coordinate',NetCDF::UNLIMITED);
 
 	for (my($f)=0; $f<=$#antsLayout; $f++) {			# types
 		my($tpa) = $antsLayout[$f] . ':NC_type';
 		my($sl) = ($P{$tpa} =~ m{^string(\d+)$});
 		if ($sl > 0) {									# string
-			$slDim[$f] = NetCDF::dimdef($ncId,"$antsLayout[$f]:strlen",$sl);
+			$slDim[$f] = NetCDF::ncdimdef($ncId,"$antsLayout[$f]:strlen",$sl);
 			$NCtype[$f] = NetCDF::CHAR;
 		} elsif (defined($P{$tpa})) {					# custom
 			$NCtype[$f] = NC_type($P{$tpa});
@@ -347,9 +346,9 @@ sub NC_writeMData($$$)
 	for (my($f)=0; $f<=$#antsLayout; $f++) {			# VARIABLES
 		my($vid);
 		if (defined($slDim[$f])) {
-			$vid = NetCDF::vardef($ncId,$antsLayout[$f],$NCtype[$f],[$aid,$slDim[$f]]);
+			$vid = NetCDF::ncvardef($ncId,$antsLayout[$f],$NCtype[$f],[$aid,$slDim[$f]]);
 		} else {
-			$vid = NetCDF::vardef($ncId,$antsLayout[$f],$NCtype[$f],[$aid]);
+			$vid = NetCDF::ncvardef($ncId,$antsLayout[$f],$NCtype[$f],[$aid]);
 		}
 		croak("$0: varid != fnr (implementation restriction)")
 			unless ($vid == $f);
@@ -359,9 +358,9 @@ sub NC_writeMData($$$)
 			next unless ($var eq $antsLayout[$f]);
 			$attrDone{$anm} = 1;						# mark
 			if (numberp($P{$anm}) || lc($P{$anm}) eq nan) {
-				NetCDF::attput($ncId,$f,$attr,NetCDF::DOUBLE,$P{$anm});
+				NetCDF::ncattput($ncId,$f,$attr,NetCDF::DOUBLE,$P{$anm});
 			} else {
-				NetCDF::attput($ncId,$f,$attr,NetCDF::CHAR,$P{$anm});
+				NetCDF::ncattput($ncId,$f,$attr,NetCDF::CHAR,$P{$anm});
 			}
         }		                  
 	}
@@ -375,14 +374,14 @@ sub NC_writeMData($$$)
 					 $anm eq 'RECNO'	|| $anm eq 'LINENO');
 			next if $attrDone{$anm};
 			if (numberp($P{$anm}) || lc($P{$anm}) eq nan) {
-				NetCDF::attput($ncId,NetCDF::GLOBAL,$anm,NetCDF::DOUBLE,$P{$anm});
+				NetCDF::ncattput($ncId,NetCDF::GLOBAL,$anm,NetCDF::DOUBLE,$P{$anm});
 			} else {
-				NetCDF::attput($ncId,NetCDF::GLOBAL,$anm,NetCDF::CHAR,$P{$anm});
+				NetCDF::ncattput($ncId,NetCDF::GLOBAL,$anm,NetCDF::CHAR,$P{$anm});
 			}
 	    }
 	}
 
-	NetCDF::endef($ncId);
+	NetCDF::ncendef($ncId);
 
 	return $ncId;
 }
@@ -418,16 +417,16 @@ sub NC_writeMDataMulti($$$$$@)
 	my($fn,$abscissa,$suppress_params,$file_id,$n_files,$global_attribs) = @_;
 	my(@slDim,@NCtype);
 
-	my($ncId) = NetCDF::create($fn,NetCDF::CLOBBER);
+	my($ncId) = NetCDF::nccreate($fn,NetCDF::CLOBBER);
 																				# DIMENSIONS
-	my($aid) = NetCDF::dimdef($ncId,$abscissa . '_coordinate',NetCDF::UNLIMITED);
-	my($mid) = NetCDF::dimdef($ncId,$file_id,$n_files);
+	my($aid) = NetCDF::ncdimdef($ncId,$abscissa . '_coordinate',NetCDF::UNLIMITED);
+	my($mid) = NetCDF::ncdimdef($ncId,$file_id,$n_files);
 
 	for (my($f)=0; $f<=$#antsLayout; $f++) {									# TYPES
 		my($tpa) = $antsLayout[$f] . ':NC_type';								# defined explicitly
 		my($sl) = ($P{$tpa} =~ m{^string(\d+)$});
 		if ($sl > 0) {															# string
-			$slDim[$f] = NetCDF::dimdef($ncId,"$antsLayout[$f]:strlen",$sl);
+			$slDim[$f] = NetCDF::ncdimdef($ncId,"$antsLayout[$f]:strlen",$sl);
 			$NCtype[$f] = NetCDF::CHAR;
 		} elsif (defined($P{$tpa})) {											# other custom type 
 			$NCtype[$f] = NC_type($P{$tpa});
@@ -441,9 +440,9 @@ sub NC_writeMDataMulti($$$$$@)
 	for (my($f)=0; $f<=$#antsLayout; $f++) {									# VARIABLES
 		my($vid);
 		if (defined($slDim[$f])) {
-			$vid = NetCDF::vardef($ncId,$antsLayout[$f],$NCtype[$f],[$aid,$mid,$slDim[$f]]);
+			$vid = NetCDF::ncvardef($ncId,$antsLayout[$f],$NCtype[$f],[$aid,$mid,$slDim[$f]]);
 		} else {
-			$vid = NetCDF::vardef($ncId,$antsLayout[$f],$NCtype[$f],[$aid,$mid]);
+			$vid = NetCDF::ncvardef($ncId,$antsLayout[$f],$NCtype[$f],[$aid,$mid]);
 		}
 		croak("$0: varid != fnr (implementation restriction)")
 			unless ($vid == $f);
@@ -453,9 +452,9 @@ sub NC_writeMDataMulti($$$$$@)
 			next unless ($var eq $antsLayout[$f]);
 			$nc_varAttr{$anm} = 1;												# mark as done
 			if (numberp($P{$anm}) || lc($P{$anm}) eq nan) {
-				NetCDF::attput($ncId,$f,$attr,NetCDF::DOUBLE,$P{$anm});
+				NetCDF::ncattput($ncId,$f,$attr,NetCDF::DOUBLE,$P{$anm});
 			} else {
-				NetCDF::attput($ncId,$f,$attr,NetCDF::CHAR,$P{$anm});
+				NetCDF::ncattput($ncId,$f,$attr,NetCDF::CHAR,$P{$anm});
 			}
         }		                  
 	}
@@ -472,7 +471,7 @@ sub NC_writeMDataMulti($$$$$@)
 			my($tpa) = $anm . ':NC_type';										# defined explicitly
 			my($sl) = ($P{$tpa} =~ m{^string(\d+)$});
 			if ($sl > 0) {														# string
-				$slDim{$anm} = NetCDF::dimdef($ncId,"$anm:strlen",$sl);
+				$slDim{$anm} = NetCDF::ncdimdef($ncId,"$anm:strlen",$sl);
 				$NCtype{$anm} = NetCDF::CHAR;
 			} elsif (defined($P{$tpa})) {										# other custom type 
 				$NCtype{$anm} = NC_type($P{$tpa});
@@ -480,9 +479,9 @@ sub NC_writeMDataMulti($$$$$@)
 				$NCtype{$anm} = NetCDF::DOUBLE;										# not a NC type %PARAM
 			}
 			if (defined($slDim{$anm})) {										# string type
-				$nc_vid{$anm} = NetCDF::vardef($ncId,$anm,$NCtype{$anm},[$mid,$slDim{$anm}]);
+				$nc_vid{$anm} = NetCDF::ncvardef($ncId,$anm,$NCtype{$anm},[$mid,$slDim{$anm}]);
 			} else {															# other type
-				$nc_vid{$anm} = NetCDF::vardef($ncId,$anm,$NCtype{$anm},[$mid]);
+				$nc_vid{$anm} = NetCDF::ncvardef($ncId,$anm,$NCtype{$anm},[$mid]);
 			}
 	    }
 	}
@@ -491,11 +490,11 @@ sub NC_writeMDataMulti($$$$$@)
 		foreach my $anm (keys(%$global_attribs)) {
 			croak("global attributes must be numeric (implementation restriction)")
 				unless numberp($$global_attribs{$anm});
-			NetCDF::attput($ncId,NetCDF::GLOBAL,$anm,NetCDF::DOUBLE,$$global_attribs{$anm});
+			NetCDF::ncattput($ncId,NetCDF::GLOBAL,$anm,NetCDF::DOUBLE,$$global_attribs{$anm});
 	    }
 	}
 
-	NetCDF::endef($ncId);
+	NetCDF::ncendef($ncId);
 
 	return $ncId;
 }
