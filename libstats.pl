@@ -1,9 +1,9 @@
 #======================================================================
 #                    L I B S T A T S . P L 
 #                    doc: Wed Mar 24 13:59:27 1999
-#                    dlm: Sat Aug 14 13:08:30 2021
+#                    dlm: Thu Aug  6 22:28:26 2026
 #                    (c) 1999 A.M. Thurnherr
-#                    uE-Info: 86 1 NIL 0 0 72 0 2 4 NIL ofnI
+#                    uE-Info: 40 42 NIL 0 0 72 0 2 4 NIL ofnI
 #======================================================================
 
 # HISTORY:
@@ -37,6 +37,8 @@
 #	Jan 30, 2015: - added log_avg()
 #				  - added noise_avg()
 #	Mar 26, 2019: - added regress()
+#	Aug  6, 2026: - added median_minSamp()
+# HISTORY END
 
 require "$ANTS/libfuns.pl";
 
@@ -222,6 +224,16 @@ sub median(@)
 {
 	my(@svals) = sort {$a <=> $b} grep { numberp($_) } @_;
 	return nan if (@svals == 0);
+	return (@svals & 1) ?
+				$svals[$#svals/2] :
+				0.5 * ($svals[$#svals/2] + $svals[$#svals/2+1]);
+}
+
+sub median_minSamp(@)
+{
+	my($minSamp,@data) = @_;
+	my(@svals) = sort {$a <=> $b} grep { numberp($_) } @data;
+	return nan if (@svals < $minSamp);
 	return (@svals & 1) ?
 				$svals[$#svals/2] :
 				0.5 * ($svals[$#svals/2] + $svals[$#svals/2+1]);

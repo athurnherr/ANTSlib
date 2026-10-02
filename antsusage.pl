@@ -2,9 +2,9 @@
 #======================================================================
 #                    A N T S U S A G E . P L 
 #                    doc: Fri Jun 19 13:43:05 1998
-#                    dlm: Tue May 17 15:35:36 2022
+#                    dlm: Tue Sep  1 11:29:09 2026
 #                    (c) 1998 A.M. Thurnherr
-#                    uE-Info: 168 89 NIL 0 0 70 2 2 4 NIL ofnI
+#                    uE-Info: 169 72 NIL 0 0 70 2 2 4 NIL ofnI
 #======================================================================
 
 # HISTORY:
@@ -166,6 +166,7 @@
 #				  - common options cosmetics
 #	Dec 13, 2017: - BUG: common options cosmetics
 #	May 17, 2022: - BUG: antsFileError() did not report permission errors in a useful way
+#	Sep  1, 2026: - BUG: @file:field special arg did not remove newlines
 # HISTORY END
 
 # NOTES:
@@ -333,7 +334,7 @@ sub antsUsage($$@) {									# handle options
 		my(@exp);
 		if ($ARGV[$ai] =~ /^@([^:]+):(.+)/) {			# @file:field
 			&antsAddDeps($1);
-			@exp = `Cat -QF$2 $1`;
+			chomp(@exp = `Cat -QF$2 $1`);
 			croak("(...while expanding $ARGV[$ai])\n") if ($?);
 		} elsif ($ARGV[$ai] =~ /^#(-?[\d\.]+)-(-?[\d\.]+):?(-?[\d\.]+)?/) {
 			my($step) = 1;								# #num-num:step
